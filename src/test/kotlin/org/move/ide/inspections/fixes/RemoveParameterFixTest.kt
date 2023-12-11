@@ -1,9 +1,9 @@
 package org.move.ide.inspections.fixes
 
-import org.move.ide.inspections.MvUnusedVariableInspection
-import org.move.utils.tests.annotation.InspectionTestBase
+import org.sui.ide.inspections.SuiMvUnusedVariableInspection
+import org.sui.utils.tests.annotation.InspectionTestBase
 
-class RemoveParameterFixTest : InspectionTestBase(MvUnusedVariableInspection::class) {
+class RemoveParameterFixTest : InspectionTestBase(SuiMvUnusedVariableInspection::class) {
     fun `test single parameter`() = checkFixByText(
         "Remove parameter", """
     module 0x1::M {

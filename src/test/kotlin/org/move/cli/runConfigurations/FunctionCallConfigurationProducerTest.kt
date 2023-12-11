@@ -1,10 +1,10 @@
-package org.move.cli.runConfigurations
+package org.sui.cli.runConfigurations
 
 import com.intellij.execution.actions.ConfigurationContext
-import org.move.cli.runConfigurations.aptos.FunctionCallConfigurationBase
-import org.move.lang.core.psi.MvFunction
-import org.move.lang.core.psi.ext.ancestorOrSelf
-import org.move.utils.tests.RunConfigurationProducerTestBase
+import org.sui.cli.runConfigurations.sui.FunctionCallConfigurationBase
+import org.sui.lang.core.psi.MvFunction
+import org.sui.lang.core.psi.ext.ancestorOrSelf
+import org.sui.utils.tests.RunConfigurationProducerTestBase
 
 class FunctionCallConfigurationProducerTest : RunConfigurationProducerTestBase("function_call") {
     fun `test run command for entry function call with no arguments`() {

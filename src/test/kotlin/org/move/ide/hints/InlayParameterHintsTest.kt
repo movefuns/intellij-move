@@ -2,8 +2,7 @@ package org.move.ide.hints
 
 import com.intellij.codeInsight.daemon.impl.HintRenderer
 import org.intellij.lang.annotations.Language
-import org.move.utils.tests.DebugMode
-import org.move.utils.tests.MvTestBase
+import org.sui.utils.tests.MvTestBase
 
 class InlayParameterHintsTest : MvTestBase() {
     fun `test fun`() = checkByText(

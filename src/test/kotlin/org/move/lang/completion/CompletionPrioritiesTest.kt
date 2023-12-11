@@ -1,8 +1,8 @@
 package org.move.lang.completion
 
 import org.intellij.lang.annotations.Language
-import org.move.lang.core.psi.MvQualNamedElement
-import org.move.utils.tests.completion.CompletionTestCase
+import org.sui.lang.core.psi.MvQualNamedElement
+import org.sui.utils.tests.completion.CompletionTestCase
 
 class CompletionPrioritiesTest : CompletionTestCase() {
     fun `test local before builtin before unimported`() = checkCompletionsOrder(

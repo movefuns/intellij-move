@@ -1,7 +1,7 @@
 package org.move.lang.types
 
-import org.move.lang.core.psi.MvRefExpr
-import org.move.utils.tests.types.TypificationTestCase
+import org.sui.lang.core.psi.MvRefExpr
+import org.sui.utils.tests.types.TypificationTestCase
 
 class ExpectedTypeTest : TypificationTestCase() {
     fun `test function parameter primitive type`() = testExpectedTyExpr(

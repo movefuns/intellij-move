@@ -1,7 +1,7 @@
 package org.move.ide.annotator.errors
 
-import org.move.ide.annotator.MvErrorAnnotator
-import org.move.utils.tests.annotation.AnnotatorTestCase
+import org.sui.ide.annotator.MvErrorAnnotator
+import org.sui.utils.tests.annotation.AnnotatorTestCase
 
 class BuiltinCallErrorTest: AnnotatorTestCase(MvErrorAnnotator::class) {
     fun `test builtin resource functions can only be called with struct from the current module`() = checkErrors("""

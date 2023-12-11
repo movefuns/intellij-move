@@ -1,6 +1,6 @@
 package org.move.lang.completion.names
 
-import org.move.utils.tests.completion.CompletionTestCase
+import org.sui.utils.tests.completion.CompletionTestCase
 
 class DotAccessCompletionTest: CompletionTestCase() {
     fun `test dot access for struct reference`() = doSingleCompletion("""

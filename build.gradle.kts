@@ -3,7 +3,7 @@ import org.jetbrains.intellij.tasks.RunPluginVerifierTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.*
 
-val publishingToken = System.getenv("JB_PUB_TOKEN") ?: null
+val publishingToken = System.getenv("PUBLISH_TOKEN") ?: null
 // set by default in Github Actions
 val isCI = System.getenv("CI") != null
 
@@ -11,23 +11,24 @@ fun prop(name: String): String =
     extra.properties[name] as? String
         ?: error("Property `$name` is not defined in gradle.properties for environment `$platformVersion`")
 
-val platformVersion = prop("shortPlatformVersion")
-val codeVersion = "1.31.0"
-val pluginVersion = "$codeVersion.$platformVersion"
-val pluginGroup = "org.move"
-val javaVersion = JavaVersion.VERSION_17
-val kotlinStdlibVersion = "1.9.0"
-val pluginJarName = "intellij-move-$pluginVersion"
 
-val aptosVersion = "2.0.3"
+val platformVersion = prop("shortPlatformVersion")
+val codeVersion = "1.0.0"
+val pluginVersion = "$codeVersion.$platformVersion"
+val pluginGroup = "org.sui.move"
+val javaVersion = JavaVersion.VERSION_17
+val kotlinStdlibVersion = "1.8.20"
+val pluginJarName = "intellij-sui-move-$pluginVersion"
+val network = "testnet"
+val suiVersion = "v1.14.0"
 
 group = pluginGroup
 version = pluginVersion
 
 plugins {
     id("java")
-    kotlin("jvm") version "1.9.0"
-    id("org.jetbrains.intellij") version "1.15.0"
+    kotlin("jvm") version "1.8.20"
+    id("org.jetbrains.intellij") version "1.16.0"
     id("org.jetbrains.grammarkit") version "2022.3.1"
     id("net.saliman.properties") version "1.5.2"
     id("org.gradle.idea")
@@ -36,10 +37,7 @@ plugins {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinStdlibVersion")
-
-    implementation("io.sentry:sentry:6.25.0") {
-        exclude("org.slf4j")
-    }
+    implementation("io.sentry:sentry:6.25.0") { exclude("org.slf4j") }
     implementation("com.github.ajalt.clikt:clikt:3.5.2")
 }
 
@@ -52,27 +50,33 @@ allprojects {
     }
 
     repositories {
-        mavenCentral()
-        maven("https://cache-redirector.jetbrains.com/intellij-dependencies")
-        gradlePluginPortal()
+//        mavenCentral()
+//        maven("https://cache-redirector.jetbrains.com/intellij-dependencies")
+//        gradlePluginPortal()
+        maven("https://maven.aliyun.com/repository/central/")
+        maven("https://maven.aliyun.com/repository/public/" )
+        maven("https://maven.aliyun.com/repository/google/" )
+        maven("https://maven.aliyun.com/repository/jcenter/")
+        maven("https://maven.aliyun.com/repository/gradle-plugin")
     }
 
     intellij {
         pluginName.set(pluginJarName)
+        version.set(prop("platformVersion"))
         type.set(prop("platformType"))
-
         downloadSources.set(!isCI)
         instrumentCode.set(false)
         ideaDependencyCachePath.set(dependencyCachePath)
+        updateSinceUntilBuild.set(false)
+        plugins.set(
+            prop("platformPlugins")
+                .split(',')
+                .map(String::trim)
+                .filter(String::isNotEmpty)
+        )
 
-        // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file.
-        plugins.set(prop("platformPlugins").split(',').map(String::trim).filter(String::isNotEmpty))
-
-        version.set(prop("platformVersion"))
-//        localPath.set("/home/mkurnikov/pontem-ide/pontem-ide-2023.2/")
-//        localSourcesPath.set("/home/mkurnikov/pontem-ide/pontem-232.SNAPSHOT-source")
     }
-
+    println("Sandbox 目录:${project.buildDir}/idea-sandbox")
     configure<JavaPluginExtension> {
         sourceCompatibility = javaVersion
         targetCompatibility = javaVersion
@@ -97,15 +101,15 @@ allprojects {
             version.set(pluginVersion)
             changeNotes.set(
                 """
-    <body>
-        <p><a href="https://github.com/pontem-network/intellij-move/blob/master/changelog/$pluginVersion.md">
-            Changelog for Intellij-Move $pluginVersion on Github
-            </a></p>
-    </body>
-            """
+                <body>
+                    <p><a href="https://github.com/pontem-network/intellij-move/blob/master/changelog/$pluginVersion.md">
+                        Changelog for Intellij-Move $pluginVersion on Github
+                        </a></p>
+                </body>
+                """
             )
             sinceBuild.set(prop("pluginSinceBuild"))
-            untilBuild.set(prop("pluginUntilBuild"))
+//            untilBuild.set(prop("pluginUntilBuild"))
         }
 
         withType<KotlinCompile> {
@@ -127,35 +131,37 @@ allprojects {
             duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         }
 
-        task("downloadAptosBinaries") {
-            val baseUrl = "https://github.com/aptos-labs/aptos-core/releases/download/aptos-cli-v$aptosVersion"
+        task("downloadSuiBinaries") {
+            val baseUrl = "https://github.com/MystenLabs/sui/releases/download/$network-$suiVersion"
             doLast {
-                for (releasePlatform in listOf("MacOSX", "Ubuntu-22.04", "Ubuntu", "Windows")) {
-                    val zipFileName = "aptos-cli-$aptosVersion-$releasePlatform-x86_64.zip"
+                for (releasePlatform in listOf("macos-arm64", "macos-x86_64", "ubuntu-x86_64", "windows-x86_64")) {
+                    val zipFileName = "sui-$network-$suiVersion-$releasePlatform.tgz"
                     val zipFileUrl = "$baseUrl/$zipFileName"
                     val zipRoot = "${rootProject.buildDir}/zip"
                     val zipFile = file("$zipRoot/$zipFileName")
+                    println("下载路径" + zipFileUrl)
                     if (zipFile.exists()) {
                         continue
                     }
-                    download.run {
-                        src(zipFileUrl)
-                        dest(zipFile)
-                        overwrite(false)
-                    }
+//                    download.run {
+//                        src(zipFileUrl)
+//                        dest(zipFile)
+//                        overwrite(false)
+//                    }
 
                     val platformName =
                         when (releasePlatform) {
-                            "MacOSX" -> "macos"
-                            "Ubuntu" -> "ubuntu"
-                            "Ubuntu-22.04" -> "ubuntu22"
-                            "Windows" -> "windows"
+                            "macos-arm64" -> "macos-arm"
+                            "macos-x86_64" -> "macos"
+                            "ubuntu-x86_64" -> "ubuntu"
+                            "windows-x86_64" -> "windows"
                             else -> error("unreachable")
                         }
                     val platformRoot = file("${rootProject.rootDir}/bin/$platformName")
+                    println("解压文件" + tarTree(zipFile))
                     copy {
                         from(
-                            zipTree(zipFile)
+                            tarTree(zipFile)
                         )
                         into(platformRoot)
                     }
@@ -184,6 +190,7 @@ project(":") {
         withType<KotlinCompile> {
             dependsOn(generateLexer, generateParser)
         }
+
     }
 
     task("resolveDependencies") {
@@ -217,12 +224,22 @@ project(":plugin") {
                     )
                 )
             )
-        }
 
+        }
+//        signPlugin {
+//            certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
+//            privateKey.set(System.getenv("PRIVATE_KEY"))
+//            password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
+//        }
         publishPlugin {
             token.set(publishingToken)
         }
 
+        verifyPlugin {
+            pluginDir.set(
+                file("$rootDir/plugin/build/idea-sandbox/plugins/$pluginJarName")
+            )
+        }
         runIde { enabled = true }
         prepareSandbox { enabled = true }
         buildSearchableOptions {
@@ -230,9 +247,9 @@ project(":plugin") {
             jbrVersion.set(prop("jbrVersion"))
         }
 
-        buildPlugin {
-            dependsOn("downloadAptosBinaries")
-        }
+//        buildPlugin {
+//            dependsOn("downloadSuiBinaries")
+//        }
 
         withType<PrepareSandboxTask> {
             // copy bin/ directory inside the plugin zip file
@@ -265,4 +282,3 @@ val Project.dependencyCachePath
         }
         return cachePath.absolutePath
     }
-

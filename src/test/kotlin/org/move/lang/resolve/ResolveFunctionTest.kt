@@ -1,6 +1,6 @@
 package org.move.lang.resolve
 
-import org.move.utils.tests.resolve.ResolveTestCase
+import org.sui.utils.tests.resolve.ResolveTestCase
 
 class ResolveFunctionTest : ResolveTestCase() {
     fun `test resolve reference to function`() = checkByCode(

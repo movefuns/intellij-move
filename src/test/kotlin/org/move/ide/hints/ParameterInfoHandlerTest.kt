@@ -1,7 +1,9 @@
 package org.move.ide.hints
 
-import org.move.lang.core.psi.MvValueArgumentList
-import org.move.utils.tests.ParameterInfoHandlerTestCase
+import org.sui.ide.hints.FunctionParameterInfoHandler
+import org.sui.ide.hints.ParamsDescription
+import org.sui.lang.core.psi.MvValueArgumentList
+import org.sui.utils.tests.ParameterInfoHandlerTestCase
 
 class ParameterInfoHandlerTest
     : ParameterInfoHandlerTestCase<MvValueArgumentList, ParamsDescription>(FunctionParameterInfoHandler()) {

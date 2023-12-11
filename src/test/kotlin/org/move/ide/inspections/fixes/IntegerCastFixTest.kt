@@ -1,9 +1,9 @@
 package org.move.ide.inspections.fixes
 
-import org.move.ide.inspections.MvTypeCheckInspection
-import org.move.utils.tests.annotation.InspectionTestBase
+import org.sui.ide.inspections.SuiMvTypeCheckInspection
+import org.sui.utils.tests.annotation.InspectionTestBase
 
-class IntegerCastFixTest : InspectionTestBase(MvTypeCheckInspection::class) {
+class IntegerCastFixTest : InspectionTestBase(SuiMvTypeCheckInspection::class) {
     fun `test no cast available on untyped integer`() = checkFixIsUnavailable(
         "Cast to 'u64'", """
         module 0x1::m {

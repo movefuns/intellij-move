@@ -1,7 +1,7 @@
 .idea
 .gradle
 out/
-build/
+/build
 src/main/gen/
 .DS_Store
 /dove

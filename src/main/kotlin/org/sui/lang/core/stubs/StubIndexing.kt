@@ -1,0 +1,62 @@
+package org.sui.lang.core.stubs
+
+import com.intellij.psi.stubs.IndexSink
+import org.sui.lang.core.psi.MvFunction
+import org.sui.lang.index.*
+import org.sui.lang.moveProject
+
+fun IndexSink.indexModuleStub(stub: MvModuleStub) {
+    indexNamedStub(stub)
+}
+
+fun IndexSink.indexFunctionStub(stub: MvFunctionStub) {
+    indexNamedStub(stub)
+    stub.unresolvedQualName?.let {
+        when {
+            stub.isTest -> occurrence(MvTestFunctionIndex.KEY, it)
+            stub.isEntry -> occurrence(MvEntryFunctionIndex.KEY, it)
+            stub.isView -> occurrence(MvViewFunctionIndex.KEY, it)
+        }
+    }
+    val function = stub.psi as MvFunction
+    function.moveProject?.let { proj ->
+        stub.resolvedQualName(proj)
+            ?.let {
+                when {
+                    stub.isTest -> occurrence(MvTestFunctionIndex.KEY, it)
+                    stub.isEntry -> occurrence(MvEntryFunctionIndex.KEY, it)
+                    stub.isView -> occurrence(MvViewFunctionIndex.KEY, it)
+                }
+            }
+    }
+//    if (!stub.isTest) {
+//    }
+}
+
+fun IndexSink.indexSpecFunctionStub(stub: MvSpecFunctionStub) {
+    indexNamedStub(stub)
+}
+
+fun IndexSink.indexStructStub(stub: MvStructStub) {
+    indexNamedStub(stub)
+}
+
+fun IndexSink.indexSchemaStub(stub: MvSchemaStub) {
+    indexNamedStub(stub)
+}
+
+fun IndexSink.indexConstStub(stub: MvConstStub) {
+    indexNamedStub(stub)
+}
+
+fun IndexSink.indexModuleSpecStub(stub: MvModuleSpecStub) {
+    stub.moduleName?.let {
+        occurrence(MvModuleSpecIndex.KEY, it)
+    }
+}
+
+private fun IndexSink.indexNamedStub(stub: MvNamedStub) {
+    stub.name?.let {
+        occurrence(MvNamedElementIndex.KEY, it)
+    }
+}

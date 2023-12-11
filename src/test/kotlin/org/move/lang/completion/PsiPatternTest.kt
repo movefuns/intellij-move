@@ -3,10 +3,10 @@ package org.move.lang.completion
 import com.intellij.patterns.ElementPattern
 import com.intellij.psi.PsiElement
 import org.intellij.lang.annotations.Language
-import org.move.lang.core.MvPsiPatterns
-import org.move.utils.tests.InlineFile
-import org.move.utils.tests.MvTestBase
-import org.move.utils.tests.base.findElementInEditor
+import org.sui.lang.core.MvPsiPatterns
+import org.sui.utils.tests.InlineFile
+import org.sui.utils.tests.MvTestBase
+import org.sui.utils.tests.base.findElementInEditor
 
 class PsiPatternTest : MvTestBase() {
     fun `test on stmt beginning`() = testPattern("""

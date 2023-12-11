@@ -3,10 +3,11 @@ package org.move.ide.search
 import com.intellij.codeInsight.TargetElementUtil
 import com.intellij.psi.PsiElement
 import org.intellij.lang.annotations.Language
-import org.move.lang.core.psi.MvNamedElement
-import org.move.lang.core.psi.ext.startOffset
-import org.move.utils.tests.MvTestBase
-import org.move.utils.tests.base.findElementWithDataAndOffsetInEditor
+import org.sui.ide.search.MvUsageTypeProvider
+import org.sui.lang.core.psi.MvNamedElement
+import org.sui.lang.core.psi.ext.startOffset
+import org.sui.utils.tests.MvTestBase
+import org.sui.utils.tests.base.findElementWithDataAndOffsetInEditor
 
 class FindUsagesTest : MvTestBase() {
     fun `test let declaration usages`() = doTestByText("""

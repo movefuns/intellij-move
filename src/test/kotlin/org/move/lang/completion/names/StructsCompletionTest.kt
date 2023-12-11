@@ -1,6 +1,6 @@
 package org.move.lang.completion.names
 
-import org.move.utils.tests.completion.CompletionTestCase
+import org.sui.utils.tests.completion.CompletionTestCase
 
 class StructsCompletionTest: CompletionTestCase() {
     fun `test struct name as type for let binding`() = doSingleCompletion("""

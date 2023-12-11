@@ -1,8 +1,8 @@
 package org.move.lang.completion
 
 import org.intellij.lang.annotations.Language
-import org.move.ide.annotator.BUILTIN_FUNCTIONS
-import org.move.utils.tests.completion.CompletionTestCase
+import org.sui.ide.annotator.BUILTIN_FUNCTIONS
+import org.sui.utils.tests.completion.CompletionTestCase
 
 class BuiltInsCompletionTest : CompletionTestCase() {
     fun `test autocompletion for built-in functions in expr position`() = checkContainsBuiltins("""

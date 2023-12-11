@@ -1,6 +1,6 @@
 package org.move.ide
 
-import org.move.utils.tests.MvTestBase
+import org.sui.utils.tests.MvTestBase
 
 class FoldingBuilderTest: MvTestBase() {
     override val dataPath = "org/move/ide/folding.fixtures"

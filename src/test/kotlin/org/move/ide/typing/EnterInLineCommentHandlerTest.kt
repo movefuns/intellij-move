@@ -1,6 +1,6 @@
 package org.move.ide.typing
 
-import org.move.utils.tests.MvTypingTestCase
+import org.sui.utils.tests.MvTypingTestCase
 
 class EnterInLineCommentHandlerTest: MvTypingTestCase() {
     override val dataPath = "org/move/ide/typing/lineComment.fixtures"

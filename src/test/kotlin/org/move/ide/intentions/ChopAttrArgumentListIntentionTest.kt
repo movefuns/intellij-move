@@ -1,6 +1,7 @@
 package org.move.ide.intentions
 
-import org.move.utils.tests.MvIntentionTestCase
+import org.sui.ide.intentions.ChopAttrArgumentListIntention
+import org.sui.utils.tests.MvIntentionTestCase
 
 class ChopAttrArgumentListIntentionTest: MvIntentionTestCase(ChopAttrArgumentListIntention::class) {
     fun `test separate lines for test attributes`() = doAvailableTest("""

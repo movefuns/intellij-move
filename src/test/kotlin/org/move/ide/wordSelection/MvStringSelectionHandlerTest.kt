@@ -1,6 +1,6 @@
 package org.move.ide.wordSelection
 
-import org.move.utils.tests.MvSelectionHandlerTestBase
+import org.sui.utils.tests.MvSelectionHandlerTestBase
 
 class MvStringSelectionHandlerTest: MvSelectionHandlerTestBase() {
     fun `test byte string`() = doTest("""

@@ -1,6 +1,6 @@
 package org.move.toml
 
-import org.move.utils.tests.completion.CompletionProjectTestCase
+import org.sui.utils.tests.completion.CompletionProjectTestCase
 
 class MoveTomlCompletionProjectTest : CompletionProjectTestCase() {
     fun `test local path completion in inline table`() = doSingleCompletion(

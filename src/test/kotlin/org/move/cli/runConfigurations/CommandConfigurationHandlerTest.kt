@@ -1,11 +1,11 @@
-package org.move.cli.runConfigurations
+package org.sui.cli.runConfigurations
 
-import org.move.cli.moveProjects
-import org.move.cli.runConfigurations.aptos.CommandConfigurationHandler
-import org.move.cli.runConfigurations.aptos.run.RunCommandConfigurationHandler
-import org.move.cli.runConfigurations.aptos.view.ViewCommandConfigurationHandler
-import org.move.utils.tests.MvProjectTestBase
-import org.move.utils.tests.TreeBuilder
+import org.sui.cli.moveProjects
+import org.sui.cli.runConfigurations.sui.CommandConfigurationHandler
+import org.sui.cli.runConfigurations.sui.run.TestCommandConfigurationHandler
+import org.sui.cli.runConfigurations.sui.view.ViewCommandConfigurationHandler
+import org.sui.utils.tests.MvProjectTestBase
+import org.sui.utils.tests.TreeBuilder
 
 class CommandConfigurationHandlerTest : MvProjectTestBase() {
     fun `test parse run command with explicitly defined function`() =
@@ -33,7 +33,7 @@ profiles:
                 }
             },
             "move run --profile another --function-id 0x1::m::main --args u64:100",
-            RunCommandConfigurationHandler(),
+            TestCommandConfigurationHandler(),
             expectedProfile = "another"
         )
 

@@ -1,9 +1,9 @@
 package org.move.ide.inspections.fixes
 
-import org.move.ide.inspections.MvUnusedVariableInspection
-import org.move.utils.tests.annotation.InspectionTestBase
+import org.sui.ide.inspections.SuiMvUnusedVariableInspection
+import org.sui.utils.tests.annotation.InspectionTestBase
 
-class RenameFixTest: InspectionTestBase(MvUnusedVariableInspection::class) {
+class RenameFixTest : InspectionTestBase(SuiMvUnusedVariableInspection::class) {
     fun `test unused function parameter rename fix`() = checkFixByText(
         "Rename to _a", """
     module 0x1::M {

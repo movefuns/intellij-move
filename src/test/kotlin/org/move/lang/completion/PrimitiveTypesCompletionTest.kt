@@ -1,9 +1,9 @@
 package org.move.lang.completion
 
 import org.intellij.lang.annotations.Language
-import org.move.ide.annotator.BUILTIN_TYPE_IDENTIFIERS
-import org.move.ide.annotator.PRIMITIVE_TYPE_IDENTIFIERS
-import org.move.utils.tests.completion.CompletionTestCase
+import org.sui.ide.annotator.BUILTIN_TYPE_IDENTIFIERS
+import org.sui.ide.annotator.PRIMITIVE_TYPE_IDENTIFIERS
+import org.sui.utils.tests.completion.CompletionTestCase
 
 class PrimitiveTypesCompletionTest: CompletionTestCase() {
     fun `test builtin types present in type positions for function param`() = doTest("""

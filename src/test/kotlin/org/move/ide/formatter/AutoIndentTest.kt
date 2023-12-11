@@ -1,6 +1,6 @@
 package org.move.ide.formatter
 
-import org.move.utils.tests.MvTypingTestCase
+import org.sui.utils.tests.MvTypingTestCase
 
 class AutoIndentTest : MvTypingTestCase() {
     fun `test script`() = doTestByText(

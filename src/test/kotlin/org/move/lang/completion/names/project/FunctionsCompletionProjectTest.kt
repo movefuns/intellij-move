@@ -1,6 +1,6 @@
 package org.move.lang.completion.names.project
 
-import org.move.utils.tests.completion.CompletionProjectTestCase
+import org.sui.utils.tests.completion.CompletionProjectTestCase
 
 class FunctionsCompletionProjectTest : CompletionProjectTestCase() {
     fun `test public method is encountered in completion only once`() = doSingleCompletion(

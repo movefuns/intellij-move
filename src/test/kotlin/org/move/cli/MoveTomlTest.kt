@@ -1,20 +1,19 @@
-package org.move.cli
+package org.sui.cli
 
-import org.move.cli.manifest.AptosConfigYaml
-import org.move.cli.manifest.MoveToml
-import org.move.openapiext.toPsiFile
-import org.move.openapiext.toVirtualFile
-import org.move.utils.TestProjectRootServiceImpl
-import org.move.utils.rootService
-import org.move.utils.tests.MvTestBase
-import org.move.utils.tests.base.TestCase
+import org.sui.cli.manifest.MoveToml
+import org.sui.openapiext.toPsiFile
+import org.sui.openapiext.toVirtualFile
+import org.sui.utils.TestSuiProjectRootServiceImpl
+import org.sui.utils.rootService
+import org.sui.utils.tests.MvTestBase
+import org.sui.utils.tests.base.TestCase
 import org.toml.lang.psi.TomlFile
 import java.nio.file.Paths
 
 class MoveTomlTest : MvTestBase() {
     fun `test parse move package`() {
         val moveProjectRoot = Paths.get(TestCase.testResourcesPath).resolve("move_toml_project")
-        (project.rootService as TestProjectRootServiceImpl).modifyPath(moveProjectRoot)
+        (project.rootService as TestSuiProjectRootServiceImpl).modifyPath(moveProjectRoot)
 
         val manifestPath = moveProjectRoot.resolve(Consts.MANIFEST_FILE)
         val tomlFile = manifestPath.toVirtualFile()?.toPsiFile(project) as TomlFile
@@ -32,6 +31,6 @@ class MoveTomlTest : MvTestBase() {
         check(moveToml.deps.size == 1)
 
         val movePackage = MovePackage.fromMoveToml(moveToml)!!
-        check(movePackage.aptosConfigYaml?.profiles == setOf("default", "emergency"))
+        check(movePackage.suiConfigYaml?.profiles == setOf("default", "emergency"))
     }
 }

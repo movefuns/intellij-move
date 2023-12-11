@@ -3,9 +3,9 @@ package org.move.ide.typing
 import com.intellij.codeInsight.highlighting.BraceMatchingUtil
 import com.intellij.openapi.editor.ex.EditorEx
 import org.intellij.lang.annotations.Language
-import org.move.lang.MoveFileType
-import org.move.utils.tests.MvTypingTestCase
-import org.move.utils.tests.replaceCaretMarker
+import org.sui.lang.MoveFileType
+import org.sui.utils.tests.MvTypingTestCase
+import org.sui.utils.tests.replaceCaretMarker
 
 class BraceMatcherTest : MvTypingTestCase() {
     fun `test don't pair parenthesis before identifier`() = doTest(

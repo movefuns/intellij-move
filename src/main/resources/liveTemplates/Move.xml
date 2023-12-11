@@ -1,4 +1,4 @@
-<templateSet group="Move">
+<templateSet group="Sui Move">
     <template name="d"
               value="std::debug::print(&amp;$TEXT$);"
               description="debug print"

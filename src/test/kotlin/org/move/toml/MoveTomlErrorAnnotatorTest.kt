@@ -1,6 +1,7 @@
 package org.move.toml
 
-import org.move.utils.tests.annotation.AnnotatorTestCase
+import org.sui.toml.MoveTomlErrorAnnotator
+import org.sui.utils.tests.annotation.AnnotatorTestCase
 
 class MoveTomlErrorAnnotatorTest : AnnotatorTestCase(MoveTomlErrorAnnotator::class) {
     fun `test valid addresses`() = checkMoveTomlWarnings("""

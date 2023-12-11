@@ -1,9 +1,9 @@
 package org.move.ide.inspections.fixes
 
-import org.move.ide.inspections.RedundantTypeCastInspection
-import org.move.utils.tests.annotation.InspectionTestBase
+import org.sui.ide.inspections.SuiRedundantTypeCastInspection
+import org.sui.utils.tests.annotation.InspectionTestBase
 
-class RemoveRedundantCastFixTest: InspectionTestBase(RedundantTypeCastInspection::class) {
+class RemoveRedundantCastFixTest : InspectionTestBase(SuiRedundantTypeCastInspection::class) {
     fun `test remove redundant cast no parens`() = checkFixByText("Remove redundant cast", """
 module 0x1::main {
     fun main() {

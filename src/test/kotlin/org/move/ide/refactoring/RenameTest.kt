@@ -1,7 +1,7 @@
 package org.move.ide.refactoring
 
 import org.intellij.lang.annotations.Language
-import org.move.utils.tests.MvTestBase
+import org.sui.utils.tests.MvTestBase
 
 class RenameTest : MvTestBase() {
     fun `test function argument`() = doTest(

@@ -1,6 +1,6 @@
 package org.move.lang.types
 
-import org.move.utils.tests.types.TypificationTestCase
+import org.sui.utils.tests.types.TypificationTestCase
 
 class TypeSubstitutionTest: TypificationTestCase() {
     fun `test return type of callable`() = testExpr(

@@ -1,6 +1,6 @@
 package org.move.lang.resolve
 
-import org.move.utils.tests.resolve.ResolveTestCase
+import org.sui.utils.tests.resolve.ResolveTestCase
 
 class ResolveModulesTest : ResolveTestCase() {
     fun `test import module itself with Self import`() = checkByCode(

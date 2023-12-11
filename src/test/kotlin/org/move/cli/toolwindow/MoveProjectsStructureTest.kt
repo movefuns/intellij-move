@@ -1,11 +1,11 @@
-package org.move.cli.toolwindow
+package org.sui.cli.toolwindow
 
 import com.intellij.ide.util.treeView.AbstractTreeStructure
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.ProjectViewTestUtil
-import org.move.cli.moveProjects
-import org.move.utils.tests.MvProjectTestBase
-import org.move.utils.tests.TreeBuilder
+import org.sui.cli.moveProjects
+import org.sui.utils.tests.MvProjectTestBase
+import org.sui.utils.tests.TreeBuilder
 
 class MoveProjectsStructureTest : MvProjectTestBase() {
     fun `test move projects`() = doTest("""

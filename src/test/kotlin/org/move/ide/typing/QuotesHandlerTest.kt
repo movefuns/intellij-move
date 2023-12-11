@@ -1,6 +1,6 @@
 package org.move.ide.typing
 
-import org.move.utils.tests.MvTypingTestCase
+import org.sui.utils.tests.MvTypingTestCase
 
 class QuotesHandlerTest: MvTypingTestCase() {
     fun `test no auto insertion if no prefix`() = doTestByText("""

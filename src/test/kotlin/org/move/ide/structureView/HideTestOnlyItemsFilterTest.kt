@@ -1,5 +1,7 @@
 package org.move.ide.structureView
 
+import org.sui.ide.structureView.HideTestOnlyItemsFilter
+
 class HideTestOnlyItemsFilterTest: StructureViewToggleableActionTestBase() {
     fun `test hide test only items filter`() = doTest("""
         module 0x1::m {

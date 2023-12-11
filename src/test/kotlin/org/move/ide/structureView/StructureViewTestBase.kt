@@ -4,7 +4,8 @@ import com.intellij.ide.structureView.newStructureView.StructureViewComponent
 import com.intellij.openapi.ui.Queryable
 import com.intellij.testFramework.PlatformTestUtil
 import org.intellij.lang.annotations.Language
-import org.move.utils.tests.MvTestBase
+import org.sui.ide.structureView.MvStructureViewTreeElement
+import org.sui.utils.tests.MvTestBase
 import javax.swing.JTree
 import javax.swing.tree.TreePath
 

@@ -1,6 +1,7 @@
 package org.move.ide.intentions
 
-import org.move.utils.tests.MvIntentionTestCase
+import org.sui.ide.intentions.RemoveCurlyBracesIntention
+import org.sui.utils.tests.MvIntentionTestCase
 
 class RemoveCurlyBracesIntentionTest: MvIntentionTestCase(RemoveCurlyBracesIntention::class) {
     fun `test remove curly braces simple`() = doAvailableTest(

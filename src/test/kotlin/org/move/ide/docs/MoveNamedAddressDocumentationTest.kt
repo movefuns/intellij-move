@@ -1,6 +1,7 @@
 package org.move.ide.docs
 
-import org.move.utils.tests.MvDocumentationProviderProjectTestCase
+import org.sui.ide.docs.MvDocumentationProvider
+import org.sui.utils.tests.MvDocumentationProviderProjectTestCase
 
 class MvNamedAddressDocumentationTest : MvDocumentationProviderProjectTestCase() {
     fun `test value of named address accessible from documentation`() = doTestByFileTree(

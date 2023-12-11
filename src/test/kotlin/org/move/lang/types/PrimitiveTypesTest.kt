@@ -1,6 +1,6 @@
 package org.move.lang.types
 
-import org.move.utils.tests.types.TypificationTestCase
+import org.sui.utils.tests.types.TypificationTestCase
 
 class PrimitiveTypesTest: TypificationTestCase() {
     fun `test default int is u8`() = testExpr(

@@ -4,11 +4,11 @@ import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementPresentation
 import com.intellij.psi.NavigatablePsiElement
 import org.intellij.lang.annotations.Language
-import org.move.lang.core.completion.createCompletionLookupElement
-import org.move.lang.core.psi.MvElement
-import org.move.lang.core.psi.MvNamedElement
-import org.move.utils.tests.MvTestBase
-import org.move.utils.tests.base.findElementInEditor
+import org.sui.lang.core.completion.createCompletionLookupElement
+import org.sui.lang.core.psi.MvElement
+import org.sui.lang.core.psi.MvNamedElement
+import org.sui.utils.tests.MvTestBase
+import org.sui.utils.tests.base.findElementInEditor
 
 class LookupElementTest : MvTestBase() {
     fun `test function param`() = check("""

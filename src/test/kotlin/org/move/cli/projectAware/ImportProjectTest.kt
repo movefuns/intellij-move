@@ -1,6 +1,6 @@
-package org.move.cli.projectAware
+package org.sui.cli.projectAware
 
-import org.move.utils.tests.MvProjectTestBase
+import org.sui.utils.tests.MvProjectTestBase
 
 class ImportProjectTest : MvProjectTestBase() {
     fun `test import project with circular dependencies no stackoverflow`() {

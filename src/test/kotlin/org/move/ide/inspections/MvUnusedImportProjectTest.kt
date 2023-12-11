@@ -1,8 +1,9 @@
 package org.move.ide.inspections
 
-import org.move.utils.tests.annotation.InspectionProjectTestBase
+import org.sui.ide.inspections.SuiMvUnusedImportInspection
+import org.sui.utils.tests.annotation.InspectionProjectTestBase
 
-class MvUnusedImportProjectTest : InspectionProjectTestBase(MvUnusedImportInspection::class) {
+class MvUnusedImportProjectTest : InspectionProjectTestBase(SuiMvUnusedImportInspection::class) {
     fun `test no error if import used in spec module`() = checkWarningsByFileTree {
         namedMoveToml("Mira")
         sources {

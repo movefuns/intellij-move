@@ -1,10 +1,10 @@
 package org.move.lang
 
-import org.move.cli.moveProjects
-import org.move.lang.core.psi.MvNamedAddress
-import org.move.utils.tests.FileTreeBuilder
-import org.move.utils.tests.MvProjectTestBase
-import org.move.utils.tests.base.findElementAndDataInEditor
+import org.sui.cli.moveProjects
+import org.sui.lang.core.psi.MvNamedAddress
+import org.sui.utils.tests.FileTreeBuilder
+import org.sui.utils.tests.MvProjectTestBase
+import org.sui.utils.tests.base.findElementAndDataInEditor
 
 class NamedAddressValuesTest : MvProjectTestBase() {
     fun `test named address`() = checkByFileTree {

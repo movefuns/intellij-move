@@ -1,17 +1,4 @@
 <idea-plugin>
-<!--    <id>org.move.lang</id>-->
-<!--    <name>Move Language</name>-->
-
-<!--    <vendor>Pontem</vendor>-->
-
-<!--    <description>-->
-<!--        <![CDATA[-->
-<!--            <p>Support for Move, smart-contract language for Aptos and other blockchains.</p>-->
-
-<!--            <p><a href="https://github.com/pontem-network/intellij-move">https://github.com/pontem-network/intellij-move</a></p>-->
-<!--        ]]>-->
-<!--    </description>-->
-
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
      on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
@@ -19,351 +6,381 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <fileType name="Move"
-                  language="Move"
+                  language="Sui Move"
                   extensions="move"
-                  implementationClass="org.move.lang.MoveFileType"
+                  implementationClass="org.sui.lang.MoveFileType"
                   fieldName="INSTANCE"/>
 
-        <codeInsight.lineMarkerProvider language="Move"
-                                        implementationClass="org.move.ide.lineMarkers.ItemSpecsLineMarkerProvider" />
+        <codeInsight.lineMarkerProvider language="Sui Move"
+                                        implementationClass="org.sui.ide.lineMarkers.ItemSpecsLineMarkerProvider"/>
 
         <!-- PSI managing -->
 
-        <projectService serviceInterface="org.move.lang.core.psi.MvPsiManager"
-                        serviceImplementation="org.move.lang.core.psi.MvPsiManagerImpl"/>
+        <projectService serviceInterface="org.sui.lang.core.psi.SuiMvPsiManager"
+                        serviceImplementation="org.sui.lang.core.psi.SuiMvPsiManagerImpl"/>
 
         <configurationType
-                implementation="org.move.cli.runConfigurations.legacy.MoveConfigurationType"/>
+                implementation="org.sui.cli.runConfigurations.legacy.MoveConfigurationType"/>
         <configurationType
-                implementation="org.move.cli.runConfigurations.aptos.AptosConfigurationType"/>
-        <runConfigurationProducer
-                implementation="org.move.cli.runConfigurations.producers.TestCommandConfigurationProducer"/>
-        <runConfigurationProducer
-                implementation="org.move.cli.runConfigurations.producers.RunCommandConfigurationProducer"/>
-        <runConfigurationProducer
-                implementation="org.move.cli.runConfigurations.producers.ViewCommandConfigurationProducer"/>
-        <runLineMarkerContributor language="Move"
-                                  implementationClass="org.move.ide.lineMarkers.AptosCommandLineMarkerContributor"/>
+                implementation="org.sui.cli.runConfigurations.sui.SuiConfigurationType"/>
+        <!--        <runConfigurationProducer-->
+        <!--                implementation="org.sui.cli.runConfigurations.producers.AnyCommandConfigurationProducer"/>-->
+        <!--        <runConfigurationProducer-->
+        <!--                implementation="org.sui.cli.runConfigurations.producers.BuildCommandConfigurationProducer"/>-->
+        <!--        <runConfigurationProducer-->
+        <!--                implementation="org.sui.cli.runConfigurations.producers.TestCommandConfigurationProducer"/>-->
+        <!--        <runLineMarkerContributor language="Sui Move"-->
+        <!--                                  implementationClass="org.sui.ide.lineMarkers.AptosCommandLineMarkerContributor"/>-->
 
-        <lang.parserDefinition language="Move"
-                               implementationClass="org.move.lang.MoveParserDefinition"/>
+        <lang.parserDefinition language="Sui Move"
+                               implementationClass="org.sui.lang.MoveParserDefinition"/>
 
-        <stubElementTypeHolder class="org.move.lang.MvElementTypes" />
+        <stubElementTypeHolder class="org.sui.lang.MvElementTypes"/>
 
-        <stubIndex implementation="org.move.lang.index.MvNamedElementIndex" />
-        <stubIndex implementation="org.move.lang.index.MvEntryFunctionIndex" />
-        <stubIndex implementation="org.move.lang.index.MvViewFunctionIndex" />
-        <stubIndex implementation="org.move.lang.index.MvTestFunctionIndex" />
-        <stubIndex implementation="org.move.lang.index.MvModuleSpecIndex" />
+        <stubIndex implementation="org.sui.lang.index.MvNamedElementIndex"/>
+        <stubIndex implementation="org.sui.lang.index.MvEntryFunctionIndex"/>
+        <stubIndex implementation="org.sui.lang.index.MvViewFunctionIndex"/>
+        <stubIndex implementation="org.sui.lang.index.MvTestFunctionIndex"/>
+        <stubIndex implementation="org.sui.lang.index.MvModuleSpecIndex"/>
 
-        <lang.documentationProvider language="Move"
-                                    implementationClass="org.move.ide.docs.MvDocumentationProvider"/>
+        <lang.documentationProvider language="Sui Move"
+                                    implementationClass="org.sui.ide.docs.MvDocumentationProvider"/>
 
-        <lang.importOptimizer language="Move" implementationClass="org.move.ide.refactoring.MvImportOptimizer"/>
+        <lang.importOptimizer language="Sui Move" implementationClass="org.sui.ide.refactoring.MvImportOptimizer"/>
 
-        <gotoSymbolContributor implementation="org.move.ide.navigation.MvSymbolNavigationContributor"/>
-        <gotoClassContributor implementation="org.move.ide.navigation.MvStructNavigationContributor"/>
+        <gotoSymbolContributor implementation="org.sui.ide.navigation.MvSymbolNavigationContributor"/>
+        <gotoClassContributor implementation="org.sui.ide.navigation.MvStructNavigationContributor"/>
 
-        <lang.syntaxHighlighter language="Move"
-                                implementationClass="org.move.ide.MvHighlighter"/>
-        <lang.commenter language="Move"
-                        implementationClass="org.move.ide.MvCommenter"/>
-        <lang.braceMatcher language="Move"
-                           implementationClass="org.move.ide.typing.MvBraceMatcher"/>
-        <lang.quoteHandler language="Move"
-                           implementationClass="org.move.ide.typing.MvQuoteHandler"/>
-        <typedHandler implementation="org.move.ide.typing.MvAngleBraceTypedHandler"
+        <lang.syntaxHighlighter language="Sui Move"
+                                implementationClass="org.sui.ide.MvHighlighter"/>
+        <lang.commenter language="Sui Move"
+                        implementationClass="org.sui.ide.MvCommenter"/>
+        <lang.braceMatcher language="Sui Move"
+                           implementationClass="org.sui.ide.typing.MvBraceMatcher"/>
+        <lang.quoteHandler language="Sui Move"
+                           implementationClass="org.sui.ide.typing.MvQuoteHandler"/>
+        <typedHandler implementation="org.sui.ide.typing.MvAngleBraceTypedHandler"
                       id="MvAngleBracketsHandler"/>
-        <typedHandler implementation="org.move.ide.typing.MoveTextFieldTypedHandler"
+        <typedHandler implementation="org.sui.ide.typing.MoveTextFieldTypedHandler"
                       id="MoveTextFieldTypedHandler"/>
-        <typedHandler implementation="org.move.ide.typing.MvTypedHandler"
+        <typedHandler implementation="org.sui.ide.typing.MvTypedHandler"
                       id="MvTypedHandler"/>
-        <enterHandlerDelegate implementation="org.move.ide.typing.MvEnterInLineCommentHandler"
+        <enterHandlerDelegate implementation="org.sui.ide.typing.MvEnterInLineCommentHandler"
                               id="MvEnterInLineComments"/>
-        <backspaceHandlerDelegate implementation="org.move.ide.typing.MvAngleBracketsBackspaceHandler"
+        <backspaceHandlerDelegate implementation="org.sui.ide.typing.MvAngleBracketsBackspaceHandler"
                                   id="MvAngleBracketsBackspaceHandler"/>
 
-        <lang.formatter language="Move"
-                        implementationClass="org.move.ide.formatter.MvFormattingModelBuilder"/>
+        <lang.formatter language="Sui Move"
+                        implementationClass="org.sui.ide.formatter.MvFormattingModelBuilder"/>
         <langCodeStyleSettingsProvider
-                implementation="org.move.ide.formatter.MvLanguageCodeStyleSettingsProvider"/>
+                implementation="org.sui.ide.formatter.MvLanguageCodeStyleSettingsProvider"/>
 
-        <lang.foldingBuilder language="Move" implementationClass="org.move.ide.folding.MvFoldingBuilder"/>
+        <lang.foldingBuilder language="Sui Move" implementationClass="org.sui.ide.folding.MvFoldingBuilder"/>
 
-        <lang.namesValidator language="Move"
-                             implementationClass="org.move.ide.refactoring.MvNamesValidator"/>
-        <lang.refactoringSupport language="Move"
-                                 implementationClass="org.move.ide.refactoring.MvRefactoringSupportProvider"/>
+        <lang.namesValidator language="Sui Move"
+                             implementationClass="org.sui.ide.refactoring.MvNamesValidator"/>
+        <lang.refactoringSupport language="Sui Move"
+                                 implementationClass="org.sui.ide.refactoring.MvRefactoringSupportProvider"/>
 
 <!--        <lang.refactoringSupport language="TOML"-->
-<!--                                 implementationClass="org.move.ide.refactoring.toml.TomlRefactoringSupportProvider"/>-->
-<!--        <renameHandler implementation="org.move.ide.refactoring.toml.TomlInPlaceRenameHandler" />-->
-<!--        <renameHandler implementation="org.move.ide.refactoring.toml.TomlRenameHandler" />-->
-<!--        <renamePsiElementProcessor implementation="org.move.ide.refactoring.toml.MvRenameAddressProcessor"-->
+        <!--                                 implementationClass="org.sui.ide.refactoring.toml.TomlRefactoringSupportProvider"/>-->
+        <!--        <renameHandler implementation="org.sui.ide.refactoring.toml.TomlInPlaceRenameHandler" />-->
+        <!--        <renameHandler implementation="org.sui.ide.refactoring.toml.TomlRenameHandler" />-->
+        <!--        <renamePsiElementProcessor implementation="org.sui.ide.refactoring.toml.MvRenameAddressProcessor"-->
 <!--                                   order="first"-->
 <!--                                   id="mvRenameAddressProcessor" />-->
 
 
-        <lang.findUsagesProvider language="Move"
-                                 implementationClass="org.move.ide.search.MvFindUsagesProvider"/>
+        <lang.findUsagesProvider language="Sui Move"
+                                 implementationClass="org.sui.ide.search.MvFindUsagesProvider"/>
         <usageTypeProvider
-                implementation="org.move.ide.search.NamedAddressUsageTypeProvider"/>
+                implementation="org.sui.ide.search.NamedAddressUsageTypeProvider"/>
         <findUsagesHandlerFactory
-                implementation="org.move.ide.search.NamedAddressFindUsagesHandlerFactory"/>
+                implementation="org.sui.ide.search.NamedAddressFindUsagesHandlerFactory"/>
 
-        <completion.confidence language="Move"
-                               implementationClass="org.move.lang.core.completion.MvCompletionConfidence"/>
-        <completion.contributor language="Move"
-                                implementationClass="org.move.lang.core.completion.CommonCompletionContributor"/>
-        <completion.contributor language="Move"
-                                implementationClass="org.move.lang.core.completion.KeywordCompletionContributor"/>
-        <completion.contributor language="Move"
-                                implementationClass="org.move.lang.core.completion.MoveTextFieldCompletionContributor"/>
+        <completion.confidence language="Sui Move"
+                               implementationClass="org.sui.lang.core.completion.MvCompletionConfidence"/>
+        <completion.contributor language="Sui Move"
+                                implementationClass="org.sui.lang.core.completion.CommonCompletionContributor"/>
+        <completion.contributor language="Sui Move"
+                                implementationClass="org.sui.lang.core.completion.KeywordCompletionContributor"/>
+        <completion.contributor language="Sui Move"
+                                implementationClass="org.sui.lang.core.completion.MoveTextFieldCompletionContributor"/>
         <completion.contributor language="TOML"
-                                implementationClass="org.move.toml.completion.MoveTomlCompletionContributor"/>
+                                implementationClass="org.sui.toml.completion.MoveTomlCompletionContributor"/>
         <weigher key="completion"
                  implementationClass="com.intellij.codeInsight.completion.PriorityWeigher"
                  id="priority"
                  order="first"/>
 
         <psi.referenceContributor language="TOML"
-                                  implementation="org.move.toml.MoveTomlReferenceContributor"/>
-        <psi.referenceContributor language="Move"
-                                  implementation="org.move.toml.NamedAddressReferenceContributor"/>
+                                  implementation="org.sui.toml.MoveTomlReferenceContributor"/>
+        <psi.referenceContributor language="Sui Move"
+                                  implementation="org.sui.toml.NamedAddressReferenceContributor"/>
 
-        <annotator language="Move"
-                   implementationClass="org.move.ide.annotator.MvErrorAnnotator"/>
-        <annotator language="Move"
-                   implementationClass="org.move.ide.annotator.MvSyntaxErrorAnnotator"/>
-        <annotator language="Move"
-                   implementationClass="org.move.ide.annotator.HighlightingAnnotator"/>
+        <annotator language="Sui Move"
+                   implementationClass="org.sui.ide.annotator.MvErrorAnnotator"/>
+        <annotator language="Sui Move"
+                   implementationClass="org.sui.ide.annotator.MvSyntaxErrorAnnotator"/>
+        <annotator language="Sui Move"
+                   implementationClass="org.sui.ide.annotator.HighlightingAnnotator"/>
 
         <annotator language="TOML"
-                   implementationClass="org.move.toml.MoveTomlErrorAnnotator" />
+                   implementationClass="org.sui.toml.MoveTomlErrorAnnotator"/>
 
-        <codeInsight.parameterInfo language="Move"
-                                   implementationClass="org.move.ide.hints.FunctionParameterInfoHandler"/>
-        <codeInsight.parameterInfo language="Move"
-                                   implementationClass="org.move.ide.hints.TypeParameterInfoHandler"/>
-        <codeInsight.parameterInfo language="Move"
-                                   implementationClass="org.move.ide.hints.StructLitFieldsInfoHandler"/>
-        <codeInsight.parameterNameHints language="Move"
-                                        implementationClass="org.move.ide.hints.MvInlayParameterHintsProvider"/>
-        <codeInsight.inlayProvider language="Move"
-                                   implementationClass="org.move.ide.hints.type.MvInlayTypeHintsProvider"/>
+        <codeInsight.parameterInfo language="Sui Move"
+                                   implementationClass="org.sui.ide.hints.FunctionParameterInfoHandler"/>
+        <codeInsight.parameterInfo language="Sui Move"
+                                   implementationClass="org.sui.ide.hints.TypeParameterInfoHandler"/>
+        <codeInsight.parameterInfo language="Sui Move"
+                                   implementationClass="org.sui.ide.hints.StructLitFieldsInfoHandler"/>
+        <codeInsight.parameterNameHints language="Sui Move"
+                                        implementationClass="org.sui.ide.hints.MvInlayParameterHintsProvider"/>
+        <codeInsight.inlayProvider language="Sui Move"
+                                   implementationClass="org.sui.ide.hints.type.MvInlayTypeHintsProvider"/>
 
         <defaultLiveTemplates file="liveTemplates/Move.xml"/>
-        <liveTemplateContext implementation="org.move.ide.live_templates.MvContextType$Generic"/>
-        <liveTemplateContext implementation="org.move.ide.live_templates.MvContextType$Module"/>
-        <liveTemplateContext implementation="org.move.ide.live_templates.MvContextType$Block"/>
+        <liveTemplateContext implementation="org.sui.ide.live_templates.MvContextType$Generic"
+                             contextId="org.sui.lang.Generic"/>
+        <liveTemplateContext implementation="org.sui.ide.live_templates.MvContextType$Module"
+                             contextId="org.sui.lang.Module"/>
+        <liveTemplateContext implementation="org.sui.ide.live_templates.MvContextType$Block"
+                             contextId="org.sui.lang.Block"/>
 
-        <renamePsiElementProcessor implementation="org.move.ide.refactoring.MvRenameProcessor"
+        <renamePsiElementProcessor implementation="org.sui.ide.refactoring.MvRenameProcessor"
                                    order="first"
                                    id="mvRenameProcessor"/>
-        <renamePsiElementProcessor implementation="org.move.ide.refactoring.MvRenameFileProcessor"
+        <renamePsiElementProcessor implementation="org.sui.ide.refactoring.MvRenameFileProcessor"
                                    order="before renamePsiFile"
                                    id="mvRenamePsiFileProcessor"/>
         <lang.psiStructureViewFactory
-                language="Move"
-                implementationClass="org.move.ide.structureView.MvPsiStructureViewFactory"/>
+                language="Sui Move"
+                implementationClass="org.sui.ide.structureView.MvPsiStructureViewFactory"/>
 
         <declarationRangeHandler
-                key="org.move.lang.core.psi.MvModule"
-                implementationClass="org.move.ide.navigation.ModuleDeclarationRangeHandler"/>
+                key="org.sui.lang.core.psi.MvModule"
+                implementationClass="org.sui.ide.navigation.ModuleDeclarationRangeHandler"/>
         <declarationRangeHandler
-                key="org.move.lang.core.psi.MvFunction"
-                implementationClass="org.move.ide.navigation.FunctionDeclarationRangeHandler"/>
+                key="org.sui.lang.core.psi.MvFunction"
+                implementationClass="org.sui.ide.navigation.FunctionDeclarationRangeHandler"/>
 
-        <breadcrumbsInfoProvider implementation="org.move.ide.MvBreadcrumbsProvider" />
+        <breadcrumbsInfoProvider implementation="org.sui.ide.MvBreadcrumbsProvider"/>
 
-        <toolWindow id="Aptos"
+        <toolWindow id="Sui"
                     anchor="right"
-                    factoryClass="org.move.cli.toolwindow.AptosToolWindowFactory"
-                    icon="/icons/aptos.svg" />
+                    factoryClass="org.sui.cli.toolwindow.SuiToolWindowFactory"
+                    icon="/icons/sui.svg"/>
 
 
-
-        <!--        <localInspection language="Move" groupPath="Move" groupName="Naming"-->
+        <!--        <localInspection language="Sui Move" groupPath="Move" groupName="Naming"-->
         <!--                         displayName="Attempt to override a built-in function"-->
         <!--                         enabledByDefault="true" level="ERROR"-->
-        <!--                         implementationClass="org.move.ide.inspections.lints.FunctionNamingInspection"/>-->
-        <localInspection language="Move" groupName="Move"
+        <!--                         implementationClass="org.sui.ide.inspections.lints.FunctionNamingInspection"/>-->
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Unresolved reference"
                          enabledByDefault="true"
                          level="ERROR"
-                         implementationClass="org.move.ide.inspections.MvUnresolvedReferenceInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiMvUnresolvedReferenceInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Field initialization shorthand"
                          enabledByDefault="true" level="WEAK WARNING"
-                         implementationClass="org.move.ide.inspections.FieldInitShorthandInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiFieldInitShorthandInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Invalid module declaration"
                          enabledByDefault="true" level="ERROR"
-                         implementationClass="org.move.ide.inspections.InvalidModuleDeclarationInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiInvalidModuleDeclarationInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Constant naming convention"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.move.ide.inspections.MvConstNamingInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiMvConstNamingInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Struct naming convention"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.move.ide.inspections.MvStructNamingInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiMvStructNamingInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Function naming convention"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.move.ide.inspections.MvFunctionNamingInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiMvFunctionNamingInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Local variable naming convention"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.move.ide.inspections.MvLocalBindingNamingInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiMvLocalBindingNamingInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Redundant qualifier"
                          enabledByDefault="false" level="WARNING"
-                         implementationClass="org.move.ide.inspections.RedundantQualifiedPathInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiRedundantQualifiedPathInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Type checking"
                          enabledByDefault="true" level="ERROR"
-                         implementationClass="org.move.ide.inspections.MvTypeCheckInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiMvTypeCheckInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Ability checking"
                          enabledByDefault="false" level="ERROR"
-                         implementationClass="org.move.ide.inspections.MvAbilityCheckInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiMvAbilityCheckInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Missing acquires"
                          enabledByDefault="true" level="ERROR"
-                         implementationClass="org.move.ide.inspections.MvMissingAcquiresInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiMvMissingAcquiresInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Unused acquires"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.move.ide.inspections.MvUnusedAcquiresTypeInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiMvUnusedAcquiresTypeInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Unused struct type parameter"
                          enabledByDefault="true" level="ERROR"
-                         implementationClass="org.move.ide.inspections.PhantomTypeParameterInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiPhantomTypeParameterInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Unused import"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.move.ide.inspections.MvUnusedImportInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiMvUnusedImportInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Unused declaration"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.move.ide.inspections.MvUnusedVariableInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiMvUnusedVariableInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Unused test signer"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.move.ide.inspections.UnusedTestSignerInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiUnusedTestSignerInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Address by value inspection"
                          enabledByDefault="false" level="WEAK WARNING"
-                         implementationClass="org.move.ide.inspections.AddressByValueImportInspection"/>
-        <localInspection language="Move" groupName="Move"
+                         implementationClass="org.sui.ide.inspections.SuiAddressByValueImportInspection"/>
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Redundant type cast"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.move.ide.inspections.RedundantTypeCastInspection"/>
+                         implementationClass="org.sui.ide.inspections.SuiRedundantTypeCastInspection"/>
 
         <!-- Color Settings -->
-        <colorSettingsPage implementation="org.move.ide.colors.MvColorSettingsPage"/>
+        <colorSettingsPage implementation="org.sui.ide.colors.MvColorSettingsPage"/>
 
-        <extendWordSelectionHandler implementation="org.move.ide.wordSelection.MvListSelectionHandler" />
-        <extendWordSelectionHandler implementation="org.move.ide.wordSelection.MvTypeParamBoundListHandler" />
-        <extendWordSelectionHandler implementation="org.move.ide.wordSelection.MvStringSelectionHandler" />
+        <extendWordSelectionHandler implementation="org.sui.ide.wordSelection.MvListSelectionHandler"/>
+        <extendWordSelectionHandler implementation="org.sui.ide.wordSelection.MvTypeParamBoundListHandler"/>
+        <extendWordSelectionHandler implementation="org.sui.ide.wordSelection.MvStringSelectionHandler"/>
 
         <additionalTextAttributes scheme="Default" file="colors/MoveDefault.xml"/>
         <additionalTextAttributes scheme="Darcula" file="colors/MoveDarcula.xml"/>
 
         <moduleType id="MOVE_MODULE"
-                    implementationClass="org.move.cli.module.MvModuleType"/>
-        <moduleBuilder builderClass="org.move.cli.module.MvModuleBuilder"/>
-        <projectTaskRunner implementation="org.move.cli.runConfigurations.AptosBuildTaskRunner" />
+                    implementationClass="org.sui.cli.module.MvModuleType"/>
+        <moduleBuilder builderClass="org.sui.cli.module.MvModuleBuilder"/>
+        <projectTaskRunner implementation="org.sui.cli.runConfigurations.SuiBuildTaskRunner"/>
 
-        <projectOpenProcessor id="Move" implementation="org.move.cli.AptosProjectOpenProcessor"/>
+        <projectOpenProcessor id="Move" implementation="org.sui.cli.SuiProjectOpenProcessor"/>
 
-        <directoryProjectGenerator implementation="org.move.ide.newProject.AptosProjectGenerator" />
+        <directoryProjectGenerator implementation="org.sui.ide.newProject.SuiProjectGenerator"/>
 
-        <projectConfigurable instance="org.move.cli.settings.PerProjectMoveConfigurable"
-                             displayName="Move Language"
+        <projectConfigurable instance="org.sui.cli.settings.PerProjectMoveConfigurable"
+                             displayName="Sui Move Language"
                              groupId="language"
-                             id="language.move"/>
-        <projectService serviceInterface="org.move.utils.ProjectRootService"
-                        serviceImplementation="org.move.utils.ProjectRootServiceImpl"
-                        testServiceImplementation="org.move.utils.TestProjectRootServiceImpl"/>
+                             id="language.sui.move"/>
+        <projectService serviceInterface="org.sui.utils.SuiProjectRootService"
+                        serviceImplementation="org.sui.utils.SuiProjectRootServiceImpl"
+                        testServiceImplementation="org.sui.utils.TestSuiProjectRootServiceImpl"/>
 
-        <projectService serviceImplementation="org.move.cli.MoveProjectsService"/>
-<!--        <projectService serviceImplementation="org.move.cli.packages.MovePackageService"/>-->
+        <projectService serviceImplementation="org.sui.cli.SuiMoveProjectsService"/>
+        <!--        <projectService serviceImplementation="org.sui.cli.packages.MovePackageService"/>-->
 
 <!--        <projectService serviceInterface="com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectTracker"-->
-<!--                        serviceImplementation="org.move.cli.projectAware.MoveExternalSystemProjectAware"-->
+        <!--                        serviceImplementation="org.sui.cli.projectAware.MoveExternalSystemProjectAware"-->
 <!--                        overrides="true" />-->
-        <applicationService serviceImplementation="org.move.openapiext.OpenSSLInfoService" />
+        <applicationService serviceImplementation="org.sui.openapiext.OpenSSLInfoService"/>
 
         <additionalLibraryRootsProvider
-                implementation="org.move.cli.module.BuildLibraryRootsProvider"/>
+                implementation="org.sui.cli.module.BuildLibraryRootsProvider"/>
 
         <!-- Notifications -->
-        <notificationGroup id="Move Language" displayType="BALLOON"/>
+        <notificationGroup id="Sui Move Language" displayType="BALLOON"/>
         <editorNotificationProvider
-                implementation="org.move.ide.notifications.InvalidAptosBinaryNotification"/>
+                implementation="org.sui.ide.notifications.InvalidSuiBinaryNotification"/>
 
         <intentionAction>
-            <className>org.move.ide.intentions.RemoveCurlyBracesIntention</className>
+            <language>Sui Move</language>
+            <className>org.sui.ide.intentions.RemoveCurlyBracesIntention</className>
             <category>Move</category>
         </intentionAction>
         <intentionAction>
-            <className>org.move.ide.intentions.InlineAddressBlockIntention</className>
+            <language>Sui Move</language>
+            <className>org.sui.ide.intentions.InlineAddressBlockIntention</className>
             <category>Move</category>
         </intentionAction>
         <intentionAction>
-            <className>org.move.ide.intentions.ChopParameterListIntention</className>
+            <language>Sui Move</language>
+            <className>org.sui.ide.intentions.ChopParameterListIntention</className>
             <category>Move</category>
         </intentionAction>
         <intentionAction>
-            <className>org.move.ide.intentions.ChopValueArgumentListIntention</className>
+            <language>Sui Move</language>
+            <className>org.sui.ide.intentions.ChopValueArgumentListIntention</className>
             <category>Move</category>
         </intentionAction>
         <intentionAction>
-            <className>org.move.ide.intentions.ChopAttrArgumentListIntention</className>
+            <language>Sui Move</language>
+            <className>org.sui.ide.intentions.ChopAttrArgumentListIntention</className>
             <category>Move</category>
         </intentionAction>
         <intentionAction>
-            <className>org.move.ide.intentions.ChopStructLiteralIntention</className>
+            <language>Sui Move</language>
+            <className>org.sui.ide.intentions.ChopStructLiteralIntention</className>
             <category>Move</category>
         </intentionAction>
         <intentionAction>
-            <className>org.move.ide.intentions.ChopStructPatIntention</className>
+            <language>Sui Move</language>
+            <className>org.sui.ide.intentions.ChopStructPatIntention</className>
             <category>Move</category>
         </intentionAction>
 
-        <errorHandler implementation="org.move.cli.sentryReporter.SentryErrorReporter" />
+        <errorHandler implementation="org.sui.cli.sentryReporter.SentryErrorReporter"/>
 
     </extensions>
-
+    <applicationListeners>
+        <listener
+                class="org.sui.cli.settings.MvApplicationSettingListener"
+                topic="org.sui.cli.settings.ApplicationSettingTopic"/>
+    </applicationListeners>
     <projectListeners>
-        <listener class="org.move.ide.notifications.UpdateNotificationsOnSettingsChangeListener"
-                  topic="org.move.cli.settings.MoveSettingsListener"
+        <listener class="org.sui.ide.notifications.UpdateNotificationsOnSettingsChangeListener"
+                  topic="org.sui.cli.settings.MoveSettingsListener"
                   activeInTestMode="false"/>
     </projectListeners>
 
     <actions>
-        <action id="Move.NewMoveFile"
-                class="org.move.ide.actions.CreateMoveFileAction"
-                text="Move File"
+        <action id="Sui.NewMoveFile"
+                class="org.sui.ide.actions.CreateMoveFileAction"
+                text="Sui Move File"
                 description="Create new Move file">
             <add-to-group group-id="NewGroup" anchor="before" relative-to-action="NewFile"/>
         </action>
-<!--        <action id="Move.DownloadAptosCLI"-->
-<!--                class="org.move.ide.actions.DownloadAptosAction"-->
-<!--                text="Download Aptos CLI"-->
-<!--                description="Download Aptos CLI">-->
-<!--&lt;!&ndash;            <add-to-group group-id="NewGroup" anchor="before" relative-to-action="NewFile"/>&ndash;&gt;-->
-<!--        </action>-->
-        <action id="Move.RefreshAllProjects"
+        <action id="Sui.RefreshAllProjects"
                 description="Update Move project information"
                 text="Update Move Projects"
-                class="org.move.ide.actions.RefreshMoveProjectsAction"
+                class="org.sui.ide.actions.RefreshMoveProjectsAction"
                 icon="AllIcons.Actions.Refresh"/>
-
-        <group id="Move.Aptos">
-            <reference id="Move.RefreshAllProjects"/>
+        <action id="Sui.GetActiveAddress"
+                description="Get active address"
+                text="Get Active Address"
+                class="org.sui.ide.actions.GetActiveAddressAction"
+                icon="AllIcons.Actions.PreserveCaseSelected"/>
+        <action id="Sui.GetGas"
+                description="Get gas"
+                text="Get Gas"
+                class="org.sui.ide.actions.GetGasAction"
+                icon="AllIcons.Actions.PreserveCase"/>
+        <action id="Sui.OpenAddressDialog"
+                description="Open address dialog"
+                text="Open Address Dialog"
+                class="org.sui.ide.actions.OpenSwitchAddressDialogAction"
+                icon="AllIcons.Actions.ListChanges"/>
+        <action id="Sui.OpenEnvsDialog"
+                description="Open envs dialog"
+                text="Open Envs Dialog"
+                class="org.sui.ide.actions.OpenSwitchEnvsDialogAction"
+                icon="AllIcons.Actions.DiffWithClipboard"/>
+        <group id="Move.Sui">
+            <reference id="Sui.RefreshAllProjects"/>
+            <reference id="Sui.GetActiveAddress"/>
+            <!--            <reference id="Sui.GetGas"/>-->
+            <reference id="Sui.OpenAddressDialog"/>
+            <reference id="Sui.OpenEnvsDialog"/>
         </group>
     </actions>
 </idea-plugin>

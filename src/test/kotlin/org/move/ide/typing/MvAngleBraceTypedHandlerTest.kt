@@ -1,6 +1,6 @@
 package org.move.ide.typing
 
-import org.move.utils.tests.MvTypingTestCase
+import org.sui.utils.tests.MvTypingTestCase
 
 class MvAngleBraceTypedHandlerTest : MvTypingTestCase() {
     fun `test add second pair of angle brackets`() = doTest(

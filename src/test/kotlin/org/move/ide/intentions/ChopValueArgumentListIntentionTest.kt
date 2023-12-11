@@ -1,6 +1,7 @@
 package org.move.ide.intentions
 
-import org.move.utils.tests.MvIntentionTestCase
+import org.sui.ide.intentions.ChopValueArgumentListIntention
+import org.sui.utils.tests.MvIntentionTestCase
 
 class ChopValueArgumentListIntentionTest: MvIntentionTestCase(ChopValueArgumentListIntention::class) {
     fun `test separate arguments in call expr`() = doAvailableTest("""

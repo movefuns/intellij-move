@@ -1,10 +1,11 @@
 package org.move.ide.inspections.imports
 
-import org.move.ide.utils.imports.ImportCandidateCollector
-import org.move.lang.core.resolve.ref.MvReferenceElement
-import org.move.utils.tests.FileTreeBuilder
-import org.move.utils.tests.MvProjectTestBase
-import org.move.utils.tests.base.findElementWithDataAndOffsetInEditor
+import org.sui.ide.inspections.imports.ImportContext
+import org.sui.ide.utils.imports.ImportCandidateCollector
+import org.sui.lang.core.resolve.ref.MvReferenceElement
+import org.sui.utils.tests.FileTreeBuilder
+import org.sui.utils.tests.MvProjectTestBase
+import org.sui.utils.tests.base.findElementWithDataAndOffsetInEditor
 
 class ImportCandidatesTest : MvProjectTestBase() {
     fun `test cannot import test function`() = checkCandidates {

@@ -1,10 +1,10 @@
 package org.move.lang.resolve
 
 import org.intellij.lang.annotations.Language
-import org.move.lang.core.resolve.ref.MvReferenceElement
-import org.move.utils.tests.InlineFile
-import org.move.utils.tests.base.findElementInEditor
-import org.move.utils.tests.resolve.ResolveTestCase
+import org.sui.lang.core.resolve.ref.MvReferenceElement
+import org.sui.utils.tests.InlineFile
+import org.sui.utils.tests.base.findElementInEditor
+import org.sui.utils.tests.resolve.ResolveTestCase
 
 class MultiResolveTest: ResolveTestCase() {
     fun `test struct literal shorthand`() = doTest("""

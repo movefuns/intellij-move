@@ -1,8 +1,8 @@
 package org.move.lang.resolve
 
-import org.move.lang.core.psi.MvNamedAddress
-import org.move.utils.tests.FileTreeBuilder
-import org.move.utils.tests.resolve.ResolveProjectTestCase
+import org.sui.lang.core.psi.MvNamedAddress
+import org.sui.utils.tests.FileTreeBuilder
+import org.sui.utils.tests.resolve.ResolveProjectTestCase
 import org.toml.lang.psi.TomlKeySegment
 
 class ResolveNamedAddressProjectTest : ResolveProjectTestCase() {

@@ -1,9 +1,9 @@
 package org.move.ide.annotator.errors
 
-import org.move.ide.annotator.MvErrorAnnotator
-import org.move.ide.inspections.MvTypeCheckInspection
-import org.move.utils.tests.WithEnabledInspections
-import org.move.utils.tests.annotation.AnnotatorTestCase
+import org.sui.ide.annotator.MvErrorAnnotator
+import org.sui.ide.inspections.SuiMvTypeCheckInspection
+import org.sui.utils.tests.WithEnabledInspections
+import org.sui.utils.tests.annotation.AnnotatorTestCase
 
 class NeedsTypeAnnotationTest: AnnotatorTestCase(MvErrorAnnotator::class) {
 
@@ -88,7 +88,7 @@ class NeedsTypeAnnotationTest: AnnotatorTestCase(MvErrorAnnotator::class) {
     }    
     """)
 
-    @WithEnabledInspections(MvTypeCheckInspection::class)
+    @WithEnabledInspections(SuiMvTypeCheckInspection::class)
     fun `test no needs type annotation error if type error happened in the child`() = checkErrors("""
         module 0x1::m {
             fun call<R>(a: u8, b: &R) {}

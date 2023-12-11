@@ -1,6 +1,6 @@
 package org.move.lang.completion
 
-import org.move.utils.tests.completion.CompletionTestCase
+import org.sui.utils.tests.completion.CompletionTestCase
 
 class KeywordCompletionTest : CompletionTestCase() {
     fun `test address`() = doSingleCompletion(

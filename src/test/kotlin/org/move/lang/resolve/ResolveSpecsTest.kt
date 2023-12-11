@@ -1,6 +1,6 @@
 package org.move.lang.resolve
 
-import org.move.utils.tests.resolve.ResolveTestCase
+import org.sui.utils.tests.resolve.ResolveTestCase
 
 class ResolveSpecsTest: ResolveTestCase() {
     fun `test resolve spec to function`() = checkByCode("""

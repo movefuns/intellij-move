@@ -1,11 +1,12 @@
 package org.move.ide.inspections.imports
 
 import org.intellij.lang.annotations.Language
-import org.move.ide.inspections.MvUnresolvedReferenceInspection
-import org.move.utils.tests.FileTreeBuilder
-import org.move.utils.tests.annotation.InspectionProjectTestBase
+import org.sui.ide.inspections.SuiMvUnresolvedReferenceInspection
+import org.sui.ide.inspections.imports.AutoImportFix
+import org.sui.utils.tests.FileTreeBuilder
+import org.sui.utils.tests.annotation.InspectionProjectTestBase
 
-class AutoImportFixProjectTest : InspectionProjectTestBase(MvUnresolvedReferenceInspection::class) {
+class AutoImportFixProjectTest : InspectionProjectTestBase(SuiMvUnresolvedReferenceInspection::class) {
     fun `test import method from another file`() = checkAutoImportFixByText(
         {
             namedMoveToml("MyModule")
@@ -143,7 +144,7 @@ class AutoImportFixProjectTest : InspectionProjectTestBase(MvUnresolvedReference
     ) = doTest { checkFixByFileTree(AutoImportFix.NAME, before, after) }
 
     private inline fun doTest(action: () -> Unit) {
-        val inspection = inspection as MvUnresolvedReferenceInspection
+        val inspection = inspection as SuiMvUnresolvedReferenceInspection
         val defaultValue = inspection.ignoreWithoutQuickFix
         try {
             inspection.ignoreWithoutQuickFix = false

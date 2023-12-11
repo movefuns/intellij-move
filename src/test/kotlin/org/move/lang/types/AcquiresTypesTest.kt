@@ -1,15 +1,15 @@
 package org.move.lang.types
 
 import org.intellij.lang.annotations.Language
-import org.move.ide.presentation.fullnameNoArgs
-import org.move.lang.core.psi.MvCallExpr
-import org.move.lang.core.psi.MvFunction
-import org.move.lang.core.types.infer.getAcquiresTypes
-import org.move.lang.core.types.infer.getInnerAcquiresTypes
-import org.move.lang.core.types.infer.inference
-import org.move.utils.tests.InlineFile
-import org.move.utils.tests.MvTestBase
-import org.move.utils.tests.base.findElementInEditor
+import org.sui.ide.presentation.fullnameNoArgs
+import org.sui.lang.core.psi.MvCallExpr
+import org.sui.lang.core.psi.MvFunction
+import org.sui.lang.core.types.infer.getAcquiresTypes
+import org.sui.lang.core.types.infer.getInnerAcquiresTypes
+import org.sui.lang.core.types.infer.inference
+import org.sui.utils.tests.InlineFile
+import org.sui.utils.tests.MvTestBase
+import org.sui.utils.tests.base.findElementInEditor
 
 class AcquiresTypesTest : MvTestBase() {
     fun `test no acquired types on function without storage access`() = testFunction(

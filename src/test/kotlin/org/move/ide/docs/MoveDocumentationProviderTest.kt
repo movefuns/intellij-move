@@ -1,7 +1,8 @@
 package org.move.ide.docs
 
 import org.intellij.lang.annotations.Language
-import org.move.utils.tests.MvDocumentationProviderTestCase
+import org.sui.ide.docs.MvDocumentationProvider
+import org.sui.utils.tests.MvDocumentationProviderTestCase
 
 class MvDocumentationProviderTest : MvDocumentationProviderTestCase() {
     fun `test show docs for move_from`() = doTest("""

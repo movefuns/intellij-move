@@ -1,12 +1,12 @@
-package org.move.lang;
+package org.sui.lang;
 
 import com.intellij.psi.tree.IElementType;
 import com.intellij.lexer.FlexLexer;
 
 import static com.intellij.psi.TokenType.BAD_CHARACTER;
 import static com.intellij.psi.TokenType.WHITE_SPACE;
-import static org.move.lang.MvElementTypes.*;
-import static org.move.lang.MoveParserDefinition.*;
+import static org.sui.lang.MvElementTypes.*;
+import static org.sui.lang.MoveParserDefinition.*;
 
 %%
 

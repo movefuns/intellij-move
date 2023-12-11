@@ -1,7 +1,7 @@
 package org.move.ide.annotator.errors.fixes
 
-import org.move.ide.annotator.MvErrorAnnotator
-import org.move.utils.tests.annotation.AnnotatorTestCase
+import org.sui.ide.annotator.MvErrorAnnotator
+import org.sui.utils.tests.annotation.AnnotatorTestCase
 
 class ItemSpecSignatureFixTest : AnnotatorTestCase(MvErrorAnnotator::class) {
     fun `test add signature for item one param`() = checkFixByText(

@@ -1,7 +1,7 @@
 package org.move.ide.annotator.errors
 
-import org.move.ide.annotator.MvErrorAnnotator
-import org.move.utils.tests.annotation.AnnotatorTestCase
+import org.sui.ide.annotator.MvErrorAnnotator
+import org.sui.utils.tests.annotation.AnnotatorTestCase
 
 class StructFieldsNumberErrorTest: AnnotatorTestCase(MvErrorAnnotator::class) {
     fun `test missing fields for struct`() = checkErrors("""

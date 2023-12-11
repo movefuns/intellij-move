@@ -2,11 +2,11 @@ package org.move.lang.completion.lookups
 
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementPresentation
-import org.move.lang.core.completion.createCompletionLookupElement
-import org.move.lang.core.psi.MvModule
-import org.move.lang.core.psi.ext.builtinFunctions
-import org.move.utils.tests.MvTestBase
-import org.move.utils.tests.base.findElementInEditor
+import org.sui.lang.core.completion.createCompletionLookupElement
+import org.sui.lang.core.psi.MvModule
+import org.sui.lang.core.psi.ext.builtinFunctions
+import org.sui.utils.tests.MvTestBase
+import org.sui.utils.tests.base.findElementInEditor
 
 class BuiltInFunctionLookupTest : MvTestBase() {
     fun `test move_from`() = checkBuiltinPresentation(

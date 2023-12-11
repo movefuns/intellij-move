@@ -1,7 +1,7 @@
 package org.move.ide.annotator.syntaxErrors
 
-import org.move.ide.annotator.MvSyntaxErrorAnnotator
-import org.move.utils.tests.annotation.AnnotatorTestCase
+import org.sui.ide.annotator.MvSyntaxErrorAnnotator
+import org.sui.utils.tests.annotation.AnnotatorTestCase
 
 class RequiredParensForCastExprErrorTest : AnnotatorTestCase(MvSyntaxErrorAnnotator::class) {
     fun `test cast expr in parens`() = checkErrors(

@@ -2,9 +2,9 @@ package org.move.lang.lexer
 
 import com.intellij.openapi.editor.Editor
 import org.intellij.lang.annotations.Language
-import org.move.openapiext.createLexer
-import org.move.utils.tests.MvTestBase
-import org.move.utils.tests.replaceCaretMarker
+import org.sui.utils.tests.MvTestBase
+import org.sui.utils.tests.replaceCaretMarker
+import org.sui.openapiext.createLexer
 
 class RestartableLexerTest : MvTestBase() {
     fun `test lexer restart closing block comment`() =

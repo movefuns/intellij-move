@@ -1,7 +1,9 @@
 package org.move.ide.hints
 
-import org.move.lang.core.psi.MvTypeArgumentList
-import org.move.utils.tests.ParameterInfoHandlerTestCase
+import org.sui.ide.hints.TypeParameterInfoHandler
+import org.sui.ide.hints.TypeParamsDescription
+import org.sui.lang.core.psi.MvTypeArgumentList
+import org.sui.utils.tests.ParameterInfoHandlerTestCase
 
 class TypeParameterInfoHandlerTest :
     ParameterInfoHandlerTestCase<MvTypeArgumentList, TypeParamsDescription>(TypeParameterInfoHandler()) {

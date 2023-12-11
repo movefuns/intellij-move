@@ -1,6 +1,6 @@
 package org.move.toml
 
-import org.move.utils.tests.MoveTomlCompletionTestBase
+import org.sui.utils.tests.MoveTomlCompletionTestBase
 
 class MoveTomlCompletionTest: MoveTomlCompletionTestBase() {
     fun `test complete addresses top level`() {

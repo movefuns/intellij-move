@@ -1,6 +1,6 @@
 package org.move.ide.formatter
 
-import org.move.utils.tests.MvFormatterTestBase
+import org.sui.utils.tests.MvFormatterTestBase
 
 class FormatterTest : MvFormatterTestBase() {
     fun `test blank lines`() = doTest()

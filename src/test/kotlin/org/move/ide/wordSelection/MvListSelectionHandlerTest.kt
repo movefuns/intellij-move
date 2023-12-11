@@ -5,7 +5,7 @@
 
 package org.move.ide.wordSelection
 
-import org.move.utils.tests.MvSelectionHandlerTestBase
+import org.sui.utils.tests.MvSelectionHandlerTestBase
 
 class MvListSelectionHandlerTest : MvSelectionHandlerTestBase() {
 

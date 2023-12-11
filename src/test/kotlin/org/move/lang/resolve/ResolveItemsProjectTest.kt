@@ -1,6 +1,6 @@
 package org.move.lang.resolve
 
-import org.move.utils.tests.resolve.ResolveProjectTestCase
+import org.sui.utils.tests.resolve.ResolveProjectTestCase
 
 class ResolveItemsProjectTest : ResolveProjectTestCase() {
 

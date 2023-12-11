@@ -1,6 +1,6 @@
 package org.move.ide.lineMarkers
 
-import org.move.utils.tests.lineMarkers.LineMarkerProviderTestBase
+import org.sui.utils.tests.lineMarkers.LineMarkerProviderTestBase
 
 class ItemSpecsLineMarkerProviderTest: LineMarkerProviderTestBase() {
     fun `test no specifications`() = doTestByText("""

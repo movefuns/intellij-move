@@ -2,7 +2,7 @@ package org.move.ide.hints
 
 import com.intellij.codeInsight.hints.LinearOrderInlayRenderer
 import org.intellij.lang.annotations.Language
-import org.move.utils.tests.MvTestBase
+import org.sui.utils.tests.MvTestBase
 
 class InlayTypeHintsTest : MvTestBase() {
     fun `test no type hint for unknown type`() = checkByText(

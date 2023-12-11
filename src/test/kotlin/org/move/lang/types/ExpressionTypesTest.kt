@@ -1,7 +1,6 @@
 package org.move.lang.types
 
-import org.move.utils.tests.DebugMode
-import org.move.utils.tests.types.TypificationTestCase
+import org.sui.utils.tests.types.TypificationTestCase
 
 class ExpressionTypesTest : TypificationTestCase() {
     fun `test add expr`() = testExpr(

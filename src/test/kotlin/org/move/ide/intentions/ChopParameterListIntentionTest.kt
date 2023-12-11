@@ -1,6 +1,7 @@
 package org.move.ide.intentions
 
-import org.move.utils.tests.MvIntentionTestCase
+import org.sui.ide.intentions.ChopParameterListIntention
+import org.sui.utils.tests.MvIntentionTestCase
 
 class ChopParameterListIntentionTest: MvIntentionTestCase(ChopParameterListIntention::class) {
     fun `test one parameter`() = doUnavailableTest("""

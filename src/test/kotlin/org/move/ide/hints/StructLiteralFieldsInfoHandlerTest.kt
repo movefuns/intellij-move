@@ -1,7 +1,9 @@
 package org.move.ide.hints
 
-import org.move.lang.core.psi.MvStructLitFieldsBlock
-import org.move.utils.tests.ParameterInfoHandlerTestCase
+import org.sui.ide.hints.FieldsDescription
+import org.sui.ide.hints.StructLitFieldsInfoHandler
+import org.sui.lang.core.psi.MvStructLitFieldsBlock
+import org.sui.utils.tests.ParameterInfoHandlerTestCase
 
 class StructLitFieldsInfoHandlerTest :
     ParameterInfoHandlerTestCase<MvStructLitFieldsBlock,

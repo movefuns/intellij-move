@@ -1,7 +1,8 @@
 package org.move.ide.annotator
 
-import org.move.ide.colors.MvColor
-import org.move.utils.tests.annotation.AnnotatorTestCase
+import org.sui.ide.annotator.HighlightingAnnotator
+import org.sui.ide.colors.MvColor
+import org.sui.utils.tests.annotation.AnnotatorTestCase
 
 class HighlightingAnnotatorTest : AnnotatorTestCase(HighlightingAnnotator::class) {
     override fun setUp() {

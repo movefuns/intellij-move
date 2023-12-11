@@ -2,7 +2,7 @@ package org.move.ide
 
 import com.intellij.testFramework.UsefulTestCase
 import org.intellij.lang.annotations.Language
-import org.move.utils.tests.MvTestBase
+import org.sui.utils.tests.MvTestBase
 
 class MvBreadcrumbsProviderTest : MvTestBase() {
     fun `test breadcrumbs`() = doTextTest(

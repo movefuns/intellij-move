@@ -1,6 +1,6 @@
 package org.move.lang.parser
 
-import org.move.utils.tests.parser.MvParsingTestCase
+import org.sui.utils.tests.parser.MvParsingTestCase
 
 class PartialParsingTest: MvParsingTestCase("partial") {
     // top level items recovery
