@@ -1,4 +1,4 @@
-package org.move.ide
+package org.sui.ide
 
 import org.sui.utils.tests.MvTestBase
 

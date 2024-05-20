@@ -1,4 +1,4 @@
-package org.move.lang.resolve
+package org.sui.lang.resolve
 
 import org.intellij.lang.annotations.Language
 import org.sui.lang.core.resolve.ref.MvReferenceElement
@@ -32,7 +32,7 @@ module 0x1::M {
     }    
     """)
 
-    private fun doTest(@Language("Move") code: String) {
+    private fun doTest(@Language("Sui Move") code: String) {
         InlineFile(myFixture, code, "main.move")
         val element = myFixture.findElementInEditor<MvReferenceElement>()
         val ref = element.reference ?: error("Failed to get reference for `${element.text}`")

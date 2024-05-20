@@ -51,9 +51,7 @@ private inline fun RelateResult.and(rhs: () -> RelateResult): RelateResult = if 
 
 typealias CoerceResult = RsResult<CoerceOk, CombineTypeError>
 
-data class CoerceOk(
-    val obligations: List<Obligation> = emptyList()
-)
+class CoerceOk()
 
 fun RelateResult.into(): CoerceResult = map { CoerceOk() }
 
@@ -151,8 +149,6 @@ class InferenceContext(
     val varUnificationTable = UnificationTable<TyInfer.TyVar, Ty>()
     val intUnificationTable = UnificationTable<TyInfer.IntVar, Ty>()
 
-    val fulfill = FulfillmentContext(this)
-
     fun startSnapshot(): Snapshot = CombinedSnapshot(
         intUnificationTable.startSnapshot(),
         varUnificationTable.startSnapshot(),
@@ -185,11 +181,7 @@ class InferenceContext(
             is MvSchema -> owner.specBlock?.let { inference.inferSpec(it) }
         }
 
-        fulfill.selectWherePossible()
-
         fallbackUnresolvedTypeVarsIfPossible()
-
-        fulfill.selectWherePossible()
 
         exprTypes.replaceAll { _, ty -> fullyResolve(ty) }
         patTypes.replaceAll { _, ty -> fullyResolve(ty) }
@@ -368,7 +360,7 @@ class InferenceContext(
             ty1msl is TyPrimitive && ty2msl is TyPrimitive && ty1msl.name == ty2msl.name -> Ok(Unit)
 
             ty1msl is TyVector && ty2msl is TyVector -> combineTypes(ty1msl.item, ty2msl.item)
-            ty1msl is TyIntegerRange && ty2msl is TyIntegerRange -> Ok(Unit)
+            ty1msl is TyRange && ty2msl is TyRange -> Ok(Unit)
 
             ty1msl is TyReference && ty2msl is TyReference
                     // inferredTy permissions should be a superset of expectedTy permissions

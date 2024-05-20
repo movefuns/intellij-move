@@ -1,4 +1,4 @@
-package org.move.lang.parser
+package org.sui.lang.parser
 
 import org.sui.utils.tests.parser.MvParsingTestCase
 

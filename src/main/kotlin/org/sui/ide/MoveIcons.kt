@@ -6,7 +6,7 @@ import javax.swing.Icon
 
 object MoveIcons {
     val MOVE_LOGO = load("/icons/move_logo.svg")
-
+    val APTOS_LOGO = load("/icons/move_logo.svg")
     val ADDRESS = load("/icons/annotationtype.png")
     val MODULE = load("/icons/module.svg")
 
@@ -39,6 +39,5 @@ object MoveIcons {
     val SPEC_SOURCE_MODULE_GUTTER_DARK = load("/icons/up_dark.svg")
 
     val SUI_LOGO = load("icons/sui.svg")
-    val SUI_ICON = load("icons/sui.svg")
     private fun load(path: String): Icon = IconLoader.getIcon(path, MoveIcons::class.java)
 }

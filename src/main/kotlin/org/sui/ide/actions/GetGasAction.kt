@@ -6,7 +6,6 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sui.cli.settings.suiExec
 import org.sui.common.NOTIFACATION_GROUP
 
 class GetGasAction : AnAction() {
@@ -36,7 +35,7 @@ class GetGasAction : AnAction() {
                 )
             }
         }
-        project.suiExec.toExecutor()?.simpleCommand(project, "client", listOf("gas"), onProcessComplete)
+//        project.suiExec.toExecutor()?.simpleCommand(project, "client", listOf("gas"), onProcessComplete)
     }
 
     fun convertToHtmlTable(input: String): String {

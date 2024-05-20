@@ -1,4 +1,4 @@
-package org.move.ide.refactoring.optimizeImports
+package org.sui.ide.refactoring.optimizeImports
 
 class MergeImportsTest : OptimizeImportsTestBase() {
 

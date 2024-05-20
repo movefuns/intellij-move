@@ -1,9 +1,7 @@
 package org.sui.cli.toolwindow
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiDocumentManager
-import com.intellij.psi.PsiFile
+import com.intellij.openapi.application.runReadAction
 import com.intellij.ui.tree.AsyncTreeModel
 import com.intellij.ui.tree.StructureTreeModel
 import com.intellij.ui.treeStructure.CachingSimpleNode
@@ -15,8 +13,8 @@ import org.sui.ide.MoveIcons
 import org.sui.lang.core.psi.MvFunction
 import org.sui.lang.core.psi.MvModule
 import org.sui.lang.core.psi.ext.entryFunctions
-import org.sui.lang.core.psi.ext.isTest
-import org.sui.lang.core.psi.ext.isTestOnly
+import org.sui.lang.core.psi.ext.hasTestAttr
+import org.sui.lang.core.psi.ext.hasTestOnlyAttr
 import org.sui.lang.core.psi.ext.viewFunctions
 import org.sui.stdext.iterateMoveFiles
 import java.util.concurrent.CompletableFuture
@@ -53,7 +51,7 @@ class MoveProjectsTreeStructure(
             override fun toTestString() = "Root"
         }
 
-        open class Package(val movePackage: MovePackage, parent: SimpleNode) : MoveSimpleNode(parent) {
+        open class Package(private val movePackage: MovePackage, parent: SimpleNode) : MoveSimpleNode(parent) {
             init {
                 icon = MoveIcons.MOVE_LOGO
             }
@@ -65,13 +63,13 @@ class MoveProjectsTreeStructure(
                 for (folder in movePackage.moveFolders()) {
                     folder.iterateMoveFiles(movePackage.project) {
                         for (module in it.modules()) {
-                            if (!module.isTestOnly) modules.add(module)
+                            if (!module.hasTestOnlyAttr) modules.add(module)
                             scriptFunctions.addAll(
                                 module.entryFunctions()
-                                    .filter { fn -> !fn.isTestOnly && !fn.isTest })
+                                    .filter { fn -> !fn.hasTestOnlyAttr && !fn.hasTestAttr })
                             viewFunctions.addAll(
                                 module.viewFunctions()
-                                    .filter { fn -> !fn.isTestOnly && !fn.isTest })
+                                    .filter { fn -> !fn.hasTestOnlyAttr && !fn.hasTestAttr })
                         }
                         true
                     }
@@ -125,7 +123,7 @@ class MoveProjectsTreeStructure(
             }
 
             override fun buildChildren(): Array<SimpleNode> = emptyArray()
-            override fun getName(): String = module.qualName?.editorText() ?: "null"
+            override fun getName(): String = runReadAction { module.qualName?.editorText() ?: "null" }
             override fun toTestString(): String = "Module($name)"
         }
 
@@ -141,28 +139,11 @@ class MoveProjectsTreeStructure(
         class Entrypoint(val function: MvFunction, parent: SimpleNode) : MoveSimpleNode(parent) {
             init {
                 icon = MoveIcons.FUNCTION
-                function.containingFile
             }
 
             override fun buildChildren(): Array<SimpleNode> = emptyArray()
-            override fun getName(): String = function.qualName?.editorText() ?: "null"
+            override fun getName(): String = runReadAction { function.qualName?.editorText() ?: "null" }
             override fun toTestString(): String = "Entrypoint($name)"
-
-            fun getFile(): VirtualFile {
-                val psiFile: PsiFile = function.containingFile
-                return psiFile.virtualFile
-            }
-
-            fun getLine(): Int {
-                val document = PsiDocumentManager.getInstance(project).getDocument(function.containingFile)
-                return document?.getLineNumber(function.textOffset) ?: -1
-            }
-
-            fun getColumn(): Int {
-                val document = PsiDocumentManager.getInstance(project).getDocument(function.containingFile)
-                val lineStartOffset = document?.getLineStartOffset(getLine())
-                return if (lineStartOffset != null) function.textOffset - lineStartOffset else -1
-            }
         }
 
         class Views(val functions: List<MvFunction>, parent: SimpleNode) : MoveSimpleNode(parent) {
@@ -180,7 +161,7 @@ class MoveProjectsTreeStructure(
             }
 
             override fun buildChildren(): Array<SimpleNode> = emptyArray()
-            override fun getName(): String = function.qualName?.editorText() ?: "null"
+            override fun getName(): String = runReadAction { function.qualName?.editorText() ?: "null" }
             override fun toTestString(): String = "View($name)"
         }
 

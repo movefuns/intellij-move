@@ -15,6 +15,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.elementType
 import com.intellij.psi.util.nextLeaf
 import org.sui.cli.settings.collapseSpecs
+import org.sui.lang.MoveFile
 import org.sui.lang.MoveParserDefinition.Companion.BLOCK_COMMENT
 import org.sui.lang.MoveParserDefinition.Companion.EOL_DOC_COMMENT
 import org.sui.lang.MvElementTypes.*
@@ -43,7 +44,7 @@ class MvFoldingBuilder : CustomFoldingBuilder(), DumbAware {
         document: Document,
         quick: Boolean
     ) {
-        if (root !is org.sui.lang.MoveFile) return
+        if (root !is MoveFile) return
 
         val usesRanges: MutableList<TextRange> = ArrayList()
         val constRanges: MutableList<TextRange> = ArrayList()

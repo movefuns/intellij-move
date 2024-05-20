@@ -59,9 +59,7 @@ WHITE_SPACE      = {WHITE_SPACE_CHAR}+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Comments
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-//EOL_DOC_LINE  = {LINE_WS}*("///".*)
 EOL_DOC_COMMENT =  ("///".*)
-//OUTER_EOL_DOC = ({EOL_DOC_LINE}{EOL_WS})*{EOL_DOC_LINE}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Literals
@@ -76,7 +74,6 @@ INTEGER_LITERAL=[0-9]+[a-zA-Z0-9_]*
 HEX_INTEGER_LITERAL=0x[0-9a-zA-Z_]*
 HEX_STRING_LITERAL=x\" ( [0-9a-zA-Z]* ) (\")?
 BYTE_STRING_LITERAL=b\" ( [^\\\"\n] | \\[^] )* (\")?
-//BYTE_STRING_LITERAL=b\" ( [^\"\n] | (\\\")] )* (\")?
 
 IDENTIFIER=[_a-zA-Z][_a-zA-Z0-9]*
 
@@ -148,6 +145,9 @@ IDENTIFIER=[_a-zA-Z][_a-zA-Z0-9]*
       "let"            { return LET; }
       "phantom"            { return PHANTOM; }
       "spec"           { return SPEC; }
+      "enum"           { return ENUM_KW; }
+      "type"           { return TYPE_KW; }
+      "match"           { return MATCH_KW; }
 
   {DIEM_ADDRESS}          { return DIEM_ADDRESS; }
   {PLACEHOLDER_ADDRESS}          { return PLACEHOLDER_ADDRESS; }

@@ -11,7 +11,9 @@ import com.intellij.testFramework.builders.ModuleFixtureBuilder
 import com.intellij.testFramework.fixtures.CodeInsightFixtureTestCase
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import org.intellij.lang.annotations.Language
-import org.sui.cli.moveProjects
+import org.sui.cli.moveProjectsService
+import org.sui.cli.settings.Blockchain
+import org.sui.cli.settings.moveSettings
 import org.sui.openapiext.toPsiDirectory
 import org.sui.openapiext.toPsiFile
 import org.sui.openapiext.toVirtualFile
@@ -19,6 +21,20 @@ import org.sui.utils.tests.base.TestCase
 
 abstract class MvProjectTestBase : CodeInsightFixtureTestCase<ModuleFixtureBuilder<*>>() {
     var _testProject: TestProject? = null
+
+    override fun setUp() {
+        super.setUp()
+
+        val settingsState = project.moveSettings.state
+
+        val debugMode = this.findAnnotationInstance<DebugMode>()?.enabled ?: true
+        val blockchain = this.findAnnotationInstance<WithBlockchain>()?.blockchain ?: Blockchain.APTOS
+        // triggers projects refresh
+        project.moveSettings.state = settingsState.copy(
+            debugMode = debugMode,
+            blockchain = blockchain
+        )
+    }
 
     override fun tearDown() {
         _testProject = null
@@ -30,12 +46,12 @@ abstract class MvProjectTestBase : CodeInsightFixtureTestCase<ModuleFixtureBuild
         return TestCase.camelOrWordsToSnake(camelCase)
     }
 
-    fun testProject(@Language("Move") code: String): TestProject {
+    public fun testProject(@Language("Sui Move") code: String): TestProject {
         val fileTree = fileTreeFromText(code)
         return testProject(fileTree)
     }
 
-    fun testProject(builder: FileTreeBuilder.() -> Unit): TestProject {
+    public fun testProject(builder: FileTreeBuilder.() -> Unit): TestProject {
         val fileTree = fileTree(builder)
         return testProject(fileTree)
     }
@@ -47,7 +63,7 @@ abstract class MvProjectTestBase : CodeInsightFixtureTestCase<ModuleFixtureBuild
         myFixture.configureFromFileWithCaret(testProject)
 
         System.setProperty("user.home", testProject.rootDirectory.path)
-        project.moveProjects.refreshAllProjects()
+        project.moveProjectsService.scheduleProjectsRefresh()
         return testProject
     }
 

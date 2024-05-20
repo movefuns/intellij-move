@@ -40,7 +40,7 @@ class MoveParserDefinition : ParserDefinition {
     }
 
     override fun createFile(viewProvider: FileViewProvider): PsiFile {
-        return org.sui.lang.MoveFile(viewProvider)
+        return MoveFile(viewProvider)
     }
 
     companion object {

@@ -1,10 +1,10 @@
-package org.move.lang.lexer
+package org.sui.lang.lexer
 
 import com.intellij.openapi.editor.Editor
 import org.intellij.lang.annotations.Language
+import org.sui.openapiext.createLexer
 import org.sui.utils.tests.MvTestBase
 import org.sui.utils.tests.replaceCaretMarker
-import org.sui.openapiext.createLexer
 
 class RestartableLexerTest : MvTestBase() {
     fun `test lexer restart closing block comment`() =
@@ -28,7 +28,7 @@ class RestartableLexerTest : MvTestBase() {
     fun `test lexer restart inside spec 2`() =
         doTestLexerRestart(""" module M { spec module { assert true } fun main() { asser/*caret*/(1 == 1, 0); } } """, 't')
 
-    private fun doTestLexerRestart(@Language("Move") originalText: String, char: Char) {
+    private fun doTestLexerRestart(@Language("Sui Move") originalText: String, char: Char) {
         val text = replaceCaretMarker(originalText)
         var editor = createEditor("main.move", text)
         myFixture.type(char)

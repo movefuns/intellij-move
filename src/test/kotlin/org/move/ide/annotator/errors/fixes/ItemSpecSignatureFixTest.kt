@@ -1,4 +1,4 @@
-package org.move.ide.annotator.errors.fixes
+package org.sui.ide.annotator.errors.fixes
 
 import org.sui.ide.annotator.MvErrorAnnotator
 import org.sui.utils.tests.annotation.AnnotatorTestCase

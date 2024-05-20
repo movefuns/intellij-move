@@ -1,4 +1,4 @@
-package org.move.ide.formatter
+package org.sui.ide.formatter
 
 import org.sui.utils.tests.MvFormatterTestBase
 

@@ -8,12 +8,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.elementType
+import org.sui.lang.MoveFile
 import org.sui.lang.MvElementTypes.AT
 import org.sui.lang.MvElementTypes.COLON_COLON
 
 class MvTypedHandler : TypedHandlerDelegate() {
     override fun checkAutoPopup(charTyped: Char, project: Project, editor: Editor, file: PsiFile): Result {
-        if (file !is org.sui.lang.MoveFile) return Result.CONTINUE
+        if (file !is MoveFile) return Result.CONTINUE
 
         val offset = editor.caretModel.offset
 

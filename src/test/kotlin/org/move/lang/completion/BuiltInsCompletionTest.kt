@@ -1,4 +1,4 @@
-package org.move.lang.completion
+package org.sui.lang.completion
 
 import org.intellij.lang.annotations.Language
 import org.sui.ide.annotator.BUILTIN_FUNCTIONS
@@ -128,7 +128,7 @@ class BuiltInsCompletionTest : CompletionTestCase() {
         }        
     """)
 
-    private fun checkContainsBuiltins(@Language("Move") text: String) {
+    private fun checkContainsBuiltins(@Language("Sui Move") text: String) {
         val functionNames = BUILTIN_FUNCTIONS
         for (name in functionNames) {
             checkContainsCompletion(name, text)

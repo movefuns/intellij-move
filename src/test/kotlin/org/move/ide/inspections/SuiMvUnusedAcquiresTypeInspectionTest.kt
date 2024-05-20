@@ -1,9 +1,8 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiMvUnusedAcquiresTypeInspection
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class SuiMvUnusedAcquiresTypeInspectionTest : InspectionTestBase(SuiMvUnusedAcquiresTypeInspection::class) {
+class SuiMvUnusedAcquiresTypeInspectionTest : InspectionTestBase(MvUnusedAcquiresTypeInspection::class) {
     fun `test no error if used acquires type`() = checkWarnings(
         """
         module 0x1::M {

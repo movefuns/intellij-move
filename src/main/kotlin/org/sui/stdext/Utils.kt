@@ -48,7 +48,7 @@ fun VirtualFile.iterateMoveVirtualFiles(
 
 fun VirtualFile.iterateMoveFiles(
     project: Project,
-    process: (org.sui.lang.MoveFile) -> Boolean
+    process: (MoveFile) -> Boolean
 ) {
     return this.iterateFiles({ it.extension == "move" }) {
         val moveFile = it.toMoveFile(project) ?: return@iterateFiles true

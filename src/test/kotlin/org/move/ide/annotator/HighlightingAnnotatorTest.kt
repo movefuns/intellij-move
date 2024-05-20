@@ -1,6 +1,5 @@
-package org.move.ide.annotator
+package org.sui.ide.annotator
 
-import org.sui.ide.annotator.HighlightingAnnotator
 import org.sui.ide.colors.MvColor
 import org.sui.utils.tests.annotation.AnnotatorTestCase
 

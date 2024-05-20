@@ -11,17 +11,17 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.intellij.lang.annotations.Language
 import org.sui.lang.core.psi.MvNamedElement
 import org.sui.lang.core.resolve.ref.MvReferenceElement
+import org.sui.openapiext.document
+import org.sui.openapiext.toPsiFile
+import org.sui.openapiext.toVirtualFile
 import org.sui.utils.tests.FileTreeBuilder
 import org.sui.utils.tests.MvProjectTestBase
 import org.sui.utils.tests.TestProject
 import org.sui.utils.tests.base.findElementWithDataAndOffsetInEditor
-import org.sui.openapiext.document
-import org.sui.openapiext.toPsiFile
-import org.sui.openapiext.toVirtualFile
 import kotlin.math.min
 
 abstract class ResolveProjectTestCase : MvProjectTestBase() {
-    protected fun checkByFileTree(@Language("Move") code: String) {
+    protected fun checkByFileTree(@Language("Sui Move") code: String) {
         checkByFileTree(
             code,
             MvReferenceElement::class.java,

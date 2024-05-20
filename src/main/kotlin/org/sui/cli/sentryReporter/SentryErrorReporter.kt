@@ -19,10 +19,9 @@ import io.sentry.SentryLevel
 import io.sentry.UserFeedback
 import io.sentry.protocol.Message
 import io.sentry.protocol.SentryId
-import org.sui.cli.moveProjects
 import org.sui.cli.settings.moveSettings
-import org.sui.stdext.asMap
 import org.sui.openapiext.project
+import org.sui.stdext.asMap
 import java.awt.Component
 
 
@@ -69,23 +68,30 @@ class SentryErrorReporter : ErrorReportSubmitter() {
         return true
     }
 
-    companion object {
         private fun createSentryEventFromError(project: Project?, event: IdeaLoggingEvent): SentryEvent {
             val sentryEvent = SentryEvent()
             sentryEvent.level = SentryLevel.ERROR
 
             val plugin = IdeErrorsDialog.getPlugin(event)
-            sentryEvent.contexts["Plugin Info"] =
-                mapOf(
-                    "Platform" to ApplicationInfo.getInstance().fullApplicationName,
-                    "Plugin Version" to (plugin?.version ?: "unknown"),
-                )
+            val pluginInfoContext = mutableMapOf<String, Any>()
+            pluginInfoContext["Platform"] = ApplicationInfo.getInstance().fullApplicationName
+            pluginInfoContext["Plugin Version"] = plugin?.version ?: "unknown"
+            sentryEvent.contexts["Plugin Info"] = pluginInfoContext
+//        try {
+//        } catch (e: NoSuchFieldError) {
+//            // intellij 2023.1 on windows 11 throws this, catch and report that one instead
+//            // TODO: remove later
+//            sentryEvent.contexts["Runtime Error Stacktrace"] = mapOf("Value" to e.getThrowableText())
+//        }
+//
+
             if (project != null) {
                 val settings = project.moveSettings.state.asMap().toMutableMap()
                 settings.remove("suiPath")
                 sentryEvent.contexts["Settings"] = settings
-                sentryEvent.contexts["Projects"] =
-                    project.moveProjects.allProjects.map { MoveProjectContext.from(it) }
+                // TODO: serialization doesn't work for some reason
+//            sentryEvent.contexts["Projects"] =
+//                project.moveProjectsService.allProjects.map { MoveProjectContext.from(it) }.toList()
             }
             // IdeaLoggingEvent only provides text stacktrace
             sentryEvent.contexts["Stacktrace"] = mapOf("Value" to event.throwableText)
@@ -102,7 +108,6 @@ class SentryErrorReporter : ErrorReportSubmitter() {
 
         private fun successfullySent(sentryEventId: SentryId): Boolean {
             return sentryEventId != SentryId.EMPTY_ID
-        }
     }
 }
 

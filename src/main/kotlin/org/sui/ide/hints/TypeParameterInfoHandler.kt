@@ -12,7 +12,7 @@ import org.sui.lang.core.psi.ext.ancestorStrict
 import org.sui.utils.AsyncParameterInfoHandlerBase
 
 class TypeParameterInfoHandler :
-    org.sui.utils.AsyncParameterInfoHandlerBase<MvTypeArgumentList, TypeParamsDescription>() {
+    AsyncParameterInfoHandlerBase<MvTypeArgumentList, TypeParamsDescription>() {
 
     override fun findTargetElement(file: PsiFile, offset: Int): MvTypeArgumentList? =
         file.findElementAt(offset)?.ancestorStrict()

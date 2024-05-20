@@ -8,7 +8,6 @@ import com.intellij.psi.stubs.StubIndexKey
 import org.sui.lang.core.psi.MvNamedElement
 import org.sui.lang.core.stubs.impl.MvFileStub
 import org.sui.openapiext.checkCommitIsNotInProgress
-import org.sui.openapiext.getElements
 
 class MvNamedElementIndex : StringStubIndexExtension<MvNamedElement>() {
     override fun getVersion(): Int = MvFileStub.Type.stubVersion
@@ -16,7 +15,7 @@ class MvNamedElementIndex : StringStubIndexExtension<MvNamedElement>() {
 
     companion object {
         val KEY: StubIndexKey<String, MvNamedElement> =
-            StubIndexKey.createIndexKey("org.sui.lang.index.NamedElementIndex")
+            StubIndexKey.createIndexKey("org.sui.index.NamedElementIndex")
 
         fun getAllKeys(project: Project): Collection<String> {
             checkCommitIsNotInProgress(project)
@@ -32,15 +31,6 @@ class MvNamedElementIndex : StringStubIndexExtension<MvNamedElement>() {
             checkCommitIsNotInProgress(project)
             StubIndex.getInstance()
                 .processElements(KEY, target, project, scope, MvNamedElement::class.java, processor)
-        }
-
-        fun findElementsByName(
-            project: Project,
-            target: String,
-            scope: GlobalSearchScope = GlobalSearchScope.allScope(project)
-        ): Collection<MvNamedElement> {
-            checkCommitIsNotInProgress(project)
-            return getElements(KEY, target, project, scope)
         }
     }
 }

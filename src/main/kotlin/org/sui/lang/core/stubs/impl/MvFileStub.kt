@@ -8,10 +8,11 @@ import com.intellij.psi.stubs.PsiFileStubImpl
 import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.tree.IStubFileElementType
+import org.sui.lang.MoveFile
 import org.sui.lang.MoveLanguage
 import org.sui.lang.MoveParserDefinition
 
-class MvFileStub(file: org.sui.lang.MoveFile?) : PsiFileStubImpl<org.sui.lang.MoveFile>(file) {
+class MvFileStub(file: MoveFile?) : PsiFileStubImpl<MoveFile>(file) {
 
     override fun getType() = Type
 
@@ -24,14 +25,14 @@ class MvFileStub(file: org.sui.lang.MoveFile?) : PsiFileStubImpl<org.sui.lang.Mo
         override fun getBuilder(): StubBuilder = object : DefaultStubBuilder() {
             override fun createStubForFile(file: PsiFile): StubElement<*> {
                 TreeUtil.ensureParsed(file.node) // profiler hint
-                check(file is org.sui.lang.MoveFile)
+                check(file is MoveFile)
                 return MvFileStub(file)
             }
         }
 
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?) = MvFileStub(null)
 
-        override fun getExternalId(): String = "Sui-Move.file"
+        override fun getExternalId(): String = "Move.file"
 
 //        // Uncomment to find out what causes switch to the AST
 //        private val PARSED = com.intellij.util.containers.ContainerUtil.newConcurrentSet<String>()

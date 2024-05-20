@@ -1,4 +1,4 @@
-package org.move.lang.completion
+package org.sui.lang.completion
 
 import org.intellij.lang.annotations.Language
 import org.sui.ide.annotator.BUILTIN_TYPE_IDENTIFIERS
@@ -98,7 +98,7 @@ class PrimitiveTypesCompletionTest: CompletionTestCase() {
     }    
     """)
 
-    private fun doTest(@Language("Move") text: String) {
+    private fun doTest(@Language("Sui Move") text: String) {
         val typeNames = PRIMITIVE_TYPE_IDENTIFIERS + BUILTIN_TYPE_IDENTIFIERS
         for (typeName in typeNames) {
             checkContainsCompletion(typeName, text)

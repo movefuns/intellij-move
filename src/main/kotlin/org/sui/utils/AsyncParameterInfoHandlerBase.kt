@@ -40,7 +40,7 @@ abstract class AsyncParameterInfoHandlerBase<ParameterOwner : PsiElement, Parame
                     context.itemsToShow = paramInfo
                     showParameterInfo(element, context)
                 }
-            }.expireWhen { !element.isValid }.submit(org.sui.utils.AsyncParameterInfoHandlerBase.Companion.executor)
+            }.expireWhen { !element.isValid }.submit(executor)
 
             null
         }

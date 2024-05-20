@@ -1,9 +1,8 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiAddressByValueImportInspection
 import org.sui.utils.tests.annotation.InspectionProjectTestBase
 
-class SuiAddressByValueImportInspectionTest : InspectionProjectTestBase(SuiAddressByValueImportInspection::class) {
+class SuiAddressByValueImportInspectionTest : InspectionProjectTestBase(AddressByValueImportInspection::class) {
     fun `test no inspection if imported from the correct address name`() =
         checkWeakWarningsByFileTree {
             moveToml(

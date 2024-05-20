@@ -1,15 +1,15 @@
 package org.sui.cli.runConfigurations.test
 
 import com.intellij.execution.runners.ExecutionEnvironment
-import org.sui.cli.runConfigurations.aptos.AptosCommandLine
-import org.sui.cli.runConfigurations.aptos.AptosCommandLineState
+import org.sui.cli.runConfigurations.CliCommandLineArgs
+import org.sui.cli.runConfigurations.MoveCommandLineState
 import java.nio.file.Path
 
 class AptosTestCommandLineState(
     execEnv: ExecutionEnvironment,
     aptosPath: Path,
-    commandLine: AptosCommandLine
-) : AptosCommandLineState(execEnv, aptosPath, commandLine) {
+    commandLine: CliCommandLineArgs
+) : MoveCommandLineState(execEnv, aptosPath, commandLine) {
 
 //    override fun execute(executor: Executor, runner: ProgramRunner<*>): ExecutionResult {
 //        val processHandler = startProcess()

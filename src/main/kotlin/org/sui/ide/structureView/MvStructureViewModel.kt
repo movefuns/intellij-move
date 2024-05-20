@@ -8,9 +8,10 @@ import com.intellij.ide.util.treeView.smartTree.*
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiFile
 import com.intellij.util.PlatformIcons
+import org.sui.lang.MoveFile
 import org.sui.lang.core.psi.MvNamedElement
 
-class MvStructureViewModel(editor: Editor?, moveFile: org.sui.lang.MoveFile) :
+class MvStructureViewModel(editor: Editor?, moveFile: MoveFile) :
     StructureViewModelBase(
         moveFile,
         editor,

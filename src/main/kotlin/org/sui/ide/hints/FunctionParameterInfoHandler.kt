@@ -12,9 +12,9 @@ import org.sui.lang.core.psi.MvStructLitFieldsBlock
 import org.sui.lang.core.psi.MvValueArgumentList
 import org.sui.lang.core.psi.ext.ancestorOrSelf
 import org.sui.lang.core.psi.ext.startOffset
+import org.sui.utils.AsyncParameterInfoHandlerBase
 
-class FunctionParameterInfoHandler :
-    org.sui.utils.AsyncParameterInfoHandlerBase<MvValueArgumentList, ParamsDescription>() {
+class FunctionParameterInfoHandler : AsyncParameterInfoHandlerBase<MvValueArgumentList, ParamsDescription>() {
 
     override fun findTargetElement(file: PsiFile, offset: Int): MvValueArgumentList? {
         val element = file.findElementAt(offset) ?: return null

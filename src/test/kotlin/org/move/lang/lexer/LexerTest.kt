@@ -1,4 +1,4 @@
-package org.move.lang.lexer
+package org.sui.lang.lexer
 
 import org.sui.utils.tests.MvLexerTestBase
 

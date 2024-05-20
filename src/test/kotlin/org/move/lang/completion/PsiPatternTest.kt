@@ -1,4 +1,4 @@
-package org.move.lang.completion
+package org.sui.lang.completion
 
 import com.intellij.patterns.ElementPattern
 import com.intellij.psi.PsiElement
@@ -84,7 +84,7 @@ class PsiPatternTest : MvTestBase() {
         assertTrue(pattern.accepts(element))
     }
 
-    private fun <T> testPatternNegative(@Language("Move") code: String, pattern: ElementPattern<T>) {
+    private fun <T> testPatternNegative(@Language("Sui Move") code: String, pattern: ElementPattern<T>) {
         InlineFile(myFixture, code, "main.move")
         val element = myFixture.findElementInEditor<PsiElement>()
         assertFalse(pattern.accepts(element, null))

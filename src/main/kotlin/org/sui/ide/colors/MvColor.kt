@@ -69,7 +69,7 @@ enum class MvColor(humanName: String, default: TextAttributesKey? = null) {
     PARENTHESES("Braces and Operators//Parentheses", Default.PARENTHESES),
     ;
 
-    val textAttributesKey = TextAttributesKey.createTextAttributesKey("org.move.$name", default)
+    val textAttributesKey = TextAttributesKey.createTextAttributesKey("org.sui.$name", default)
     val attributesDescriptor = AttributesDescriptor(humanName, textAttributesKey)
     val testSeverity: HighlightSeverity = HighlightSeverity(name, HighlightSeverity.INFORMATION.myVal)
 

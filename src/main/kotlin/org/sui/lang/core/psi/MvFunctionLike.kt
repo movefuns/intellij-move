@@ -34,13 +34,13 @@ interface MvFunctionLike : MvNameIdentifierOwner,
     }
 }
 
-val MvFunctionLike.itemPresentation: PresentationData?
+val MvFunctionLike.functionItemPresentation: PresentationData?
     get() {
         val name = this.name ?: return null
         val signature = this.signatureText
         return PresentationData(
             "$name$signature",
-            null,
+            this.locationString(true),
             MoveIcons.FUNCTION,
             TextAttributesKey.createTextAttributesKey("public")
         )
@@ -54,7 +54,7 @@ val MvFunctionLike.allParamsAsBindings: List<MvBindingPat> get() = this.paramete
 
 val MvFunctionLike.valueParamsAsBindings: List<MvBindingPat>
     get() {
-        val msl = this.isMsl()
+        val msl = this.isMslOnlyItem
         val parameters = this.parameters
         return parameters
             .filter { it.type?.loweredType(msl) !is TyLambda }
@@ -63,7 +63,7 @@ val MvFunctionLike.valueParamsAsBindings: List<MvBindingPat>
 
 val MvFunctionLike.lambdaParamsAsBindings: List<MvBindingPat>
     get() {
-        val msl = this.isMsl()
+        val msl = this.isMslOnlyItem
         val parameters = this.parameters
         return parameters
             .filter { it.type?.loweredType(msl) is TyLambda }

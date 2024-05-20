@@ -1,4 +1,4 @@
-package org.move.ide.typing
+package org.sui.ide.typing
 
 import org.sui.utils.tests.MvTypingTestCase
 

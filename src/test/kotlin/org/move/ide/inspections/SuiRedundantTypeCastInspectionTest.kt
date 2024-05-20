@@ -1,9 +1,8 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiRedundantTypeCastInspection
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class SuiRedundantTypeCastInspectionTest : InspectionTestBase(SuiRedundantTypeCastInspection::class) {
+class SuiRedundantTypeCastInspectionTest : InspectionTestBase(RedundantTypeCastInspection::class) {
     fun `test no error in correct cast from integer`() = checkByText("""
 module 0x1::main {
     fun main() {

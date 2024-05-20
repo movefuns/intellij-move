@@ -1,6 +1,4 @@
-package org.move.ide.structureView
-
-import org.sui.ide.structureView.HideTestFunctionsFilter
+package org.sui.ide.structureView
 
 class HideTestFunctionsFilterTest: StructureViewToggleableActionTestBase() {
     fun `test hide test functions filter`() = doTest("""

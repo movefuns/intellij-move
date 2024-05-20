@@ -5,7 +5,7 @@
     <depends>org.toml.lang</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <fileType name="Move"
+        <fileType name="Sui Move"
                   language="Sui Move"
                   extensions="move"
                   implementationClass="org.sui.lang.MoveFileType"
@@ -16,26 +16,30 @@
 
         <!-- PSI managing -->
 
-        <projectService serviceInterface="org.sui.lang.core.psi.SuiMvPsiManager"
-                        serviceImplementation="org.sui.lang.core.psi.SuiMvPsiManagerImpl"/>
+        <projectService serviceInterface="org.sui.lang.core.psi.MvPsiManager"
+                        serviceImplementation="org.sui.lang.core.psi.MvPsiManagerImpl"/>
 
         <configurationType
                 implementation="org.sui.cli.runConfigurations.legacy.MoveConfigurationType"/>
+        <!--        <configurationType-->
+        <!--                implementation="org.sui.cli.runConfigurations.aptos.AptosConfigurationType"/>-->
         <configurationType
                 implementation="org.sui.cli.runConfigurations.sui.SuiConfigurationType"/>
         <!--        <runConfigurationProducer-->
-        <!--                implementation="org.sui.cli.runConfigurations.producers.AnyCommandConfigurationProducer"/>-->
+        <!--                implementation="org.sui.cli.runConfigurations.producers.aptos.AptosTestCommandConfigurationProducer"/>-->
         <!--        <runConfigurationProducer-->
-        <!--                implementation="org.sui.cli.runConfigurations.producers.BuildCommandConfigurationProducer"/>-->
+        <!--                implementation="org.sui.cli.runConfigurations.producers.aptos.RunCommandConfigurationProducer"/>-->
         <!--        <runConfigurationProducer-->
-        <!--                implementation="org.sui.cli.runConfigurations.producers.TestCommandConfigurationProducer"/>-->
-        <!--        <runLineMarkerContributor language="Sui Move"-->
-        <!--                                  implementationClass="org.sui.ide.lineMarkers.AptosCommandLineMarkerContributor"/>-->
+        <!--                implementation="org.sui.cli.runConfigurations.producers.aptos.ViewCommandConfigurationProducer"/>-->
+        <runConfigurationProducer
+                implementation="org.sui.cli.runConfigurations.producers.sui.SuiTestCommandConfigurationProducer"/>
+        <runLineMarkerContributor language="Sui Move"
+                                  implementationClass="org.sui.ide.lineMarkers.CommandLineMarkerContributor"/>
 
         <lang.parserDefinition language="Sui Move"
                                implementationClass="org.sui.lang.MoveParserDefinition"/>
 
-        <stubElementTypeHolder class="org.sui.lang.MvElementTypes"/>
+        <stubElementTypeHolder class="org.sui.lang.MvElementTypes" externalIdPrefix="move."/>
 
         <stubIndex implementation="org.sui.lang.index.MvNamedElementIndex"/>
         <stubIndex implementation="org.sui.lang.index.MvEntryFunctionIndex"/>
@@ -48,8 +52,8 @@
 
         <lang.importOptimizer language="Sui Move" implementationClass="org.sui.ide.refactoring.MvImportOptimizer"/>
 
-        <gotoSymbolContributor implementation="org.sui.ide.navigation.MvSymbolNavigationContributor"/>
-        <gotoClassContributor implementation="org.sui.ide.navigation.MvStructNavigationContributor"/>
+        <gotoSymbolContributor implementation="org.sui.ide.navigation.goto.MvSymbolNavigationContributor"/>
+        <gotoClassContributor implementation="org.sui.ide.navigation.goto.MvStructNavigationContributor"/>
 
         <lang.syntaxHighlighter language="Sui Move"
                                 implementationClass="org.sui.ide.MvHighlighter"/>
@@ -73,7 +77,7 @@
         <lang.formatter language="Sui Move"
                         implementationClass="org.sui.ide.formatter.MvFormattingModelBuilder"/>
         <langCodeStyleSettingsProvider
-                implementation="org.sui.ide.formatter.MvLanguageCodeStyleSettingsProvider"/>
+                implementation="org.sui.ide.formatter.settings.MvLanguageCodeStyleSettingsProvider"/>
 
         <lang.foldingBuilder language="Sui Move" implementationClass="org.sui.ide.folding.MvFoldingBuilder"/>
 
@@ -82,13 +86,13 @@
         <lang.refactoringSupport language="Sui Move"
                                  implementationClass="org.sui.ide.refactoring.MvRefactoringSupportProvider"/>
 
-<!--        <lang.refactoringSupport language="TOML"-->
+        <!--        <lang.refactoringSupport language="TOML"-->
         <!--                                 implementationClass="org.sui.ide.refactoring.toml.TomlRefactoringSupportProvider"/>-->
         <!--        <renameHandler implementation="org.sui.ide.refactoring.toml.TomlInPlaceRenameHandler" />-->
         <!--        <renameHandler implementation="org.sui.ide.refactoring.toml.TomlRenameHandler" />-->
         <!--        <renamePsiElementProcessor implementation="org.sui.ide.refactoring.toml.MvRenameAddressProcessor"-->
-<!--                                   order="first"-->
-<!--                                   id="mvRenameAddressProcessor" />-->
+        <!--                                   order="first"-->
+        <!--                                   id="mvRenameAddressProcessor" />-->
 
 
         <lang.findUsagesProvider language="Sui Move"
@@ -140,12 +144,9 @@
                                    implementationClass="org.sui.ide.hints.type.MvInlayTypeHintsProvider"/>
 
         <defaultLiveTemplates file="liveTemplates/Move.xml"/>
-        <liveTemplateContext implementation="org.sui.ide.live_templates.MvContextType$Generic"
-                             contextId="org.sui.lang.Generic"/>
-        <liveTemplateContext implementation="org.sui.ide.live_templates.MvContextType$Module"
-                             contextId="org.sui.lang.Module"/>
-        <liveTemplateContext implementation="org.sui.ide.live_templates.MvContextType$Block"
-                             contextId="org.sui.lang.Block"/>
+        <liveTemplateContext implementation="org.sui.ide.liveTemplates.MvContextType$Generic"/>
+        <liveTemplateContext implementation="org.sui.ide.liveTemplates.MvContextType$Module"/>
+        <liveTemplateContext implementation="org.sui.ide.liveTemplates.MvContextType$Block"/>
 
         <renamePsiElementProcessor implementation="org.sui.ide.refactoring.MvRenameProcessor"
                                    order="first"
@@ -169,8 +170,7 @@
         <toolWindow id="Sui"
                     anchor="right"
                     factoryClass="org.sui.cli.toolwindow.SuiToolWindowFactory"
-                    icon="/icons/sui.svg"/>
-
+                    icon="/icons/move_logo.svg"/>
 
         <!--        <localInspection language="Sui Move" groupPath="Move" groupName="Naming"-->
         <!--                         displayName="Attempt to override a built-in function"-->
@@ -180,76 +180,75 @@
                          displayName="Unresolved reference"
                          enabledByDefault="true"
                          level="ERROR"
-                         implementationClass="org.sui.ide.inspections.SuiMvUnresolvedReferenceInspection"/>
+                         implementationClass="org.sui.ide.inspections.MvUnresolvedReferenceInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Field initialization shorthand"
                          enabledByDefault="true" level="WEAK WARNING"
-                         implementationClass="org.sui.ide.inspections.SuiFieldInitShorthandInspection"/>
+                         implementationClass="org.sui.ide.inspections.FieldInitShorthandInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Invalid module declaration"
                          enabledByDefault="true" level="ERROR"
-                         implementationClass="org.sui.ide.inspections.SuiInvalidModuleDeclarationInspection"/>
+                         implementationClass="org.sui.ide.inspections.InvalidModuleDeclarationInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Constant naming convention"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.SuiMvConstNamingInspection"/>
+                         implementationClass="org.sui.ide.inspections.MvConstNamingInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Struct naming convention"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.SuiMvStructNamingInspection"/>
+                         implementationClass="org.sui.ide.inspections.MvStructNamingInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Function naming convention"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.SuiMvFunctionNamingInspection"/>
+                         implementationClass="org.sui.ide.inspections.MvFunctionNamingInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Local variable naming convention"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.SuiMvLocalBindingNamingInspection"/>
+                         implementationClass="org.sui.ide.inspections.MvLocalBindingNamingInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Redundant qualifier"
                          enabledByDefault="false" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.SuiRedundantQualifiedPathInspection"/>
+                         implementationClass="org.sui.ide.inspections.RedundantQualifiedPathInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Type checking"
                          enabledByDefault="true" level="ERROR"
-                         implementationClass="org.sui.ide.inspections.SuiMvTypeCheckInspection"/>
+                         implementationClass="org.sui.ide.inspections.MvTypeCheckInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Ability checking"
                          enabledByDefault="false" level="ERROR"
-                         implementationClass="org.sui.ide.inspections.SuiMvAbilityCheckInspection"/>
+                         implementationClass="org.sui.ide.inspections.MvAbilityCheckInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Missing acquires"
                          enabledByDefault="true" level="ERROR"
-                         implementationClass="org.sui.ide.inspections.SuiMvMissingAcquiresInspection"/>
+                         implementationClass="org.sui.ide.inspections.MvMissingAcquiresInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Unused acquires"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.SuiMvUnusedAcquiresTypeInspection"/>
+                         implementationClass="org.sui.ide.inspections.MvUnusedAcquiresTypeInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Unused struct type parameter"
                          enabledByDefault="true" level="ERROR"
-                         implementationClass="org.sui.ide.inspections.SuiPhantomTypeParameterInspection"/>
+                         implementationClass="org.sui.ide.inspections.PhantomTypeParameterInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Unused import"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.SuiMvUnusedImportInspection"/>
+                         implementationClass="org.sui.ide.inspections.MvUnusedImportInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Unused declaration"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.SuiMvUnusedVariableInspection"/>
+                         implementationClass="org.sui.ide.inspections.MvUnusedVariableInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Unused test signer"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.SuiUnusedTestSignerInspection"/>
+                         implementationClass="org.sui.ide.inspections.UnusedTestSignerInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Address by value inspection"
                          enabledByDefault="false" level="WEAK WARNING"
-                         implementationClass="org.sui.ide.inspections.SuiAddressByValueImportInspection"/>
+                         implementationClass="org.sui.ide.inspections.AddressByValueImportInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Redundant type cast"
                          enabledByDefault="true" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.SuiRedundantTypeCastInspection"/>
-
+                         implementationClass="org.sui.ide.inspections.RedundantTypeCastInspection"/>
         <!-- Color Settings -->
         <colorSettingsPage implementation="org.sui.ide.colors.MvColorSettingsPage"/>
 
@@ -260,14 +259,20 @@
         <additionalTextAttributes scheme="Default" file="colors/MoveDefault.xml"/>
         <additionalTextAttributes scheme="Darcula" file="colors/MoveDarcula.xml"/>
 
-        <moduleType id="MOVE_MODULE"
-                    implementationClass="org.sui.cli.module.MvModuleType"/>
-        <moduleBuilder builderClass="org.sui.cli.module.MvModuleBuilder"/>
         <projectTaskRunner implementation="org.sui.cli.runConfigurations.SuiBuildTaskRunner"/>
 
-        <projectOpenProcessor id="Move" implementation="org.sui.cli.SuiProjectOpenProcessor"/>
+        <!--ProjectCreation-->
+        <projectOpenProcessor id="Sui Move" implementation="org.sui.ide.newProject.MoveLangProjectOpenProcessor"/>
+        <directoryProjectGenerator implementation="org.sui.ide.newProject.MoveProjectGenerator"/>
 
-        <directoryProjectGenerator implementation="org.sui.ide.newProject.SuiProjectGenerator"/>
+        <postStartupActivity
+                implementation="org.sui.ide.newProject.AlwaysRefreshProjectsAfterOpen"/>
+        <!--    <postStartupActivity-->
+        <!--        implementation="org.sui.cli.openProject.OpenMoveTomlOnProjectCreationFile" />-->
+        <!--     background = 5 seconds delayed  -->
+        <!--    <postStartupActivity-->
+        <!--        implementation="org.sui.cli.openProject.CreateDefaultCompileRunConfiguration" />-->
+
 
         <projectConfigurable instance="org.sui.cli.settings.PerProjectMoveConfigurable"
                              displayName="Sui Move Language"
@@ -277,21 +282,25 @@
                         serviceImplementation="org.sui.utils.SuiProjectRootServiceImpl"
                         testServiceImplementation="org.sui.utils.TestSuiProjectRootServiceImpl"/>
 
-        <projectService serviceImplementation="org.sui.cli.SuiMoveProjectsService"/>
+        <projectService serviceImplementation="org.sui.cli.MoveProjectsService"/>
         <!--        <projectService serviceImplementation="org.sui.cli.packages.MovePackageService"/>-->
 
-<!--        <projectService serviceInterface="com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectTracker"-->
+        <!--        <projectService serviceInterface="com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectTracker"-->
         <!--                        serviceImplementation="org.sui.cli.projectAware.MoveExternalSystemProjectAware"-->
-<!--                        overrides="true" />-->
+        <!--                        overrides="true" />-->
+        <!--<applicationServiceserviceImplementation="org.sui.openapiext.OpenSSLInfoService"/>-->
+
+        <additionalLibraryRootsProvider implementation="org.sui.cli.BuildLibraryRootsProvider"/>
+
         <applicationService serviceImplementation="org.sui.openapiext.OpenSSLInfoService"/>
-
         <additionalLibraryRootsProvider
-                implementation="org.sui.cli.module.BuildLibraryRootsProvider"/>
-
+                implementation="org.sui.cli.BuildLibraryRootsProvider"/>
         <!-- Notifications -->
         <notificationGroup id="Sui Move Language" displayType="BALLOON"/>
+        <!--        <editorNotificationProvider-->
+        <!--                implementation="org.sui.ide.notifications.InvalidBinaryNotification"/>-->
         <editorNotificationProvider
-                implementation="org.sui.ide.notifications.InvalidSuiBinaryNotification"/>
+                implementation="org.sui.ide.notifications.NoMoveProjectDetectedNotificationProvider"/>
 
         <intentionAction>
             <language>Sui Move</language>
@@ -328,21 +337,14 @@
             <className>org.sui.ide.intentions.ChopStructPatIntention</className>
             <category>Move</category>
         </intentionAction>
-
         <errorHandler implementation="org.sui.cli.sentryReporter.SentryErrorReporter"/>
-
     </extensions>
-    <applicationListeners>
-        <listener
-                class="org.sui.cli.settings.MvApplicationSettingListener"
-                topic="org.sui.cli.settings.ApplicationSettingTopic"/>
-    </applicationListeners>
+
     <projectListeners>
         <listener class="org.sui.ide.notifications.UpdateNotificationsOnSettingsChangeListener"
                   topic="org.sui.cli.settings.MoveSettingsListener"
                   activeInTestMode="false"/>
     </projectListeners>
-
     <actions>
         <action id="Sui.NewMoveFile"
                 class="org.sui.ide.actions.CreateMoveFileAction"
@@ -375,12 +377,17 @@
                 text="Open Envs Dialog"
                 class="org.sui.ide.actions.OpenSwitchEnvsDialogAction"
                 icon="AllIcons.Actions.DiffWithClipboard"/>
+        <action id="Sui.OpenObjectDialog"
+                description="Open objects dialog"
+                text="Open Objects Dialog"
+                class="org.sui.ide.actions.OpenObjectListAction"
+                icon="AllIcons.Actions.GroupByPrefix"/>
         <group id="Move.Sui">
             <reference id="Sui.RefreshAllProjects"/>
             <reference id="Sui.GetActiveAddress"/>
-            <!--            <reference id="Sui.GetGas"/>-->
             <reference id="Sui.OpenAddressDialog"/>
             <reference id="Sui.OpenEnvsDialog"/>
+            <reference id="Sui.OpenObjectDialog"/>
         </group>
     </actions>
 </idea-plugin>

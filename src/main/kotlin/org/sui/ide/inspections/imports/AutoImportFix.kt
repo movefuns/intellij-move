@@ -14,15 +14,16 @@ import org.sui.lang.core.psi.ext.ancestorStrict
 import org.sui.lang.core.psi.ext.hasAncestor
 import org.sui.lang.core.psi.ext.importCandidateNamespaces
 import org.sui.lang.core.psi.ext.smartPointer
-import org.sui.lang.core.resolve.ItemVis
-import org.sui.lang.core.resolve.mslLetScope
-import org.sui.lang.core.resolve.processFileItems
+import org.sui.lang.core.resolve.ContextScopeInfo
+import org.sui.lang.core.resolve.letStmtScope
 import org.sui.lang.core.resolve.ref.MvReferenceElement
+import org.sui.lang.core.resolve.ref.Namespace
 import org.sui.lang.core.resolve.ref.Visibility
-import org.sui.openapiext.common.checkUnitTestMode
 import org.sui.openapiext.runWriteCommandAction
 
-class AutoImportFix(element: MvReferenceElement) : DiagnosticFix<MvReferenceElement>(element), HighPriorityAction {
+
+class AutoImportFix(element: MvReferenceElement) : DiagnosticFix<MvReferenceElement>(element),
+    HighPriorityAction {
 
     private var isConsumed: Boolean = false
 
@@ -95,44 +96,54 @@ class AutoImportFix(element: MvReferenceElement) : DiagnosticFix<MvReferenceElem
 @Suppress("DataClassPrivateConstructor")
 data class ImportContext private constructor(
     val pathElement: MvReferenceElement,
-    val itemVis: ItemVis,
+    val namespaces: Set<Namespace>,
+    val visibilities: Set<Visibility>,
+    val contextScopeInfo: ContextScopeInfo,
 ) {
     companion object {
-        fun from(contextElement: MvReferenceElement, itemVis: ItemVis): ImportContext {
-            return ImportContext(contextElement, itemVis)
+        fun from(
+            contextElement: MvReferenceElement,
+            namespaces: Set<Namespace>,
+            visibilities: Set<Visibility>,
+            contextScopeInfo: ContextScopeInfo
+        ): ImportContext {
+            return ImportContext(contextElement, namespaces, visibilities, contextScopeInfo)
         }
 
-        fun from(contextElement: MvReferenceElement): ImportContext {
-            val ns = contextElement.importCandidateNamespaces()
-            val vs = if (contextElement.containingScript != null) {
+        fun from(refElement: MvReferenceElement): ImportContext {
+            val ns = refElement.importCandidateNamespaces()
+            val vs = if (refElement.containingScript != null) {
                 setOf(Visibility.Public, Visibility.PublicScript)
             } else {
-                val module = contextElement.containingModule
+                val module = refElement.containingModule
                 if (module != null) {
                     setOf(Visibility.Public, Visibility.PublicFriend(module.smartPointer()))
                 } else {
                     setOf(Visibility.Public)
                 }
             }
-            val itemVis = ItemVis(
-                namespaces = ns,
-                visibilities = vs,
-                mslLetScope = contextElement.mslLetScope,
-                itemScope = contextElement.itemScope,
+            val contextScopeInfo = ContextScopeInfo(
+                letStmtScope = refElement.letStmtScope,
+                refItemScopes = refElement.refItemScopes,
             )
-            return ImportContext(contextElement, itemVis)
+            return ImportContext(refElement, ns, vs, contextScopeInfo)
         }
     }
 }
 
-fun org.sui.lang.MoveFile.qualifiedItems(targetName: String, itemVis: ItemVis): List<MvQualNamedElement> {
-    checkUnitTestMode()
-    val elements = mutableListOf<MvQualNamedElement>()
-    processFileItems(this, itemVis) {
-        if (it.element is MvQualNamedElement && it.name == targetName) {
-            elements.add(it.element)
-        }
-        false
-    }
-    return elements
-}
+//fun MoveFile.qualifiedItems(
+//    targetName: String,
+//    namespaces: Set<Namespace>,
+//    visibilities: Set<Visibility>,
+//    itemVis: ItemVis
+//): List<MvQualNamedElement> {
+//    checkUnitTestMode()
+//    val elements = mutableListOf<MvQualNamedElement>()
+//    processFileItems(this, namespaces, visibilities, itemVis) {
+//        if (it.element is MvQualNamedElement && it.name == targetName) {
+//            elements.add(it.element)
+//        }
+//        false
+//    }
+//    return elements
+//}

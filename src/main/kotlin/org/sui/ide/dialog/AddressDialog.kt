@@ -1,14 +1,14 @@
 package org.sui.ide.dialog
 
-import com.intellij.execution.process.ProcessOutput
+import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.util.ExecUtil
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
-import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
-import org.sui.cli.settings.suiExec
 import org.sui.common.NOTIFACATION_GROUP
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -16,7 +16,10 @@ import javax.swing.*
 import javax.swing.table.DefaultTableModel
 
 
-class AddressDialog(var data: List<String>) : DialogWrapper(true) {
+class AddressDialog(var data: List<List<String>>) : DialogWrapper(true) {
+    val NOTIFICATION_TITLE = "Active Address"
+    val SWITCH_SUCCESS_MSG = "active address switched successfully"
+
     init {
         init()
         title = "Click Address To Switch"
@@ -28,7 +31,7 @@ class AddressDialog(var data: List<String>) : DialogWrapper(true) {
         val table = JBTable(tableModel)
 
         data.forEach { address ->
-            tableModel.addRow(arrayOf(address))
+            tableModel.addRow(arrayOf(address[1]))
         }
         table.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
 
@@ -36,7 +39,7 @@ class AddressDialog(var data: List<String>) : DialogWrapper(true) {
         button.addActionListener {
             val row = table.selectedRow
             if (row >= 0) {
-                executeCommand(tableModel.getValueAt(row, 0).toString())
+                switchAddressAndNotify(tableModel.getValueAt(row, 0).toString())
             }
             dispose()
         }
@@ -53,32 +56,17 @@ class AddressDialog(var data: List<String>) : DialogWrapper(true) {
         return arrayOf()
     }
 
-
-    private fun executeCommand(address: String) {
-        // 获取project 对象
-        val project = ProjectManager.getInstance().defaultProject
-
-        val onProcessComplete: (ProcessOutput?) -> Unit = { output ->
-            if (output != null && output.exitCode == 0) {
-                println("Process executed successfully with output: ${output.stdout}")
-                showNotification(address)
-            } else {
-                println("Process failed with error: ${output?.stderr}")
-            }
+    fun switchAddressAndNotify(address: String) {
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val commandLine = GeneralCommandLine("sui", "client", "switch", "--address", address)
+            val output = ExecUtil.execAndGetOutput(commandLine)
+            val notificationType = if (output.exitCode == 0) NotificationType.INFORMATION else NotificationType.ERROR
+            SwingUtilities.invokeLater { displayNotification(NOTIFICATION_TITLE, SWITCH_SUCCESS_MSG, notificationType) }
         }
-        project.suiExec.toExecutor()
-            ?.simpleCommand(project, "client", listOf("switch", "--address", address), onProcessComplete)
     }
 
-    private fun showNotification(message: String) {
-        // 显示通知
-        Notifications.Bus.notify(
-            Notification(
-                NOTIFACATION_GROUP,
-                "Switch Address",
-                message,
-                NotificationType.INFORMATION
-            )
-        )
+    private fun displayNotification(title: String, message: String, type: NotificationType) {
+        val notification = Notification(NOTIFACATION_GROUP, title, message, type)
+        Notifications.Bus.notify(notification)
     }
 }

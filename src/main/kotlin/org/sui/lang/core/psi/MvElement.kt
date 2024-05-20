@@ -5,6 +5,7 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiWhiteSpace
+import org.sui.lang.MoveFile
 import org.sui.lang.MvElementTypes
 import org.sui.lang.core.psi.ext.*
 
@@ -13,7 +14,7 @@ interface MvElement : PsiElement
 abstract class MvElementImpl(node: ASTNode) : ASTWrapperPsiElement(node),
                                               MvElement
 
-val MvElement.containingMoveFile: org.sui.lang.MoveFile? get() = this.containingFile as? org.sui.lang.MoveFile
+val MvElement.containingMoveFile: MoveFile? get() = this.containingFile as? MoveFile
 
 val MvElement.containingScript: MvScript? get() = ancestorStrict()
 

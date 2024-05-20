@@ -59,6 +59,10 @@ class KeywordCompletionContributor : CompletionContributor() {
                 "use",
                 "spec",
                 "friend",
+                "enum",
+                "type",
+                "match",
+                "mut"
             )
         )
         extend(

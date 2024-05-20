@@ -8,8 +8,11 @@ import com.intellij.task.*
 import org.jetbrains.concurrency.Promise
 import org.jetbrains.concurrency.resolvedPromise
 import org.sui.cli.moveProjectRoot
+import org.sui.cli.runConfigurations.sui.SuiCommandConfiguration
+import org.sui.ide.newProject.ProjectInitializationSteps
 import org.sui.openapiext.runManager
-import org.sui.openapiext.suiBuildRunConfigurations
+import org.sui.openapiext.suiCommandConfigurationsSettings
+
 
 @Suppress("UnstableApiUsage")
 class SuiBuildTaskRunner : ProjectTaskRunner() {
@@ -22,21 +25,20 @@ class SuiBuildTaskRunner : ProjectTaskRunner() {
         context: ProjectTaskContext,
         vararg tasks: ProjectTask?
     ): Promise<Result> {
-        val buildConfiguration =
-            project.suiBuildRunConfigurations().firstOrNull()
-                ?: project.addDefaultBuildRunConfiguration().configuration
-        val configurationSettings =
-            project.runManager.findConfigurationByName(buildConfiguration.name)
-                ?: return resolvedPromise(TaskRunnerResults.ABORTED)
-        project.runManager.selectedConfiguration = configurationSettings
+        val compileConfigurationWithSettings =
+            project.suiCommandConfigurationsSettings()
+                .find { (it.configuration as SuiCommandConfiguration).command == "move compile" }
+                ?: ProjectInitializationSteps.createDefaultCompileConfiguration(project, false)
+
+        project.runManager.selectedConfiguration = compileConfigurationWithSettings
 
         val environment = ExecutionEnvironmentBuilder.createOrNull(
             DefaultRunExecutor.getRunExecutorInstance(),
-            configurationSettings
+            compileConfigurationWithSettings
         )?.build() ?: return resolvedPromise(TaskRunnerResults.ABORTED)
 
         val success =
-            RunConfigurationBeforeRunProvider.doExecuteTask(environment, configurationSettings, null)
+            RunConfigurationBeforeRunProvider.doExecuteTask(environment, compileConfigurationWithSettings, null)
         if (success) {
             return resolvedPromise(TaskRunnerResults.SUCCESS)
         } else {

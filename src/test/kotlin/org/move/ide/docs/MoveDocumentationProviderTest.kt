@@ -1,7 +1,6 @@
-package org.move.ide.docs
+package org.sui.ide.docs
 
 import org.intellij.lang.annotations.Language
-import org.sui.ide.docs.MvDocumentationProvider
 import org.sui.utils.tests.MvDocumentationProviderTestCase
 
 class MvDocumentationProviderTest : MvDocumentationProviderTestCase() {
@@ -165,6 +164,6 @@ module 0x1::m {
 value parameter <b>result</b>: &mut T      
     """)
 
-    private fun doTest(@Language("Move") code: String, @Language("Html") expected: String?) =
+    private fun doTest(@Language("Sui Move") code: String, @Language("Html") expected: String?) =
         doTest(code, expected, block = MvDocumentationProvider::generateDoc)
 }

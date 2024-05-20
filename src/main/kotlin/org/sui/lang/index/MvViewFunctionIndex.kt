@@ -19,7 +19,7 @@ class MvViewFunctionIndex : StringStubIndexExtension<MvFunction>() {
 
     companion object {
         val KEY: StubIndexKey<String, MvFunction> =
-            StubIndexKey.createIndexKey("org.sui.lang.index.MvViewFunctionIndex")
+            StubIndexKey.createIndexKey("org.sui.index.MvViewFunctionIndex")
 
 //        fun getViewFunction(
 //            project: Project,

@@ -1,9 +1,9 @@
-package org.move.ide.inspections.fixes
+package org.sui.ide.inspections.fixes
 
-import org.sui.ide.inspections.SuiMvMissingAcquiresInspection
+import org.sui.ide.inspections.MvMissingAcquiresInspection
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class AcquiresFixTest : InspectionTestBase(SuiMvMissingAcquiresInspection::class) {
+class AcquiresFixTest : InspectionTestBase(MvMissingAcquiresInspection::class) {
     fun `test one item error with fix`() = checkFixByText(
         "Add missing `acquires Loan`", """
     module 0x1::M {

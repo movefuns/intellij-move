@@ -1,4 +1,4 @@
-package org.move.ide
+package org.sui.ide
 
 import com.intellij.testFramework.UsefulTestCase
 import org.intellij.lang.annotations.Language
@@ -21,7 +21,7 @@ class MvBreadcrumbsProviderTest : MvTestBase() {
     """
     )
 
-    private fun doTextTest(@Language("Move") content: String, info: String) {
+    private fun doTextTest(@Language("Sui Move") content: String, info: String) {
         inlineFile(content.trimIndent())
         val crumbs = myFixture.breadcrumbsAtCaret.joinToString(separator = "\n") { it.text }
         UsefulTestCase.assertSameLines(info.trimIndent(), crumbs)

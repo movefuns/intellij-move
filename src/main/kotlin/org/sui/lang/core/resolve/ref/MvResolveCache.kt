@@ -37,11 +37,11 @@ import java.util.concurrent.atomic.AtomicReference
  * The main difference from the platform one: we invalidate the cache depends on [ResolveCacheDependency], when
  * platform cache invalidates on any PSI change.
  *
- * See [SuiMvPsiManager.moveStructureModificationTracker].
+ * See [MvPsiManager.moveStructureModificationTracker].
  */
 @Service(Service.Level.PROJECT)
 class MvResolveCache(project: Project) : Disposable {
-    /** The cache is cleared on [SuiMvPsiManager.moveStructureModificationTracker] increment */
+    /** The cache is cleared on [MvPsiManager.moveStructureModificationTracker] increment */
     private val _moveStructureDependentCache: AtomicReference<ConcurrentMap<PsiElement, Any>?> =
         AtomicReference(null)
 

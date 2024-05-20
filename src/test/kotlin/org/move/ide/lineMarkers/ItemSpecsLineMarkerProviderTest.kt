@@ -1,4 +1,4 @@
-package org.move.ide.lineMarkers
+package org.sui.ide.lineMarkers
 
 import org.sui.utils.tests.lineMarkers.LineMarkerProviderTestBase
 

@@ -7,8 +7,8 @@ import org.sui.ide.MoveIcons
 import org.sui.lang.core.psi.MvModule
 import org.sui.lang.core.psi.MvSpecFunction
 import org.sui.lang.core.psi.MvSpecInlineFunction
+import org.sui.lang.core.psi.functionItemPresentation
 import org.sui.lang.core.psi.impl.MvNameIdentifierOwnerImpl
-import org.sui.lang.core.psi.itemPresentation
 import org.sui.lang.core.stubs.MvSpecFunctionStub
 import org.sui.lang.core.stubs.MvStubbedNamedElementImpl
 import org.sui.lang.core.types.ItemQualName
@@ -39,7 +39,7 @@ abstract class MvSpecFunctionMixin : MvStubbedNamedElementImpl<MvSpecFunctionStu
 
     override fun getIcon(flags: Int): Icon = MoveIcons.FUNCTION
 
-    override fun getPresentation(): ItemPresentation? = this.itemPresentation
+    override fun getPresentation(): ItemPresentation? = this.functionItemPresentation
 
 }
 
@@ -48,5 +48,5 @@ abstract class MvSpecInlineFunctionMixin(node: ASTNode) : MvNameIdentifierOwnerI
 
     override fun getIcon(flags: Int): Icon = MoveIcons.FUNCTION
 
-    override fun getPresentation(): ItemPresentation? = this.itemPresentation
+    override fun getPresentation(): ItemPresentation? = this.functionItemPresentation
 }

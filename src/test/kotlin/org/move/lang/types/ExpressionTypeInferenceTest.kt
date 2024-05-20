@@ -1,4 +1,4 @@
-package org.move.lang.types
+package org.sui.lang.types
 
 import org.sui.utils.tests.types.TypificationTestCase
 

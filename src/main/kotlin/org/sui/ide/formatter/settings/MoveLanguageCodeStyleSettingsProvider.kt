@@ -1,4 +1,4 @@
-package org.sui.ide.formatter
+package org.sui.ide.formatter.settings
 
 import com.intellij.application.options.CodeStyleAbstractConfigurable
 import com.intellij.application.options.CodeStyleAbstractPanel
@@ -6,8 +6,6 @@ import com.intellij.application.options.IndentOptionsEditor
 import com.intellij.application.options.SmartIndentOptionsEditor
 import com.intellij.lang.Language
 import com.intellij.psi.codeStyle.*
-import org.sui.ide.formatter.settings.MoveCodeStyleMainPanel
-import org.sui.ide.formatter.settings.MoveCodeStyleSettings
 import org.sui.lang.MoveLanguage
 
 class MvLanguageCodeStyleSettingsProvider : LanguageCodeStyleSettingsProvider() {
@@ -26,7 +24,7 @@ class MvLanguageCodeStyleSettingsProvider : LanguageCodeStyleSettingsProvider() 
         }
     }
 
-    override fun getConfigurableDisplayName() = "Sui Move"
+    override fun getConfigurableDisplayName() = "Sui Move Language"
 
     override fun getCodeSample(settingsType: SettingsType): String =
         when (settingsType) {

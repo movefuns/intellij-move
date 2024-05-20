@@ -1,4 +1,4 @@
-package org.move.ide.annotator.syntaxErrors
+package org.sui.ide.annotator.syntaxErrors
 
 // TODO: test
 // TODO: global is not allowed in schemas

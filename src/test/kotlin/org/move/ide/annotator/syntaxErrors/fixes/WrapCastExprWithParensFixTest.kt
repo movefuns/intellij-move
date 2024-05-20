@@ -1,6 +1,5 @@
-package org.move.ide.annotator.syntaxErrors.fixes
+package org.sui.ide.annotator.syntaxErrors.fixes
 
-import org.sui.ide.annotator.MvErrorAnnotator
 import org.sui.ide.annotator.MvSyntaxErrorAnnotator
 import org.sui.utils.tests.annotation.AnnotatorTestCase
 

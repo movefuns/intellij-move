@@ -16,7 +16,9 @@ import org.sui.openapiext.common.isUnitTestMode
 
 abstract class MvAnnotatorBase : Annotator {
     final override fun annotate(element: PsiElement, holder: AnnotationHolder) {
-        if (!isUnitTestMode || javaClass in enabledAnnotators) {
+        if (!isUnitTestMode
+            || javaClass in enabledAnnotators
+        ) {
             annotateInternal(element, holder)
         }
     }

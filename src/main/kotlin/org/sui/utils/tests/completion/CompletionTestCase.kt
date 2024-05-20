@@ -49,6 +49,6 @@ abstract class CompletionTestCase : BasePlatformTestCase() {
         @Language("Move") code: String
     ) = completionFixture.checkNotContainsCompletion(code, variant)
 
-    protected fun checkNoCompletion(@Language("Move") code: String) = completionFixture.checkNoCompletion(code)
+    protected fun checkNoCompletion(@Language("Sui Move") code: String) = completionFixture.checkNoCompletion(code)
 
 }

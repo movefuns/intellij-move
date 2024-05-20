@@ -17,7 +17,7 @@ import org.sui.lang.core.types.ty.TyUnknown
 import org.sui.utils.AsyncParameterInfoHandlerBase
 
 class StructLitFieldsInfoHandler :
-    org.sui.utils.AsyncParameterInfoHandlerBase<MvStructLitFieldsBlock, FieldsDescription>() {
+    AsyncParameterInfoHandlerBase<MvStructLitFieldsBlock, FieldsDescription>() {
 
     override fun findTargetElement(file: PsiFile, offset: Int): MvStructLitFieldsBlock? {
         val element = file.findElementAt(offset) ?: return null

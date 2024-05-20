@@ -18,7 +18,7 @@ abstract class MvLexerTestBase : LexerTestCase(),
                                  MvTestCase {
     override fun getDirPath(): String = throw UnsupportedOperationException()
 
-    override fun getTestDataPath(): String = "org/move/lang/lexer"
+    override fun getTestDataPath(): String = "org/sui/lang/lexer"
     override fun createLexer(): Lexer = createMoveLexer()
 
     override fun getTestName(lowercaseFirstLetter: Boolean): String {

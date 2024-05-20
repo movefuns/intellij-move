@@ -24,7 +24,7 @@ interface MvModificationTrackerOwner : MvElement {
      * Increments local modification counter if needed.
      *
      * If and only if false returned,
-     * [SuiMvPsiManager.moveStructureModificationTracker]
+     * [MvPsiManager.moveStructureModificationTracker]
      * will be incremented.
      *
      * @param element the changed psi element

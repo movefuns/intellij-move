@@ -1,4 +1,4 @@
-package org.move.lang.completion
+package org.sui.lang.completion
 
 import org.intellij.lang.annotations.Language
 import org.sui.lang.core.psi.MvQualNamedElement

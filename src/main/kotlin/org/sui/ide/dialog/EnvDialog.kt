@@ -1,14 +1,14 @@
 package org.sui.ide.dialog
 
-import com.intellij.execution.process.ProcessOutput
+import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.util.ExecUtil
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
-import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
-import org.sui.cli.settings.suiExec
 import org.sui.common.NOTIFACATION_GROUP
 import org.sui.ide.actions.OpenSwitchEnvsDialogAction
 import java.awt.BorderLayout
@@ -17,29 +17,21 @@ import javax.swing.*
 import javax.swing.table.DefaultTableModel
 
 class EnvDialog(var data: OpenSwitchEnvsDialogAction.Envs) : DialogWrapper(true) {
+
+    private val BUTTON_TEXT = "Switch"
+    private val SWITCH_ENV_TITLE = "Switch Network Environment"
+
     init {
         init()
-        title = "Click Env To Switch"
+        title = "Click Environment To Switch"
     }
 
     override fun createCenterPanel(): JComponent {
         val panel = JPanel()
         val tableModel = DefaultTableModel(arrayOf("alias", "rpc", "ws"), 0)
-        val table = JBTable(tableModel)
+        val table = setUpTable(tableModel)
 
-        data.netList.forEach { net ->
-            tableModel.addRow(arrayOf(net.alias, net.rpc, net.ws))
-        }
-        table.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
-
-        val button = JButton("Switch")
-        button.addActionListener {
-            val row = table.selectedRow
-            if (row >= 0) {
-                executeCommand(tableModel.getValueAt(row, 0).toString())
-            }
-            dispose()
-        }
+        val button = setUpButton(tableModel, table)
 
         val scrollPane = JBScrollPane(table)
         scrollPane.preferredSize = Dimension(550, 150)
@@ -49,26 +41,47 @@ class EnvDialog(var data: OpenSwitchEnvsDialogAction.Envs) : DialogWrapper(true)
         return panel
     }
 
+    private fun setUpTable(tableModel: DefaultTableModel): JBTable {
+        val table = JBTable(tableModel)
+        data.networks.forEach { net ->
+            tableModel.addRow(arrayOf(net.alias, net.rpc, net.ws))
+        }
+        table.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
+        return table
+    }
+
+    private fun setUpButton(tableModel: DefaultTableModel, table: JBTable): JButton {
+        val button = JButton(BUTTON_TEXT)
+        button.addActionListener {
+            val row = table.selectedRow
+            if (row >= 0) {
+                executeCommand(tableModel.getValueAt(row, 0).toString())
+            }
+            dispose()
+        }
+        return button
+    }
+
     override fun createActions(): Array<Action> {
         return arrayOf()
     }
 
     private fun executeCommand(env: String) {
-        val project = ProjectManager.getInstance().defaultProject
-
-        val onProcessComplete: (ProcessOutput?) -> Unit = { output ->
-            if (output != null && output.exitCode == 0) {
-                println("Process executed successfully with output: ${output.stdout}")
-                showNotification(env)
-            } else {
-                println("Process failed with error: ${output?.stderr}")
-            }
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val commandLine = GeneralCommandLine("sui", "client", "switch", "--env", env)
+            ExecUtil.execAndGetOutput(commandLine)
+            showNotification("network environment switched successfully")
         }
-        project.suiExec.toExecutor()
-            ?.simpleCommand(project, "client", listOf("switch", "--env", env), onProcessComplete)
     }
 
     private fun showNotification(message: String) {
-        Notifications.Bus.notify(Notification(NOTIFACATION_GROUP, "Switch Env", message, NotificationType.INFORMATION))
+        Notifications.Bus.notify(
+            Notification(
+                NOTIFACATION_GROUP,
+                SWITCH_ENV_TITLE,
+                message,
+                NotificationType.INFORMATION
+            )
+        )
     }
 }

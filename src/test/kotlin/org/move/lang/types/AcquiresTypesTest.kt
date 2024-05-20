@@ -1,4 +1,4 @@
-package org.move.lang.types
+package org.sui.lang.types
 
 import org.intellij.lang.annotations.Language
 import org.sui.ide.presentation.fullnameNoArgs
@@ -278,7 +278,7 @@ class AcquiresTypesTest : MvTestBase() {
 //    """, listOf("Element"))
 
 
-    private fun testFunction(@Language("Move") code: String, expectedTypes: List<String>) {
+    private fun testFunction(@Language("Sui Move") code: String, expectedTypes: List<String>) {
         InlineFile(myFixture, code, "main.move")
 
         val function = myFixture.findElementInEditor<MvFunction>()
@@ -292,7 +292,7 @@ class AcquiresTypesTest : MvTestBase() {
         }
     }
 
-    private fun testCallExpr(@Language("Move") code: String, expectedTypes: List<String>) {
+    private fun testCallExpr(@Language("Sui Move") code: String, expectedTypes: List<String>) {
         InlineFile(myFixture, code, "main.move")
 
         val callExpr = myFixture.findElementInEditor<MvCallExpr>()

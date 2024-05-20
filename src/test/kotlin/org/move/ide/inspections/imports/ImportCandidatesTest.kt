@@ -1,6 +1,5 @@
-package org.move.ide.inspections.imports
+package org.sui.ide.inspections.imports
 
-import org.sui.ide.inspections.imports.ImportContext
 import org.sui.ide.utils.imports.ImportCandidateCollector
 import org.sui.lang.core.resolve.ref.MvReferenceElement
 import org.sui.utils.tests.FileTreeBuilder

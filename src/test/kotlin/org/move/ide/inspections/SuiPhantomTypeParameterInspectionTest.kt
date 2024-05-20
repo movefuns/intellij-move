@@ -1,9 +1,8 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiPhantomTypeParameterInspection
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class SuiPhantomTypeParameterInspectionTest : InspectionTestBase(SuiPhantomTypeParameterInspection::class) {
+class SuiPhantomTypeParameterInspectionTest : InspectionTestBase(PhantomTypeParameterInspection::class) {
     fun `test no inspection if type parameter is used`() = checkErrors(
         """
     module 0x1::M {

@@ -1,9 +1,8 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiMvAbilityCheckInspection
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class SuiMvAbilityCheckInspectionTest : InspectionTestBase(SuiMvAbilityCheckInspection::class) {
+class SuiMvAbilityCheckInspectionTest : InspectionTestBase(MvAbilityCheckInspection::class) {
     fun `test no required ability for struct for type param`() = checkByText(
         """
     module 0x1::M {

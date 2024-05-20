@@ -1,7 +1,7 @@
 package org.sui.cli.runConfigurations
 
 import com.intellij.execution.actions.ConfigurationContext
-import org.sui.cli.runConfigurations.sui.FunctionCallConfigurationBase
+import org.sui.cli.runConfigurations.aptos.FunctionCallConfigurationBase
 import org.sui.lang.core.psi.MvFunction
 import org.sui.lang.core.psi.ext.ancestorOrSelf
 import org.sui.utils.tests.RunConfigurationProducerTestBase

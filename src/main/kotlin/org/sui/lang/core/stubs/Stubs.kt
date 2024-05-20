@@ -10,10 +10,10 @@ import org.sui.lang.core.types.StubAddress
 import org.sui.lang.core.types.deserializeStubAddress
 import org.sui.lang.core.types.psiStubAddress
 import org.sui.lang.core.types.serializeStubAddress
-import org.sui.stdext.makeBitMask
 import org.sui.openapiext.readNameAsString
 import org.sui.openapiext.readUTFFastAsNullable
 import org.sui.openapiext.writeUTFFastAsNullable
+import org.sui.stdext.makeBitMask
 
 interface MvNamedStub {
     val name: String?
@@ -38,10 +38,10 @@ interface MvAttributeOwnerStub {
             var verifyOnly = false
             for (attrItem in query.attrItems) {
                 hasAttrs = true
-                if (attrItem.name == "test_only") {
+                if (attrItem.referenceName == "test_only") {
                     testOnly = true
                 }
-                if (attrItem.name == "verify_only") {
+                if (attrItem.referenceName == "verify_only") {
                     verifyOnly = true
                 }
             }
@@ -81,7 +81,7 @@ class MvModuleStub(
     val address: StubAddress,
 ) : MvAttributeOwnerStubBase<MvModule>(parent, elementType), MvNamedStub {
 
-    object Type : MvStubElementType<MvModuleStub, MvModule>("SUI_MODULE") {
+    object Type : MvStubElementType<MvModuleStub, MvModule>("MODULE") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): MvModuleStub {
             val name = dataStream.readNameAsString()
             val flags = dataStream.readInt()
@@ -149,7 +149,7 @@ class MvFunctionStub(
         return "$addressText::$moduleName::$itemName"
     }
 
-    object Type : MvStubElementType<MvFunctionStub, MvFunction>("SUI_FUNCTION") {
+    object Type : MvStubElementType<MvFunctionStub, MvFunction>("FUNCTION") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): MvFunctionStub {
             val name = dataStream.readNameAsString()
             val flags = dataStream.readInt()
@@ -223,7 +223,7 @@ class MvSpecFunctionStub(
     override val name: String?,
 ) : StubBase<MvSpecFunction>(parent, elementType), MvNamedStub {
 
-    object Type : MvStubElementType<MvSpecFunctionStub, MvSpecFunction>("SUI_SPEC_FUNCTION") {
+    object Type : MvStubElementType<MvSpecFunctionStub, MvSpecFunction>("SPEC_FUNCTION") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?) =
             MvSpecFunctionStub(
                 parentStub,
@@ -254,7 +254,7 @@ class MvStructStub(
     override val flags: Int,
 ) : MvAttributeOwnerStubBase<MvStruct>(parent, elementType), MvNamedStub {
 
-    object Type : MvStubElementType<MvStructStub, MvStruct>("SUI_STRUCT") {
+    object Type : MvStubElementType<MvStructStub, MvStruct>("STRUCT") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): MvStructStub {
             val name = dataStream.readNameAsString()
             val flags = dataStream.readInt()
@@ -286,7 +286,7 @@ class MvSchemaStub(
     override val name: String?
 ) : StubBase<MvSchema>(parent, elementType), MvNamedStub {
 
-    object Type : MvStubElementType<MvSchemaStub, MvSchema>("SUI_SCHEMA") {
+    object Type : MvStubElementType<MvSchemaStub, MvSchema>("SCHEMA") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?) =
             MvSchemaStub(
                 parentStub,
@@ -316,7 +316,7 @@ class MvConstStub(
     override val name: String?
 ) : StubBase<MvConst>(parent, elementType), MvNamedStub {
 
-    object Type : MvStubElementType<MvConstStub, MvConst>("SUI_CONST") {
+    object Type : MvStubElementType<MvConstStub, MvConst>("CONST") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?) =
             MvConstStub(
                 parentStub,
@@ -346,7 +346,7 @@ class MvModuleSpecStub(
     val moduleName: String?,
 ) : StubBase<MvModuleSpec>(parent, elementType) {
 
-    object Type : MvStubElementType<MvModuleSpecStub, MvModuleSpec>("SUI_MODULE_SPEC") {
+    object Type : MvStubElementType<MvModuleSpecStub, MvModuleSpec>("MODULE_SPEC") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?) =
             MvModuleSpecStub(
                 parentStub,

@@ -10,7 +10,7 @@ abstract class MvNamingInspection(private val elementTitle: String) : MvLocalIns
     override val isSyntaxOnly: Boolean = true
 }
 
-class SuiMvConstNamingInspection : MvNamingInspection("Constant") {
+class MvConstNamingInspection : MvNamingInspection("Constant") {
     override fun buildMvVisitor(holder: ProblemsHolder, isOnTheFly: Boolean) = object : MvVisitor() {
         override fun visitConst(o: MvConst) {
             val ident = o.identifier ?: return
@@ -25,7 +25,7 @@ class SuiMvConstNamingInspection : MvNamingInspection("Constant") {
     }
 }
 
-class SuiMvFunctionNamingInspection : MvNamingInspection("Function") {
+class MvFunctionNamingInspection : MvNamingInspection("Function") {
     override fun buildMvVisitor(holder: ProblemsHolder, isOnTheFly: Boolean) = object : MvVisitor() {
 
         override fun visitFunction(o: MvFunction) = checkFunctionName(o)
@@ -45,7 +45,7 @@ class SuiMvFunctionNamingInspection : MvNamingInspection("Function") {
     }
 }
 
-class SuiMvStructNamingInspection : MvNamingInspection("Struct") {
+class MvStructNamingInspection : MvNamingInspection("Struct") {
     override fun buildMvVisitor(holder: ProblemsHolder, isOnTheFly: Boolean) = object : MvVisitor() {
         override fun visitStruct(o: MvStruct) {
             val ident = o.identifier ?: return
@@ -60,7 +60,7 @@ class SuiMvStructNamingInspection : MvNamingInspection("Struct") {
     }
 }
 
-class SuiMvLocalBindingNamingInspection : MvNamingInspection("Local variable") {
+class MvLocalBindingNamingInspection : MvNamingInspection("Local variable") {
     override fun buildMvVisitor(holder: ProblemsHolder, isOnTheFly: Boolean) = object : MvVisitor() {
         override fun visitBindingPat(o: MvBindingPat) {
             // filter out constants

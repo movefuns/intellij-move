@@ -1,4 +1,4 @@
-package org.move.ide.refactoring
+package org.sui.ide.refactoring
 
 //class RenameAddressTest : MvProjectTestBase() {
 //    fun `test rename from move correctly replaces Std in toml`() = doTest(

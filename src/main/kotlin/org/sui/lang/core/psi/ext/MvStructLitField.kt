@@ -4,8 +4,8 @@ import com.intellij.lang.ASTNode
 import org.sui.lang.MvElementTypes
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.resolve.ref.MvPolyVariantReference
-import org.sui.lang.core.resolve.ref.MvStructFieldReferenceImpl
 import org.sui.lang.core.resolve.ref.MvStructLitShorthandFieldReferenceImpl
+import org.sui.lang.core.resolve.ref.MvStructRefFieldReferenceImpl
 
 val MvStructLitField.structLitExpr: MvStructLitExpr
     get() = ancestorStrict()!!
@@ -22,7 +22,7 @@ fun MvStructLitField.resolveToBinding(): MvBindingPat? = resolveToElement()
 abstract class MvStructLitFieldMixin(node: ASTNode) : MvElementImpl(node),
                                                       MvStructLitField {
     override fun getReference(): MvPolyVariantReference {
-        if (!this.isShorthand) return MvStructFieldReferenceImpl(this)
+        if (!this.isShorthand) return MvStructRefFieldReferenceImpl(this)
         return MvStructLitShorthandFieldReferenceImpl(this)
     }
 }

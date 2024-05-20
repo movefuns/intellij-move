@@ -1,12 +1,8 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiMvConstNamingInspection
-import org.sui.ide.inspections.SuiMvFunctionNamingInspection
-import org.sui.ide.inspections.SuiMvLocalBindingNamingInspection
-import org.sui.ide.inspections.SuiMvStructNamingInspection
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class SuiMvConstNamingInspectionTest : InspectionTestBase(SuiMvConstNamingInspection::class) {
+class SuiMvConstNamingInspectionTest : InspectionTestBase(MvConstNamingInspection::class) {
     fun `test constants`() = checkByText(
         """
 module 0x1::M {
@@ -17,7 +13,7 @@ module 0x1::M {
     )
 }
 
-class SuiMvFunctionNamingInspectionTest : InspectionTestBase(SuiMvFunctionNamingInspection::class) {
+class SuiMvFunctionNamingInspectionTest : InspectionTestBase(MvFunctionNamingInspection::class) {
     fun `test function name cannot start with _`() = checkByText(
         """
 module 0x1::m {
@@ -43,7 +39,7 @@ module 0x1::m {
     )
 }
 
-class SuiMvStructNamingInspectionTest : InspectionTestBase(SuiMvStructNamingInspection::class) {
+class SuiMvStructNamingInspectionTest : InspectionTestBase(MvStructNamingInspection::class) {
     fun `test structs`() = checkByText(
         """
 module 0x1::M {
@@ -54,7 +50,7 @@ module 0x1::M {
     )
 }
 
-class SuiMvLocalBindingNamingInspectionTest : InspectionTestBase(SuiMvLocalBindingNamingInspection::class) {
+class SuiMvLocalBindingNamingInspectionTest : InspectionTestBase(MvLocalBindingNamingInspection::class) {
     fun `test function parameter`() = checkByText(
         """
 module 0x1::M {

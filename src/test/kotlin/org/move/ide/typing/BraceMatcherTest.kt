@@ -1,4 +1,4 @@
-package org.move.ide.typing
+package org.sui.ide.typing
 
 import com.intellij.codeInsight.highlighting.BraceMatchingUtil
 import com.intellij.openapi.editor.ex.EditorEx
@@ -42,7 +42,7 @@ class BraceMatcherTest : MvTypingTestCase() {
         noMatch("script { fun main() { let a = 4 /*caret*/< 5; let b = { 1 >> 2 }; } }")
     }
 
-    private fun noMatch(@Language("Move") source: String) {
+    private fun noMatch(@Language("Sui Move") source: String) {
         val sourceText = replaceCaretMarker(source)
 
         myFixture.configureByText(MoveFileType, sourceText)
@@ -57,7 +57,7 @@ class BraceMatcherTest : MvTypingTestCase() {
         check(!matched)
     }
 
-    private fun doMatch(@Language("Move") source: String, coBrace: String) {
+    private fun doMatch(@Language("Sui Move") source: String, coBrace: String) {
         val sourceText = replaceCaretMarker(source)
 
         myFixture.configureByText(MoveFileType, sourceText)
@@ -65,7 +65,7 @@ class BraceMatcherTest : MvTypingTestCase() {
         check(BraceMatchingUtil.getMatchedBraceOffset(myFixture.editor, true, myFixture.file) == expected)
     }
 
-//    private fun doTest(@Language("Move") before: String, type: Char, @Language("Move") after: String) {
+//    private fun doTest(@Language("Sui Move") before: String, type: Char, @Language("Move") after: String) {
 //        val beforeText = replaceCaretMarker(before)
 //        val afterText = replaceCaretMarker(after)
 //

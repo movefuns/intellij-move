@@ -1,6 +1,5 @@
-package org.move.ide.intentions
+package org.sui.ide.intentions
 
-import org.sui.ide.intentions.ChopStructLiteralIntention
 import org.sui.utils.tests.MvIntentionTestCase
 
 class ChopStructLiteralIntentionTest: MvIntentionTestCase(ChopStructLiteralIntention::class) {

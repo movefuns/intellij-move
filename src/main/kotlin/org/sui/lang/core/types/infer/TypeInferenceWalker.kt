@@ -17,9 +17,6 @@ class TypeInferenceWalker(
     val project: Project,
     private val returnTy: Ty
 ) {
-
-    private val fulfillmentContext: FulfillmentContext = ctx.fulfill
-
     val msl: Boolean = ctx.msl
 
     fun <T> mslScope(action: () -> T): T {
@@ -62,7 +59,8 @@ class TypeInferenceWalker(
                         "${bindingContext.elementType} binding is not inferred",
                         TyUnknown
                     )
-                }            }
+                }
+            }
             this.ctx.writePatTy(binding, ty)
         }
     }
@@ -115,12 +113,7 @@ class TypeInferenceWalker(
         if (!ty.hasTyInfer) return ty
         val tyRes = ctx.resolveTypeVarsIfPossible(ty)
         if (!tyRes.hasTyInfer) return tyRes
-        selectObligationsWherePossible()
         return ctx.resolveTypeVarsIfPossible(tyRes)
-    }
-
-    private fun selectObligationsWherePossible() {
-        fulfillmentContext.selectWherePossible()
     }
 
     private fun processStatement(stmt: MvStmt) {
@@ -141,7 +134,7 @@ class TypeInferenceWalker(
                     } else {
                         pat?.anonymousTyVar() ?: TyUnknown
                     }
-                pat?.extractBindings(
+                pat?.collectBindings(
                     this,
                     explicitTy ?: resolveTypeVarsWithObligations(inferredTy)
                 )
@@ -212,14 +205,14 @@ class TypeInferenceWalker(
             is MvRefExpr -> inferRefExprTy(expr)
             is MvBorrowExpr -> inferBorrowExprTy(expr, expected)
             is MvCallExpr -> inferCallExprTy(expr, expected)
-            is MvMacroCallExpr -> inferMacroCallExprTy(expr)
+            is MvAssertBangExpr -> inferMacroCallExprTy(expr)
             is MvStructLitExpr -> inferStructLitExprTy(expr, expected)
             is MvVectorLitExpr -> inferVectorLitExpr(expr, expected)
             is MvIndexExpr -> inferIndexExprTy(expr)
 
             is MvDotExpr -> inferDotExprTy(expr)
             is MvDerefExpr -> inferDerefExprTy(expr)
-            is MvLitExpr -> inferLitExprTy(expr)
+            is MvLitExpr -> inferLitExprTy(expr, expected)
             is MvTupleLitExpr -> inferTupleLitExprTy(expr, expected)
             is MvLambdaExpr -> inferLambdaExpr(expr, expected)
 
@@ -247,6 +240,7 @@ class TypeInferenceWalker(
             is MvIfExpr -> inferIfExprTy(expr, expected)
             is MvWhileExpr -> inferWhileExpr(expr)
             is MvLoopExpr -> inferLoopExpr(expr)
+            is MvForExpr -> inferForExpr(expr)
             is MvReturnExpr -> {
                 expr.expr?.inferTypeCoercableTo(returnTy)
                 TyNever
@@ -409,8 +403,8 @@ class TypeInferenceWalker(
         }
     }
 
-    fun inferMacroCallExprTy(macroExpr: MvMacroCallExpr): Ty {
-        val ident = macroExpr.macroIdent.identifier
+    fun inferMacroCallExprTy(macroExpr: MvAssertBangExpr): Ty {
+        val ident = macroExpr.identifier
         if (ident.text == "assert") {
             val formalInputTys = listOf(TyBool, TyInteger.default())
             inferArgumentTypes(formalInputTys, emptyList(), macroExpr.valueArguments.map { it.expr })
@@ -567,7 +561,7 @@ class TypeInferenceWalker(
         val posExpr = indexExpr.exprList.drop(1).first()
         val posTy = posExpr.inferType()
         return when (posTy) {
-            is TyIntegerRange -> (receiverTy as? TyVector) ?: TyUnknown
+            is TyRange -> (receiverTy as? TyVector) ?: TyUnknown
             is TyNum -> (receiverTy as? TyVector)?.item ?: TyUnknown
             else -> TyUnknown
         }
@@ -590,7 +584,7 @@ class TypeInferenceWalker(
                 val rangeTy = quantBinding.expr?.inferType()
                 when (rangeTy) {
                     is TyVector -> rangeTy.item
-                    is TyIntegerRange -> TyInteger.DEFAULT
+                    is TyRange -> TyInteger.DEFAULT
                     else -> TyUnknown
                 }
             }
@@ -601,9 +595,11 @@ class TypeInferenceWalker(
     }
 
     private fun inferRangeExprTy(rangeExpr: MvRangeExpr): Ty {
-        rangeExpr.exprList.firstOrNull()?.inferTypeCoercableTo(TyInteger.DEFAULT)
-        rangeExpr.exprList.drop(1).firstOrNull()?.inferTypeCoercableTo(TyInteger.DEFAULT)
-        return TyIntegerRange
+        val leftTy = rangeExpr.exprList.firstOrNull()?.inferType() ?: TyUnknown
+//        rangeExpr.exprList.firstOrNull()?.inferTypeCoercableTo(TyInteger.DEFAULT)
+        rangeExpr.exprList.drop(1).firstOrNull()?.inferType(expected = leftTy)
+//        rangeExpr.exprList.drop(1).firstOrNull()?.inferTypeCoercableTo(TyInteger.DEFAULT)
+        return TyRange(leftTy)
     }
 
     private fun inferBinaryExprTy(binaryExpr: MvBinaryExpr): Ty {
@@ -740,6 +736,7 @@ class TypeInferenceWalker(
         val ty = resolveTypeVarsWithObligations(this)
         return ty is TyInteger
                 || ty is TyNum
+                || ty is TyInfer.TyVar
                 || ty is TyInfer.IntVar
                 || ty is TyUnknown
                 || ty is TyNever
@@ -776,19 +773,26 @@ class TypeInferenceWalker(
         return TyTuple(types)
     }
 
-    private fun inferLitExprTy(litExpr: MvLitExpr): Ty {
-        return when {
-            litExpr.boolLiteral != null -> TyBool
-            litExpr.addressLit != null -> TyAddress
-            litExpr.integerLiteral != null || litExpr.hexIntegerLiteral != null -> {
-                if (ctx.msl) return TyNum
-                val literal = (litExpr.integerLiteral ?: litExpr.hexIntegerLiteral)!!
-                return TyInteger.fromSuffixedLiteral(literal) ?: TyInfer.IntVar()
+    private fun inferLitExprTy(litExpr: MvLitExpr, expected: Expectation): Ty {
+        val litTy =
+            when {
+                litExpr.boolLiteral != null -> TyBool
+                litExpr.addressLit != null -> TyAddress
+                litExpr.integerLiteral != null || litExpr.hexIntegerLiteral != null -> {
+                    if (ctx.msl) return TyNum
+                    val literal = (litExpr.integerLiteral ?: litExpr.hexIntegerLiteral)!!
+                    return TyInteger.fromSuffixedLiteral(literal) ?: TyInfer.IntVar()
+                }
+
+                litExpr.byteStringLiteral != null -> TyByteString(ctx.msl)
+                litExpr.hexStringLiteral != null -> TyHexString(ctx.msl)
+                else -> TyUnknown
             }
-            litExpr.byteStringLiteral != null -> TyByteString(ctx.msl)
-            litExpr.hexStringLiteral != null -> TyHexString(ctx.msl)
-            else -> TyUnknown
-        }
+        expected.onlyHasTy(this.ctx)
+            ?.let {
+                coerce(litExpr, litTy, it)
+            }
+        return litTy
     }
 
     private fun inferIfExprTy(ifExpr: MvIfExpr, expected: Expectation): Ty {
@@ -849,20 +853,35 @@ class TypeInferenceWalker(
         if (conditionExpr != null) {
             conditionExpr.inferTypeCoercableTo(TyBool)
         }
-        val codeBlock = whileExpr.codeBlock
-        val inlineBlockExpr = whileExpr.inlineBlock?.expr
-
-        val expected = Expectation.maybeHasType(TyUnit)
-        when {
-            codeBlock != null -> codeBlock.inferBlockType(expected)
-            inlineBlockExpr != null -> inlineBlockExpr.inferType(expected)
-        }
-        return TyUnit
+        return inferLoopLikeBlock(whileExpr)
     }
 
     private fun inferLoopExpr(loopExpr: MvLoopExpr): Ty {
-        val codeBlock = loopExpr.codeBlock
-        val inlineBlockExpr = loopExpr.inlineBlock?.expr
+        return inferLoopLikeBlock(loopExpr)
+    }
+
+    private fun inferForExpr(forExpr: MvForExpr): Ty {
+        val iterCondition = forExpr.forIterCondition
+        if (iterCondition != null) {
+            val rangeExpr = iterCondition.expr
+            val bindingTy =
+                if (rangeExpr != null) {
+                    val rangeTy = rangeExpr.inferType() as? TyRange
+                    rangeTy?.item ?: TyUnknown
+                } else {
+                    TyUnknown
+                }
+            val bindingPat = iterCondition.bindingPat
+            if (bindingPat != null) {
+                this.ctx.writePatTy(bindingPat, bindingTy)
+            }
+        }
+        return inferLoopLikeBlock(forExpr)
+    }
+
+    private fun inferLoopLikeBlock(loopLike: MvLoopLike): Ty {
+        val codeBlock = loopLike.codeBlock
+        val inlineBlockExpr = loopLike.inlineBlock?.expr
         val expected = Expectation.maybeHasType(TyUnit)
         when {
             codeBlock != null -> codeBlock.inferBlockType(expected)

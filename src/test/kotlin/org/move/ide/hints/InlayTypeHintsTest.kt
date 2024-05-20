@@ -1,4 +1,4 @@
-package org.move.ide.hints
+package org.sui.ide.hints
 
 import com.intellij.codeInsight.hints.LinearOrderInlayRenderer
 import org.intellij.lang.annotations.Language
@@ -64,7 +64,7 @@ class InlayTypeHintsTest : MvTestBase() {
         }
     """)
 
-    private fun checkByText(@Language("Move") code: String) {
+    private fun checkByText(@Language("Sui Move") code: String) {
         inlineFile(
             code.trimIndent()
                 .replace(HINT_COMMENT_PATTERN, "<$1/>")

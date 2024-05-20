@@ -1,7 +1,5 @@
-package org.move.ide.hints
+package org.sui.ide.hints
 
-import org.sui.ide.hints.FieldsDescription
-import org.sui.ide.hints.StructLitFieldsInfoHandler
 import org.sui.lang.core.psi.MvStructLitFieldsBlock
 import org.sui.utils.tests.ParameterInfoHandlerTestCase
 

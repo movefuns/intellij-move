@@ -12,10 +12,7 @@ import org.sui.lang.core.completion.CompletionContext
 import org.sui.lang.core.completion.UNIMPORTED_ITEM_PRIORITY
 import org.sui.lang.core.completion.createLookupElement
 import org.sui.lang.core.psi.*
-import org.sui.lang.core.psi.ext.ancestors
-import org.sui.lang.core.psi.ext.endOffset
-import org.sui.lang.core.psi.ext.isMsl
-import org.sui.lang.core.psi.ext.isSelf
+import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.resolve.*
 import org.sui.lang.core.resolve.ref.MvReferenceElement
 import org.sui.lang.core.resolve.ref.Namespace
@@ -27,7 +24,13 @@ import org.sui.lang.core.types.ty.TyUnknown
 
 abstract class MvPathCompletionProvider : MvCompletionProvider() {
 
-    abstract fun itemVis(pathElement: MvPath): ItemVis
+    abstract val namespace: Namespace
+
+    open fun pathScopeInfo(pathElement: MvPath): ContextScopeInfo =
+        ContextScopeInfo(
+            letStmtScope = pathElement.letStmtScope,
+            refItemScopes = pathElement.refItemScopes,
+        )
 
     final override fun addCompletions(
         parameters: CompletionParameters,
@@ -40,11 +43,12 @@ abstract class MvPathCompletionProvider : MvCompletionProvider() {
         if (parameters.position !== pathElement.referenceNameElement) return
 
         val moduleRef = pathElement.moduleRef
-        val itemVis = itemVis(pathElement)
-        val msl = pathElement.isMsl()
+        val namespaces = setOf(this.namespace)
+        val pathScopeInfo = pathScopeInfo(pathElement)
+        val msl = pathElement.isMslScope
         val expectedTy = getExpectedTypeForEnclosingPathOrDotExpr(pathElement, msl)
 
-        val ctx = CompletionContext(pathElement, itemVis, expectedTy)
+        val ctx = CompletionContext(pathElement, namespaces, pathScopeInfo, expectedTy)
 
         if (moduleRef != null) {
             val module = moduleRef.reference?.resolveWithAliases() as? MvModule
@@ -53,7 +57,7 @@ abstract class MvPathCompletionProvider : MvCompletionProvider() {
                 moduleRef.isSelf -> setOf(Visibility.Internal)
                 else -> Visibility.buildSetOfVisibilities(pathElement)
             }
-            processModuleItems(module, itemVis.copy(visibilities = vs)) {
+            processModuleItems(module, namespaces, vs, pathScopeInfo) {
                 val lookup = it.element.createLookupElement(ctx)
                 result.addElement(lookup)
                 false
@@ -62,16 +66,14 @@ abstract class MvPathCompletionProvider : MvCompletionProvider() {
         }
 
         val processedNames = mutableSetOf<String>()
-        processItems(pathElement, itemVis) {
-            if (processedNames.contains(it.name)) return@processItems false
-            processedNames.add(it.name)
-
-            val lookupElement = it.element.createLookupElement(
-                ctx,
-                priority = it.element.completionPriority
+        processItems(pathElement, namespaces, pathScopeInfo) { (name, element) ->
+            if (processedNames.contains(name)) {
+                return@processItems false
+            }
+            processedNames.add(name)
+            result.addElement(
+                element.createLookupElement(ctx, priority = element.completionPriority)
             )
-            result.addElement(lookupElement)
-
             false
         }
 
@@ -80,7 +82,12 @@ abstract class MvPathCompletionProvider : MvCompletionProvider() {
 
         val originalPathElement = parameters.originalPosition?.parent as? MvPath ?: return
         val importContext =
-            ImportContext.from(originalPathElement, itemVis.copy(visibilities = setOf(Visibility.Public)))
+            ImportContext.from(
+                originalPathElement,
+                namespaces,
+                setOf(Visibility.Public),
+                pathScopeInfo
+            )
         val candidates = getImportCandidates(
             parameters,
             result,
@@ -105,14 +112,16 @@ object NamesCompletionProvider : MvPathCompletionProvider() {
                 .andNot(MvPsiPatterns.pathType())
                 .andNot(MvPsiPatterns.schemaLit())
 
-    override fun itemVis(pathElement: MvPath): ItemVis {
-        return ItemVis(
-            setOf(Namespace.NAME),
-            Visibility.none(),
-            mslLetScope = pathElement.mslLetScope,
-            itemScope = pathElement.itemScope,
-        )
-    }
+    override val namespace: Namespace get() = Namespace.NAME
+
+//    override fun itemVis(pathElement: MvPath): ItemVis {
+//        return ItemVis(
+//            setOf(Namespace.NAME),
+//            Visibility.none(),
+//            mslLetScope = pathElement.mslLetScope,
+//            itemScopes = pathElement.itemScopes,
+//        )
+//    }
 }
 
 object FunctionsCompletionProvider : MvPathCompletionProvider() {
@@ -122,28 +131,32 @@ object FunctionsCompletionProvider : MvPathCompletionProvider() {
                 .andNot(MvPsiPatterns.pathType())
                 .andNot(MvPsiPatterns.schemaLit())
 
-    override fun itemVis(pathElement: MvPath): ItemVis {
-        return ItemVis(
-            setOf(Namespace.FUNCTION),
-            Visibility.none(),
-            mslLetScope = pathElement.mslLetScope,
-            itemScope = pathElement.itemScope,
-        )
-    }
+    override val namespace: Namespace get() = Namespace.FUNCTION
+
+//    override fun itemVis(pathElement: MvPath): ItemVis {
+//        return ItemVis(
+//            setOf(Namespace.FUNCTION),
+//            Visibility.none(),
+//            mslLetScope = pathElement.mslLetScope,
+//            itemScopes = pathElement.itemScopes,
+//        )
+//    }
 }
 
 object TypesCompletionProvider : MvPathCompletionProvider() {
     override val elementPattern: ElementPattern<out PsiElement>
         get() = MvPsiPatterns.pathType()
 
-    override fun itemVis(pathElement: MvPath): ItemVis {
-        return ItemVis(
-            setOf(Namespace.TYPE),
-            Visibility.none(),
-            mslLetScope = pathElement.mslLetScope,
-            itemScope = pathElement.itemScope,
-        )
-    }
+    override val namespace: Namespace get() = Namespace.TYPE
+
+//    override fun itemVis(pathElement: MvPath): ItemVis {
+//        return ItemVis(
+//            setOf(Namespace.TYPE),
+//            Visibility.none(),
+//            mslLetScope = pathElement.mslLetScope,
+//            itemScopes = pathElement.itemScopes,
+//        )
+//    }
 }
 
 object SchemasCompletionProvider : MvPathCompletionProvider() {
@@ -153,13 +166,12 @@ object SchemasCompletionProvider : MvPathCompletionProvider() {
                 MvPsiPatterns.schemaLit(), MvPsiPatterns.pathInsideIncludeStmt()
             )
 
+    override val namespace: Namespace get() = Namespace.SCHEMA
 
-    override fun itemVis(pathElement: MvPath): ItemVis {
-        return ItemVis(
-            setOf(Namespace.SCHEMA),
-            Visibility.none(),
-            mslLetScope = MslLetScope.EXPR_STMT,
-            itemScope = pathElement.itemScope,
+    override fun pathScopeInfo(pathElement: MvPath): ContextScopeInfo {
+        return ContextScopeInfo(
+            letStmtScope = LetStmtScope.EXPR_STMT,
+            refItemScopes = pathElement.refItemScopes,
         )
     }
 }

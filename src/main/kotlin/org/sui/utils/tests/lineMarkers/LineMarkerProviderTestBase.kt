@@ -12,7 +12,7 @@ abstract class LineMarkerProviderTestBase : MvTestBase() {
         lineMarkerTestHelper = LineMarkerTestHelper(myFixture)
     }
 
-    protected fun doTestByText(@Language("Move") source: String) {
+    protected fun doTestByText(@Language("Sui Move") source: String) {
         lineMarkerTestHelper.doTestByText("main.move", source)
     }
 

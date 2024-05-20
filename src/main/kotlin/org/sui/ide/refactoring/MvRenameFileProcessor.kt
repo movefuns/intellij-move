@@ -11,6 +11,7 @@ import com.intellij.refactoring.listeners.RefactoringElementListener
 import com.intellij.refactoring.rename.RenameDialog
 import com.intellij.refactoring.rename.RenamePsiFileProcessor
 import com.intellij.usageView.UsageInfo
+import org.sui.lang.MoveFile
 import org.sui.lang.MoveLanguage
 import org.sui.lang.core.psi.MvModule
 import org.sui.lang.core.psi.rename
@@ -25,7 +26,7 @@ class MvRenameFileProcessor : RenamePsiFileProcessor() {
         return object : PsiFileRenameDialog(project, element, nameSuggestionContext, editor) {
             override fun canRun() {
                 super.canRun()
-                val moveFile = element as? org.sui.lang.MoveFile ?: return
+                val moveFile = element as? MoveFile ?: return
                 if (moveFile.singleModule() != null) {
                     val newModuleName = FileUtil.getNameWithoutExtension(newName)
                     val namesValidator = LanguageNamesValidation.INSTANCE.forLanguage(MoveLanguage)
@@ -54,7 +55,7 @@ class MvRenameFileProcessor : RenamePsiFileProcessor() {
         usages: Array<out UsageInfo>,
         listener: RefactoringElementListener?
     ) {
-        val moveFile = element as? org.sui.lang.MoveFile ?: return
+        val moveFile = element as? MoveFile ?: return
 
         val newModuleName = FileUtil.getNameWithoutExtension(newName)
         val module = moveFile.singleModule()
@@ -64,7 +65,8 @@ class MvRenameFileProcessor : RenamePsiFileProcessor() {
         super.renameElement(element, newName, usages, listener)
     }
 
-    private fun org.sui.lang.MoveFile.singleModule(): MvModule? {
+    private fun MoveFile.singleModule(): MvModule? {
+        val virtualFile = virtualFile ?: return null
         return modules()
             .singleOrNull()
             ?.takeIf { it.name == virtualFile.nameWithoutExtension }

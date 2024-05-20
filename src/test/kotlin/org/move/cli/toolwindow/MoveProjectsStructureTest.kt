@@ -3,7 +3,7 @@ package org.sui.cli.toolwindow
 import com.intellij.ide.util.treeView.AbstractTreeStructure
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.ProjectViewTestUtil
-import org.sui.cli.moveProjects
+import org.sui.cli.moveProjectsService
 import org.sui.utils.tests.MvProjectTestBase
 import org.sui.utils.tests.TreeBuilder
 
@@ -61,7 +61,7 @@ Root
         val structure = MoveProjectsTreeStructure(
             MoveProjectsTree(),
             testRootDisposable,
-            project.moveProjects.allProjects.toList()
+            project.moveProjectsService.allProjects.toList()
         )
         assertStructureEqual(structure, expectedTreeStructure.trimIndent() + "\n")
     }

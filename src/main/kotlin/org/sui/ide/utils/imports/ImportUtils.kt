@@ -2,7 +2,7 @@ package org.sui.ide.utils.imports
 
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.childrenOfType
-import org.sui.lang.core.psi.ext.isTestOnly
+import org.sui.lang.core.psi.ext.hasTestOnlyAttr
 import org.sui.lang.core.psi.ext.names
 import org.sui.lang.core.types.ItemQualName
 import org.sui.openapiext.checkWriteAccessAllowed
@@ -17,8 +17,8 @@ fun ImportCandidate.import(context: MvElement) {
         ?: context.containingScript?.scriptBlock
         ?: return
     val insertTestOnly =
-        insertionScope.itemScope == ItemScope.MAIN
-                && context.itemScope == ItemScope.TEST
+        insertionScope.itemScope == NamedItemScope.MAIN
+                && context.itemScope == NamedItemScope.TEST
     insertionScope.insertUseItem(qualName, insertTestOnly)
 }
 
@@ -49,7 +49,7 @@ private fun tryInsertingIntoExistingUseStmt(
     val psiFactory = mod.project.psiFactory
     return mod
         .useStmtList
-        .filter { it.isTestOnly == testOnly }
+        .filter { it.hasTestOnlyAttr == testOnly }
         .mapNotNull { it.itemUseSpeck }
         .any { tryGroupWithItemSpeck(psiFactory, it, usePath) }
 }

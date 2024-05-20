@@ -1,4 +1,4 @@
-package org.move.toml
+package org.sui.toml
 
 import org.sui.toml.MoveTomlErrorAnnotator
 import org.sui.utils.tests.annotation.AnnotatorTestCase

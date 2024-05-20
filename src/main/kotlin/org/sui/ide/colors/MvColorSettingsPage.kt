@@ -15,7 +15,7 @@ class MvColorSettingsPage : ColorSettingsPage {
         StreamUtil.convertSeparators(text)
     }
 
-    override fun getDisplayName() = "Move"
+    override fun getDisplayName() = "SuiMove"
     override fun getIcon() = MoveIcons.MOVE_LOGO
     override fun getHighlighter() = MvHighlighter()
     override fun getAdditionalHighlightingTagToDescriptorMap() = ANNOTATOR_TAGS

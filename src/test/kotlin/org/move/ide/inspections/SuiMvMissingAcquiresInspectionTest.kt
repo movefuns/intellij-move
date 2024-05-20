@@ -1,9 +1,8 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiMvMissingAcquiresInspection
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class SuiMvMissingAcquiresInspectionTest : InspectionTestBase(SuiMvMissingAcquiresInspection::class) {
+class SuiMvMissingAcquiresInspectionTest : InspectionTestBase(MvMissingAcquiresInspection::class) {
     fun `test no error when acquired type cannot be inferred`() = checkErrors(
         """
     module 0x1::M {

@@ -1,6 +1,5 @@
-package org.move.ide.intentions
+package org.sui.ide.intentions
 
-import org.sui.ide.intentions.RemoveCurlyBracesIntention
 import org.sui.utils.tests.MvIntentionTestCase
 
 class RemoveCurlyBracesIntentionTest: MvIntentionTestCase(RemoveCurlyBracesIntention::class) {

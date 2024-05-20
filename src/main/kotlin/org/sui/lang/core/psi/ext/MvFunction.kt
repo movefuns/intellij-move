@@ -69,7 +69,7 @@ fun MvFunction.functionId(moveProject: MoveProject): String? = qualName?.cmdText
 
 val MvFunction.testAttrItem: MvAttrItem? get() = queryAttributes.getAttrItem("test")
 
-val MvFunction.isTest: Boolean
+val MvFunction.hasTestAttr: Boolean
     get() {
         val stub = greenStub
         return stub?.isTest ?: queryAttributes.isTest
@@ -186,5 +186,5 @@ abstract class MvFunctionMixin : MvStubbedNamedElementImpl<MvFunctionStub>,
 
     override fun getIcon(flags: Int): Icon = MoveIcons.FUNCTION
 
-    override fun getPresentation(): ItemPresentation? = this.itemPresentation
+    override fun getPresentation(): ItemPresentation? = this.functionItemPresentation
 }

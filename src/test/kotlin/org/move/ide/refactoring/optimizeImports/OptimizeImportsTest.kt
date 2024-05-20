@@ -1,4 +1,4 @@
-package org.move.ide.refactoring.optimizeImports
+package org.sui.ide.refactoring.optimizeImports
 
 class OptimizeImportsTest : OptimizeImportsTestBase() {
     fun `test remove unused struct import`() = doTest("""

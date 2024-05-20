@@ -4,13 +4,13 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.sui.cli.Consts
-import org.sui.cli.moveProjects
+import org.sui.cli.moveProjectsService
 
-@Service
+@Service(Service.Level.PROJECT)
 class MoveSettingsFilesService(private val project: Project) {
     fun collectSettingsFiles(): List<String> {
         val out = mutableListOf<String>()
-        for (moveProject in project.moveProjects.allProjects) {
+        for (moveProject in project.moveProjectsService.allProjects) {
             for (movePackage in moveProject.movePackages()) {
                 val root = movePackage.contentRoot.path
                 out.add("$root/${Consts.MANIFEST_FILE}")

@@ -1,23 +1,22 @@
 package org.sui.cli.runConfigurations.sui
 
-import com.intellij.execution.configurations.ConfigurationTypeBase
 import com.intellij.execution.configurations.ConfigurationTypeUtil
+import com.intellij.execution.configurations.RunConfiguration
+import com.intellij.execution.configurations.SimpleConfigurationType
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NotNullLazyValue
-import org.sui.cli.runConfigurations.sui.any.AnyCommandConfigurationFactory
 import org.sui.ide.MoveIcons
 
 class SuiConfigurationType :
-    ConfigurationTypeBase(
+    SimpleConfigurationType(
         "SuiCommandConfiguration",
-        "Sui Command",
+        "Sui",
         "Sui command execution",
-        NotNullLazyValue.createConstantValue(MoveIcons.SUI_ICON)
+        NotNullLazyValue.createConstantValue(MoveIcons.SUI_LOGO)
     ) {
 
-    init {
-//        addFactory(BuildCommandConfigurationFactory(this))
-//        addFactory(TestCommandConfigurationFactory(this))
-        addFactory(AnyCommandConfigurationFactory(this))
+    override fun createTemplateConfiguration(project: Project): RunConfiguration {
+        return SuiCommandConfiguration(project, this)
     }
 
     companion object {

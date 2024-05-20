@@ -4,20 +4,21 @@ import com.intellij.codeInspection.InspectionManager
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.lang.ImportOptimizer
 import com.intellij.psi.*
-import org.sui.ide.inspections.SuiMvUnusedImportInspection
+import org.sui.ide.inspections.MvUnusedImportInspection
 import org.sui.ide.inspections.imports.ImportAnalyzer
 import org.sui.ide.utils.imports.COMPARATOR_FOR_ITEMS_IN_USE_GROUP
 import org.sui.ide.utils.imports.UseStmtWrapper
+import org.sui.lang.MoveFile
 import org.sui.lang.MvElementTypes.L_BRACE
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.stdext.withNext
 
 class MvImportOptimizer : ImportOptimizer {
-    override fun supports(file: PsiFile) = file is org.sui.lang.MoveFile
+    override fun supports(file: PsiFile) = file is MoveFile
 
     override fun processFile(file: PsiFile) = Runnable {
-        if (!SuiMvUnusedImportInspection.isEnabled(file.project)) return@Runnable
+        if (!MvUnusedImportInspection.isEnabled(file.project)) return@Runnable
 
         val documentManager = PsiDocumentManager.getInstance(file.project)
         val document = documentManager.getDocument(file)
@@ -30,7 +31,7 @@ class MvImportOptimizer : ImportOptimizer {
         object : PsiRecursiveElementVisitor() {
             override fun visitElement(element: PsiElement) {
                 if (element is MvImportsOwner) {
-                    importVisitor.visitImportsOwner(element)
+                    importVisitor.analyzeImportsOwner(element)
                 } else {
                     super.visitElement(element)
                 }
@@ -82,7 +83,7 @@ class MvImportOptimizer : ImportOptimizer {
 
         val useStmts = useStmtOwner.useStmtList
         useStmts
-            .groupBy { Pair(it.fqModuleText, it.isTestOnly) }
+            .groupBy { Pair(it.fqModuleText, it.hasTestOnlyAttr) }
             .forEach { (key, stmts) ->
                 val (fqModuleText, isTestOnly) = key
                 if (fqModuleText == null) return@forEach

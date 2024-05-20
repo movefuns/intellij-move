@@ -1,4 +1,4 @@
-package org.move.ide.wordSelection
+package org.sui.ide.wordSelection
 
 import org.sui.utils.tests.MvSelectionHandlerTestBase
 

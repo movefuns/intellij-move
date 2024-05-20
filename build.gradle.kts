@@ -3,41 +3,45 @@ import org.jetbrains.intellij.tasks.RunPluginVerifierTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.*
 
-val publishingToken = System.getenv("PUBLISH_TOKEN") ?: null
+val publishingToken = System.getenv("JB_PUB_TOKEN") ?: null
 // set by default in Github Actions
 val isCI = System.getenv("CI") != null
 
 fun prop(name: String): String =
     extra.properties[name] as? String
-        ?: error("Property `$name` is not defined in gradle.properties for environment `$platformVersion`")
+        ?: error("Property `$name` is not defined in gradle.properties for environment `$shortPlatformVersion`")
 
-
-val platformVersion = prop("shortPlatformVersion")
-val codeVersion = "1.0.0"
-val pluginVersion = "$codeVersion.$platformVersion"
+val shortPlatformVersion = prop("shortPlatformVersion")
+val codeVersion = "1.2.1"
+val pluginVersion = "$codeVersion.$shortPlatformVersion"
 val pluginGroup = "org.sui.move"
 val javaVersion = JavaVersion.VERSION_17
-val kotlinStdlibVersion = "1.8.20"
 val pluginJarName = "intellij-sui-move-$pluginVersion"
+
+val kotlinReflectVersion = "1.8.10"
+// not use
 val network = "testnet"
-val suiVersion = "v1.14.0"
+val suiVersion = "v2.1.0"
 
 group = pluginGroup
 version = pluginVersion
 
 plugins {
     id("java")
-    kotlin("jvm") version "1.8.20"
-    id("org.jetbrains.intellij") version "1.16.0"
-    id("org.jetbrains.grammarkit") version "2022.3.1"
+    kotlin("jvm") version "1.9.22"
+    id("org.jetbrains.intellij") version "1.17.2"
+    id("org.jetbrains.grammarkit") version "2022.3.2.2"
     id("net.saliman.properties") version "1.5.2"
     id("org.gradle.idea")
-    id("de.undercouch.download") version "5.4.0"
+    id("de.undercouch.download") version "5.5.0"
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinStdlibVersion")
-    implementation("io.sentry:sentry:6.25.0") { exclude("org.slf4j") }
+    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinReflectVersion")
+
+    implementation("io.sentry:sentry:7.2.0") {
+        exclude("org.slf4j")
+    }
     implementation("com.github.ajalt.clikt:clikt:3.5.2")
 }
 
@@ -50,20 +54,21 @@ allprojects {
     }
 
     repositories {
-//        mavenCentral()
-//        maven("https://cache-redirector.jetbrains.com/intellij-dependencies")
-//        gradlePluginPortal()
+        mavenCentral()
+        maven("https://cache-redirector.jetbrains.com/intellij-dependencies")
+        gradlePluginPortal()
         maven("https://maven.aliyun.com/repository/central/")
-        maven("https://maven.aliyun.com/repository/public/" )
-        maven("https://maven.aliyun.com/repository/google/" )
+        maven("https://maven.aliyun.com/repository/public/")
+        maven("https://maven.aliyun.com/repository/google/")
         maven("https://maven.aliyun.com/repository/jcenter/")
         maven("https://maven.aliyun.com/repository/gradle-plugin")
     }
 
     intellij {
         pluginName.set(pluginJarName)
-        version.set(prop("platformVersion"))
         type.set(prop("platformType"))
+        version.set(prop("platformVersion"))
+
         downloadSources.set(!isCI)
         instrumentCode.set(false)
         ideaDependencyCachePath.set(dependencyCachePath)
@@ -76,7 +81,7 @@ allprojects {
         )
 
     }
-    println("Sandbox 目录:${project.buildDir}/idea-sandbox")
+
     configure<JavaPluginExtension> {
         sourceCompatibility = javaVersion
         targetCompatibility = javaVersion
@@ -91,7 +96,7 @@ allprojects {
     kotlin {
         sourceSets {
             main {
-                kotlin.srcDirs("src/$platformVersion/main/kotlin")
+                kotlin.srcDirs("src/$shortPlatformVersion/main/kotlin")
             }
         }
     }
@@ -109,14 +114,14 @@ allprojects {
                 """
             )
             sinceBuild.set(prop("pluginSinceBuild"))
-//            untilBuild.set(prop("pluginUntilBuild"))
+            untilBuild.set(prop("pluginUntilBuild"))
         }
 
         withType<KotlinCompile> {
             kotlinOptions {
                 jvmTarget = "17"
-                languageVersion = "1.8"
-                apiVersion = "1.6"
+                languageVersion = "1.9"
+                apiVersion = "1.8"
                 freeCompilerArgs = listOf("-Xjvm-default=all")
             }
         }
@@ -139,7 +144,6 @@ allprojects {
                     val zipFileUrl = "$baseUrl/$zipFileName"
                     val zipRoot = "${rootProject.buildDir}/zip"
                     val zipFile = file("$zipRoot/$zipFileName")
-                    println("下载路径" + zipFileUrl)
                     if (zipFile.exists()) {
                         continue
                     }
@@ -158,7 +162,6 @@ allprojects {
                             else -> error("unreachable")
                         }
                     val platformRoot = file("${rootProject.rootDir}/bin/$platformName")
-                    println("解压文件" + tarTree(zipFile))
                     copy {
                         from(
                             tarTree(zipFile)
@@ -176,21 +179,20 @@ project(":") {
     tasks {
         generateLexer {
             sourceFile.set(file("src/main/grammars/MoveLexer.flex"))
-            targetDir.set("src/main/gen/org/move/lang")
-            targetClass.set("_MoveLexer")
+            targetOutputDir.set(file("src/main/gen/org/sui/lang"))
             purgeOldFiles.set(true)
+            // targetClass.set("_MoveLexer")
         }
         generateParser {
             sourceFile.set(file("src/main/grammars/MoveParser.bnf"))
-            targetRoot.set("src/main/gen")
-            pathToParser.set("/org/move/lang/MoveParser.java")
-            pathToPsiRoot.set("/org/move/lang/psi")
+            targetRootOutputDir.set(file("src/main/gen"))
+            pathToParser.set("/org/sui/lang/MoveParser.java")
+            pathToPsiRoot.set("/org/sui/lang/psi")
             purgeOldFiles.set(true)
         }
         withType<KotlinCompile> {
             dependsOn(generateLexer, generateParser)
         }
-
     }
 
     task("resolveDependencies") {
@@ -210,9 +212,12 @@ project(":plugin") {
 
     tasks {
         runPluginVerifier {
-            ideVersions.set(
-                prop("verifierIdeVersions").split(',').map(String::trim).filter(String::isNotEmpty)
-            )
+            if ("SNAPSHOT" !in shortPlatformVersion) {
+                ideVersions.set(
+                    prop("verifierIdeVersions")
+                        .split(',').map(String::trim).filter(String::isNotEmpty)
+                )
+            }
             failureLevel.set(
                 EnumSet.complementOf(
                     EnumSet.of(
@@ -224,22 +229,17 @@ project(":plugin") {
                     )
                 )
             )
-
         }
-//        signPlugin {
-//            certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
-//            privateKey.set(System.getenv("PRIVATE_KEY"))
-//            password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
-//        }
+
         publishPlugin {
             token.set(publishingToken)
         }
 
-        verifyPlugin {
-            pluginDir.set(
-                file("$rootDir/plugin/build/idea-sandbox/plugins/$pluginJarName")
-            )
-        }
+//        verifyPlugin {
+//            pluginDir.set(
+//                file("$rootDir/plugin/build/idea-sandbox/plugins/$pluginJarName")
+//            )
+//        }
         runIde { enabled = true }
         prepareSandbox { enabled = true }
         buildSearchableOptions {
@@ -247,9 +247,6 @@ project(":plugin") {
             jbrVersion.set(prop("jbrVersion"))
         }
 
-//        buildPlugin {
-//            dependsOn("downloadSuiBinaries")
-//        }
 
         withType<PrepareSandboxTask> {
             // copy bin/ directory inside the plugin zip file

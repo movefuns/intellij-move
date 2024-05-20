@@ -9,6 +9,7 @@ import com.intellij.psi.impl.source.tree.FileElement
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.tree.IElementType
 import com.intellij.testFramework.LightVirtualFile
+import org.sui.lang.MoveFileBase
 import org.sui.lang.MoveFileType
 import org.sui.lang.MoveLanguage
 
@@ -17,7 +18,7 @@ abstract class MvCodeFragment(
     contentElementType: IElementType,
     val context: MvElement,
     forceCachedPsi: Boolean = true,
-) : org.sui.lang.MoveFileBase(fileViewProvider), PsiCodeFragment {
+) : MoveFileBase(fileViewProvider), PsiCodeFragment {
 
     constructor(
         project: Project,

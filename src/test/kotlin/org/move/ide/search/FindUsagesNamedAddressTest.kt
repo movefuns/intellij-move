@@ -1,9 +1,8 @@
-package org.move.ide.search
+package org.sui.ide.search
 
 import com.intellij.codeInsight.TargetElementUtil
 import com.intellij.psi.PsiElement
 import org.intellij.lang.annotations.Language
-import org.sui.ide.search.NamedAddressUsageTypeProvider
 import org.sui.lang.core.psi.ext.startOffset
 import org.sui.utils.tests.MvProjectTestBase
 import org.sui.utils.tests.base.findElementWithDataAndOffsetInEditor
@@ -21,7 +20,7 @@ class FindUsagesNamedAddressTest : MvProjectTestBase() {
     """
     )
 
-    private fun doTestByText(@Language("Move") code: String) {
+    private fun doTestByText(@Language("Sui Move") code: String) {
         testProject(code)
 
         val (_, _, offset) = myFixture.findElementWithDataAndOffsetInEditor<PsiElement>()

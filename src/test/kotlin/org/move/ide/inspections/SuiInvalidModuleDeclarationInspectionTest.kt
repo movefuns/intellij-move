@@ -1,9 +1,8 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiInvalidModuleDeclarationInspection
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class SuiInvalidModuleDeclarationInspectionTest : InspectionTestBase(SuiInvalidModuleDeclarationInspection::class) {
+class SuiInvalidModuleDeclarationInspectionTest : InspectionTestBase(InvalidModuleDeclarationInspection::class) {
     fun `test module in address block - no error`() = checkByText("""
     address 0x1 { module M {} }    
     """)

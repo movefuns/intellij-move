@@ -22,8 +22,8 @@ class UseStmtWrapper(val useStmt: MvUseStmt) : Comparable<UseStmtWrapper> {
     //    - super::
     //    - self::
     val packageGroupLevel: Int = when {
-        this.useStmt.isTestOnly -> 5
-        this.useStmt.isVerifyOnly -> 6
+        this.useStmt.hasTestOnlyAttr -> 5
+        this.useStmt.hasVerifyOnlyAttr -> 6
         else -> this.addr?.useGroupLevel ?: -1
     }
 
@@ -32,6 +32,10 @@ class UseStmtWrapper(val useStmt: MvUseStmt) : Comparable<UseStmtWrapper> {
         "sui" -> 1
         "coin" -> 2
         else -> 3
+        //"aptos_std" -> 1
+        //"aptos_framework" -> 2
+        //"aptos_token" -> 3
+        //else -> 4
     }
 //    val packageGroupLevel: Int = when {
 //

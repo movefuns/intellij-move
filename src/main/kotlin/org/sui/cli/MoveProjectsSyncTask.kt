@@ -1,5 +1,6 @@
 package org.sui.cli
 
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
@@ -7,9 +8,6 @@ import com.intellij.openapi.util.Computable
 import com.intellij.psi.PsiDocumentManager
 import org.sui.cli.manifest.MoveToml
 import org.sui.cli.manifest.TomlDependency
-import org.sui.cli.settings.SuiExec
-import org.sui.cli.settings.moveSettings
-import org.sui.cli.settings.suiPath
 import org.sui.lang.toNioPathOrNull
 import org.sui.lang.toTomlFile
 import org.sui.openapiext.contentRoots
@@ -21,32 +19,32 @@ import java.util.concurrent.CompletableFuture
 
 class MoveProjectsSyncTask(
     project: Project,
-    private val future: CompletableFuture<List<MoveProject>>
+    private val future: CompletableFuture<List<MoveProject>>,
+    private val reason: String?
 ) : Task.Backgroundable(project, "Reloading Move packages", true) {
 
     override fun run(indicator: ProgressIndicator) {
         indicator.isIndeterminate = true
 
+        val before = System.currentTimeMillis()
+        LOG.logProjectsRefresh("started", reason)
+        // aptos move fetch
         fetchDependencies()
 
-        val projects = PsiDocumentManager
+        val moveProjects = PsiDocumentManager
             .getInstance(project)
             .commitAndRunReadAction(Computable { loadProjects(project) })
-        project.moveSettings.state = project.moveSettings.state.also {
-            val version = SuiExec.getVersion(project.suiPath)
-            if (version == "") {
-                it.isValidExec = false
-            } else {
-                it.isValidExec = true
-            }
-        }
-        future.complete(projects)
+        LOG.logProjectsRefresh("finished in ${System.currentTimeMillis() - before}ms", reason)
+        future.complete(moveProjects)
     }
 
     private fun fetchDependencies() {
+        // run `aptos move fetch` here
     }
 
     companion object {
+        private val LOG = logger<MoveProjectsSyncTask>()
+
         private data class DepId(val rootPath: String)
 
         fun loadProjects(project: Project): List<MoveProject> {

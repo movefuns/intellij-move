@@ -58,8 +58,9 @@ val MvStruct.hasStore: Boolean get() = Ability.STORE in abilities
 val MvStruct.hasCopy: Boolean get() = Ability.COPY in abilities
 val MvStruct.hasDrop: Boolean get() = Ability.DROP in abilities
 
-val MvStruct.requiredAbilitiesForTypeParam: Set<Ability> get() =
-    this.abilities.map { it.requires() }.toSet()
+val MvStruct.requiredAbilitiesForTypeParam: Set<Ability>
+    get() =
+        this.abilities.map { it.requires() }.toSet()
 
 val MvStruct.hasPhantomTypeParameters get() = this.typeParameters.any { it.isPhantom }
 
@@ -81,7 +82,7 @@ fun MvStruct.addAbility(ability: String) {
 }
 
 abstract class MvStructMixin : MvStubbedNamedElementImpl<MvStructStub>,
-                               MvStruct {
+    MvStruct {
 
     constructor(node: ASTNode) : super(node)
 
@@ -104,7 +105,7 @@ abstract class MvStructMixin : MvStubbedNamedElementImpl<MvStructStub>,
         val structName = this.name ?: return null
         return PresentationData(
             structName,
-            null,
+            this.locationString(true),
             MoveIcons.STRUCT,
             null
         )

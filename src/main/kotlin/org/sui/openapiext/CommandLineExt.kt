@@ -10,7 +10,6 @@ import com.intellij.execution.process.CapturingProcessHandler
 import com.intellij.execution.process.ProcessListener
 import com.intellij.execution.process.ProcessOutput
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
@@ -20,11 +19,9 @@ import com.intellij.util.io.systemIndependentPath
 import org.sui.cli.runConfigurations.MvCapturingProcessHandler
 import org.sui.stdext.RsResult
 import org.sui.stdext.unwrapOrElse
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.nio.file.Path
 
-private val LOG = Logger.getInstance("org.move.openapiext.CommandLineExt")
+private val LOG = Logger.getInstance("org.sui.openapiext.CommandLineExt")
 
 //@Suppress("FunctionName")
 //fun GeneralCommandLine(path: Path, vararg args: String) =
@@ -48,24 +45,6 @@ fun GeneralCommandLine.withWorkDirectory(path: Path?) = withWorkDirectory(path?.
 //
 //    return output
 //}
-
-fun GeneralCommandLine.executeAsync(onComplete: (ProcessOutput?) -> Unit) {
-    LOG.info("Executing `$commandLineString` asynchronously")
-    ApplicationManager.getApplication().executeOnPooledThread {
-        val handler = MvCapturingProcessHandler.startProcess(this).unwrapOrElse {
-            LOG.warn("Failed to run executable", it)
-            onComplete(null)
-            return@executeOnPooledThread
-        }
-        val output = handler.runProcessWithGlobalProgress()
-        if (!output.isSuccess) {
-            LOG.warn(MvProcessExecutionException.errorMessage(commandLineString, output))
-        }
-        onComplete(output)
-    }
-}
-
-
 
 fun GeneralCommandLine.execute(): ProcessOutput? {
     LOG.info("Executing `$commandLineString`")
@@ -166,14 +145,6 @@ private fun CapturingProcessHandler.runProcessWithGlobalProgress(timeoutInMillis
     return runProcess(ProgressManager.getGlobalProgressIndicator(), timeoutInMilliseconds)
 }
 
-private fun CapturingProcessHandler.runProcessWithApplicationManager(timeoutInMilliseconds: Int? = null): ProcessOutput {
-    if (ApplicationManager.getApplication().isDispatchThread) {
-        throw IllegalStateException("runProcessWithApplicationManager should not be called on EDT")
-    }
-    return runProcess(ProgressManager.getGlobalProgressIndicator(), timeoutInMilliseconds)
-}
-
-
 private fun CapturingProcessHandler.runProcess(
     indicator: ProgressIndicator?,
     timeoutInMilliseconds: Int? = null
@@ -189,20 +160,3 @@ private fun CapturingProcessHandler.runProcess(
 }
 
 val ProcessOutput.isSuccess: Boolean get() = !isTimeout && !isCancelled && exitCode == 0
-
-fun runCommand(command: String): String {
-    return try {
-        val process = Runtime.getRuntime().exec(command)
-        val reader = BufferedReader(InputStreamReader(process.inputStream))
-        val output = StringBuilder()
-        output.append("\n")
-        var line: String?
-        while (reader.readLine().also { line = it } != null) {
-            output.append(line).append("\n")
-        }
-        reader.close()
-        output.toString()
-    } catch (e: Exception) {
-        "Error executing command: ${e.message}"
-    }
-}

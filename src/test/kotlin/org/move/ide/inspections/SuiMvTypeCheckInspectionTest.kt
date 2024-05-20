@@ -1,9 +1,8 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiMvTypeCheckInspection
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class SuiMvTypeCheckInspectionTest : InspectionTestBase(SuiMvTypeCheckInspection::class) {
+class SuiMvTypeCheckInspectionTest : InspectionTestBase(MvTypeCheckInspection::class) {
     fun `test incorrect type address passed where &signer is expected`() = checkErrors(
         """
 module 0x1::M {

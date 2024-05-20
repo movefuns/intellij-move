@@ -3,14 +3,14 @@
  * found in the LICENSE file.
  */
 
-package org.move.ide.structureView
+package org.sui.ide.structureView
 
 import org.intellij.lang.annotations.Language
 
 abstract class StructureViewToggleableActionTestBase : StructureViewTestBase() {
     protected abstract val actionId: String
 
-    protected fun doTest(@Language("Move") code: String, disabled: String, enabled: String) =
+    protected fun doTest(@Language("Sui Move") code: String, disabled: String, enabled: String) =
         doTestStructureView(code) {
             setActionActive(actionId, false)
             assertTreeEqual(tree, disabled.trimMargin())

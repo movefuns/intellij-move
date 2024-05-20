@@ -8,8 +8,8 @@ import com.intellij.psi.PsiFileSystemItem
 import org.jdom.Element
 import org.sui.cli.runConfigurations.legacy.MoveCommandConfiguration
 import org.sui.lang.core.psi.ext.ancestorOrSelf
-import org.sui.utils.tests.base.TestCase
 import org.sui.openapiext.toXmlString
+import org.sui.utils.tests.base.TestCase
 
 abstract class RunConfigurationProducerTestBase(val testDir: String) : MvProjectTestBase() {
     protected fun checkOnFsItem(fsItem: PsiFileSystemItem) {
@@ -67,7 +67,7 @@ abstract class RunConfigurationProducerTestBase(val testDir: String) : MvProject
         }
         val transformedXml = root.toXmlString().replace(testId, "unitTest_ID")
 
-        val testDataPath = "${TestCase.testResourcesPath}/org/move/cli/producers.fixtures/$testDir"
+        val testDataPath = "${TestCase.testResourcesPath}/org/sui/cli/producers.fixtures/$testDir"
         assertSameLinesWithFile(
             "$testDataPath/${getTestName(true)}.xml", transformedXml
         )

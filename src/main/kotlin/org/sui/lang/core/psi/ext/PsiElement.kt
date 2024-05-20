@@ -15,7 +15,10 @@ import com.intellij.util.SmartList
 import org.sui.lang.MoveFile
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.stubs.impl.MvFileStub
+import org.sui.lang.toNioPathOrNull
 import org.sui.openapiext.document
+import org.sui.openapiext.rootPath
+import java.nio.file.Path
 
 fun PsiElement.hasChild(tokenType: IElementType): Boolean = childrenByType(tokenType).toList().isNotEmpty()
 
@@ -171,7 +174,7 @@ inline fun <reified T : PsiElement> PsiElement.stubAncestorStrict(): T? =
  */
 val PsiElement.elementType: IElementType
     // XXX: be careful not to switch to AST
-    get() = if (this is org.sui.lang.MoveFile) MvFileStub.Type else PsiUtilCore.getElementType(this)
+    get() = if (this is MoveFile) MvFileStub.Type else PsiUtilCore.getElementType(this)
 //    get() = PsiUtilCore.getElementType(this)
 
 /**
@@ -335,3 +338,19 @@ private fun PsiElement.getLineCount(): Int {
 }
 
 fun PsiWhiteSpace.isMultiLine(): Boolean = getLineCount() > 1
+
+fun PsiElement.locationPath(tryRelative: Boolean): Path? {
+    val containingFilePath = this.containingFile.toNioPathOrNull() ?: return null
+    if (tryRelative) {
+        val rootPath = this.project.rootPath
+        if (rootPath != null) {
+            return rootPath.relativize(containingFilePath)
+        }
+    }
+    return containingFilePath
+}
+
+fun PsiElement.locationString(tryRelative: Boolean): String? =
+    locationPath(tryRelative)?.toString()
+
+

@@ -1,9 +1,8 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiMvUnusedImportInspection
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class SuiMvUnusedImportInspectionTest : InspectionTestBase(SuiMvUnusedImportInspection::class) {
+class SuiMvUnusedImportInspectionTest : InspectionTestBase(MvUnusedImportInspection::class) {
     fun `test no error`() = checkWarnings("""
 module 0x1::M {
     struct MyItem {}

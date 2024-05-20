@@ -8,12 +8,9 @@ import org.sui.lang.core.completion.addSuffix
 import org.sui.lang.core.completion.alreadyHasSpace
 import org.sui.lang.core.completion.createLookupElementWithIcon
 import org.sui.lang.core.psi.MvItemSpecRef
-import org.sui.lang.core.psi.itemScope
-import org.sui.lang.core.resolve.ItemVis
-import org.sui.lang.core.resolve.MslLetScope
-import org.sui.lang.core.resolve.processItems
-import org.sui.lang.core.resolve.ref.Namespace
-import org.sui.lang.core.resolve.ref.Visibility
+import org.sui.lang.core.psi.ext.itemSpec
+import org.sui.lang.core.psi.ext.module
+import org.sui.lang.core.psi.ext.mslSpecifiableItems
 
 object SpecItemCompletionProvider : MvCompletionProvider() {
     override val elementPattern get() = MvPsiPatterns.itemSpecRef()
@@ -24,21 +21,15 @@ object SpecItemCompletionProvider : MvCompletionProvider() {
         result: CompletionResultSet
     ) {
         val itemSpecRef = parameters.position.parent as? MvItemSpecRef ?: return
-
-        val itemVis = ItemVis(
-            namespaces = setOf(Namespace.SPEC_ITEM),
-            visibilities = Visibility.none(),
-            mslLetScope = MslLetScope.NONE,
-            itemScope = itemSpecRef.itemScope,
-        )
-        processItems(itemSpecRef, itemVis) {
-            val lookup = it.element.createLookupElementWithIcon()
-                .withInsertHandler { ctx, _ ->
-                    if (!ctx.alreadyHasSpace) ctx.addSuffix(" ")
-                }
-            result.addElement(lookup)
-            false
-        }
+        val module = itemSpecRef.itemSpec.module ?: return
+        module.mslSpecifiableItems
+            .forEach {
+                val lookup = it.createLookupElementWithIcon()
+                    .withInsertHandler { ctx, _ ->
+                        if (!ctx.alreadyHasSpace) ctx.addSuffix(" ")
+                    }
+                result.addElement(lookup)
+            }
     }
 
 

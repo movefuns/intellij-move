@@ -1,4 +1,4 @@
-package org.move.ide.structureView
+package org.sui.ide.structureView
 
 import org.intellij.lang.annotations.Language
 
@@ -68,7 +68,7 @@ address 0x1 {
     """
     )
 
-    private fun doTest(@Language("Move") code: String, expected: String) {
+    private fun doTest(@Language("Sui Move") code: String, expected: String) {
         doTestStructureView(code) {
             val normExpected = expected.trimMargin()
             assertTreeEqual(tree, normExpected)

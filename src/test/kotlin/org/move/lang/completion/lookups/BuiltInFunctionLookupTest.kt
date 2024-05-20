@@ -1,4 +1,4 @@
-package org.move.lang.completion.lookups
+package org.sui.lang.completion.lookups
 
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementPresentation

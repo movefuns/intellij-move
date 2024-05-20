@@ -1,6 +1,5 @@
-package org.move.ide.intentions
+package org.sui.ide.intentions
 
-import org.sui.ide.intentions.ChopParameterListIntention
 import org.sui.utils.tests.MvIntentionTestCase
 
 class ChopParameterListIntentionTest: MvIntentionTestCase(ChopParameterListIntention::class) {

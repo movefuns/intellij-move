@@ -11,11 +11,6 @@ import org.sui.lang.core.MvPsiPatterns.bindingPat
 import org.sui.lang.core.completion.createCompletionLookupElement
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
-import org.sui.lang.core.resolve.ItemVis
-import org.sui.lang.core.resolve.mslLetScope
-import org.sui.lang.core.resolve.processItems
-import org.sui.lang.core.resolve.ref.Namespace
-import org.sui.lang.core.resolve.ref.Visibility
 import org.sui.lang.core.withParent
 import org.sui.lang.core.withSuperParent
 
@@ -62,19 +57,13 @@ object StructFieldsCompletionProvider : MvCompletionProvider() {
                 )
             }
             is MvStructDotField -> {
-                val itemVis = ItemVis(
-                    namespaces = setOf(Namespace.DOT_FIELD),
-                    visibilities = Visibility.none(),
-                    mslLetScope = element.mslLetScope,
-                    itemScope = element.itemScope,
-                )
-                processItems(element, itemVis) {
-                    val field = it.element as? MvStructField
-                    if (field != null) {
-                        result.addElement(field.createCompletionLookupElement())
+                val receiverItem = element.receiverItem ?: return
+                receiverItem.fields
+                    .forEach {
+                        result.addElement(
+                            it.createCompletionLookupElement()
+                        )
                     }
-                    false
-                }
             }
         }
     }

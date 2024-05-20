@@ -19,9 +19,9 @@ class MoveCommandConfiguration(
 ) : LocatableConfigurationBase<RunProfileState>(project, factory, "Move"),
     RunConfigurationWithSuppressedDefaultDebugAction {
 
-    var command: String = ""
+    var command: String = "move build"
     var workingDirectory: Path? = if (!project.isDefault) {
-        project.moveProjects.allProjects.firstOrNull()?.contentRootPath
+        project.moveProjectsService.allProjects.firstOrNull()?.contentRootPath
     } else {
         null
     }
@@ -37,7 +37,7 @@ class MoveCommandConfiguration(
 
     override fun getState(executor: Executor, execEnvironment: ExecutionEnvironment): RunProfileState? {
         val config = clean().ok ?: return null
-        return MoveCommandLineState(execEnvironment, config)
+        return LegacyMoveCommandLineState(execEnvironment, config)
     }
 
     override fun writeExternal(element: Element) {
@@ -86,7 +86,7 @@ class MoveCommandConfiguration(
         val ok: Ok? get() = this as? Ok
 
         companion object {
-            fun error(@Suppress("UnstableApiUsage") @NlsContexts.DialogMessage message: String) = Err(
+            fun error(@NlsContexts.DialogMessage message: String) = Err(
                 RuntimeConfigurationError(message)
             )
         }

@@ -1,8 +1,7 @@
-package org.move.ide.actions
+package org.sui.ide.actions
 
 import com.intellij.ide.fileTemplates.FileTemplateManager
 import org.intellij.lang.annotations.Language
-import org.sui.ide.actions.CreateMoveFileAction
 import org.sui.openapiext.toPsiDirectory
 import org.sui.utils.tests.MvProjectTestBase
 

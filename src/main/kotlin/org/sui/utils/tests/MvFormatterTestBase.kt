@@ -14,7 +14,7 @@ abstract class MvFormatterTestBase : FormatterTestCase() {
         return TestCase.camelOrWordsToSnake(camelCase)
     }
 
-    override fun doTextTest(@Language("Move") text: String, @Language("Move") textAfter: String) {
+    override fun doTextTest(@Language("Sui Move") text: String, @Language("Sui Move") textAfter: String) {
         check(text.trimIndent() != textAfter.trimIndent()) {
             "Formatter before and after should be different"
         }

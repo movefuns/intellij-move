@@ -10,21 +10,23 @@ import org.sui.lang.core.psi.MvElement
 import org.sui.lang.core.psi.MvExpr
 import org.sui.lang.core.psi.MvType
 import org.sui.lang.core.psi.ext.isMsl
-import org.sui.lang.core.types.infer.*
+import org.sui.lang.core.types.infer.MvInferenceContextOwner
+import org.sui.lang.core.types.infer.inferExpectedTy
+import org.sui.lang.core.types.infer.inference
 import org.sui.utils.tests.InlineFile
 import org.sui.utils.tests.MvTestBase
 import org.sui.utils.tests.base.findElementAndDataInEditor
 
 abstract class TypificationTestCase : MvTestBase() {
-    protected fun testExpectedTyExpr(@Language("Move") code: String) {
+    protected fun testExpectedTyExpr(@Language("Sui Move") code: String) {
         testExpectedType<MvExpr>(code)
     }
 
-    protected fun testExpectedTyType(@Language("Move") code: String) {
+    protected fun testExpectedTyType(@Language("Sui Move") code: String) {
         testExpectedType<MvType>(code)
     }
 
-    protected inline fun <reified T : MvElement> testExpectedType(@Language("Move") code: String) {
+    protected inline fun <reified T : MvElement> testExpectedType(@Language("Sui Move") code: String) {
         InlineFile(myFixture, code, "main.move")
         val (element, data) = myFixture.findElementAndDataInEditor<T>()
         val expectedType = data.trim()
@@ -40,14 +42,14 @@ abstract class TypificationTestCase : MvTestBase() {
         }
     }
 
-    protected fun testExpr(@Language("Move") code: String) {
+    protected fun testExpr(@Language("Sui Move") code: String) {
         InlineFile(myFixture, code, "main.move")
         check()
 //        if (!allowErrors) checkNoInferenceErrors()
         checkAllExpressionsTypified()
     }
 
-    protected fun testExprsTypified(@Language("Move") code: String) {
+    protected fun testExprsTypified(@Language("Sui Move") code: String) {
         InlineFile(myFixture, code, "main.move")
         checkAllExpressionsTypified()
     }

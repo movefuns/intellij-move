@@ -1,4 +1,4 @@
-package org.move.lang.resolve
+package org.sui.lang.resolve
 
 import org.sui.utils.tests.resolve.ResolveProjectTestCase
 

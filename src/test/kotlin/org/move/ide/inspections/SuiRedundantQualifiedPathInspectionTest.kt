@@ -1,9 +1,8 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiRedundantQualifiedPathInspection
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class SuiRedundantQualifiedPathInspectionTest : InspectionTestBase(SuiRedundantQualifiedPathInspection::class) {
+class SuiRedundantQualifiedPathInspectionTest : InspectionTestBase(RedundantQualifiedPathInspection::class) {
     fun `test no error if fully qualified without imports`() = checkWarnings(
         """
     module 0x1::M {

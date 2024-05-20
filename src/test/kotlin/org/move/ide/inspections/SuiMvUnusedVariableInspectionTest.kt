@@ -1,9 +1,8 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiMvUnusedVariableInspection
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class SuiMvUnusedVariableInspectionTest : InspectionTestBase(SuiMvUnusedVariableInspection::class) {
+class SuiMvUnusedVariableInspectionTest : InspectionTestBase(MvUnusedVariableInspection::class) {
     fun `test used function parameter`() = checkByText(
         """
     module 0x1::M {

@@ -4,10 +4,8 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.stubs.*
 import org.sui.lang.core.psi.MvElement
 
-open class PlaceholderStub(
-    parent: StubElement<*>?,
-    elementType: IStubElementType<*, *>,
-) : StubBase<MvElement>(parent, elementType) {
+open class PlaceholderStub(parent: StubElement<*>?, elementType: IStubElementType<*, *>) :
+    StubBase<MvElement>(parent, elementType) {
 
     open class Type<PsiT : MvElement>(
         debugName: String,
@@ -23,6 +21,7 @@ open class PlaceholderStub(
 
         override fun createPsi(stub: PlaceholderStub) = psiContructor(stub, this)
 
-        override fun createStub(psi: PsiT, parentStub: StubElement<*>?) = PlaceholderStub(parentStub, this)
+        override fun createStub(psi: PsiT, parentStub: StubElement<*>?) =
+            PlaceholderStub(parentStub, this)
     }
 }

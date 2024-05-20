@@ -1,4 +1,4 @@
-package org.move.lang.completion.names
+package org.sui.lang.completion.names
 
 import org.sui.utils.tests.completion.CompletionTestCase
 

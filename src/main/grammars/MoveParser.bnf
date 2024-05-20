@@ -36,8 +36,6 @@
 
     tokens = [
         WHITESPACE='regexp:[ \n\t\r\f]'
-//        EOL_COMMENT='regexp:(//.*\n)|(//.*\R)'
-//        BLOCK_COMMENT='regexp:/\*(.|\s)*\*/'
 
         PLACEHOLDER_ADDRESS='regexp:\{\{[_a-zA-Z][_a-zA-Z0-9]*}}'
         DIEM_ADDRESS='regexp:0x[0-9a-fA-F]{1,40}'
@@ -74,23 +72,11 @@
         DOT         =  '.'
 
         EXCL        =  '!'
-//        PLUSEQ      =  '+='
         PLUS        =  '+'
-//        MINUSEQ     =  '-='
         MINUS       =  '-'
-//        OREQ        =  '|='
-//        ANDAND      =  '&&'
-//        ANDEQ       =  '&='
-//        AND         =  '&'
-//        OR          =  '|'
-//        LT          =  '<'
-//        XOREQ       =  '^='
         XOR         =  '^'
-//        MULEQ       =  '*='
         MUL         =  '*'
-//        DIVEQ       =  '/='
         DIV         =  '/'
-//        REMEQ       =  '%='
         MODULO         =  '%'
 
         AT         =  '@'
@@ -112,6 +98,7 @@
         ENTRY     = 'entry_kw'
         INLINE     = 'inline_kw'
         FRIEND     = 'friend_kw'
+        FOR     = 'for_kw'
 
         SCRIPT_KW     = 'script_kw'
         MODULE_KW     = 'module'
@@ -153,8 +140,15 @@
         EXISTS     = 'exists_kw'
         WHERE     = 'where_kw'
         IN     = 'in_kw'
+        ENUM_KW = 'enum_kw'
+        TYPE_KW = 'type_kw'
+        MATCH_KW = 'match_kw'
+        PUBLIC = 'public_kw'
+        PRIVATE = 'private_kw'
     ]
 }
+
+// USE_FUN_KW = 'use fun'
 
 // Naming convention:
 //
@@ -166,26 +160,26 @@ File ::= (NamedAddressDef | Script | AddressDef | Module | ModuleSpec)*
 QualPathCodeFragmentElement ::= FQModulePathIdent? TypeArgumentList?
 
 Attr ::= '#' '[' <<non_empty_comma_sep_items AttrItem>> ']' { pin = 1 }
-AttrItem ::= IDENTIFIER AttrItemArguments?
-{
-    implements = [ "org.sui.lang.core.psi.MvNamedElement" ]
-    mixin = "org.sui.lang.core.psi.ext.MvAttrItemMixin"
-}
-AttrItemArguments ::= '(' <<non_empty_comma_sep_items AttrItemArgument>> ')'
-AttrItemArgument ::= IDENTIFIER ('=' Expr)?
+AttrItem ::= IDENTIFIER (AttrItemList | AttrItemInitializer)?
 {
     implements = [
         "org.sui.lang.core.resolve.ref.MvReferenceElement"
     ]
-    mixin = "org.sui.lang.core.psi.ext.MvAttrItemArgumentMixin"
+    mixin = "org.sui.lang.core.psi.ext.MvAttrItemMixin"
 }
+AttrItemList ::= '(' <<non_empty_comma_sep_items AttrItem>>? ')' { pin = 1 }
+//AttrItemArgument ::= IDENTIFIER ('=' Expr)?
+//{
+//    implements = [
+//        "org.sui.lang.core.resolve.ref.MvReferenceElement"
+//    ]
+//    mixin = "org.sui.lang.core.psi.ext.MvAttrItemArgumentMixin"
+//}
+AttrItemInitializer ::= '=' Expr { pin = 1 }
 
 NamedAddressDef ::= address IDENTIFIER '=' AddressRef ';' { pin = 3 }
 
-Script ::= SCRIPT_KW ScriptBlock {
-    pin = 1
-//    mixin = "org.sui.lang.core.psi.ext.MvScriptMixin"
-}
+Script ::= SCRIPT_KW ScriptBlock { pin = 1 }
 ScriptBlock ::= '{' ScriptBlockItems '}' {
     pin = 1
     implements = [
@@ -210,7 +204,6 @@ private has ::= <<hasKeyword>>
 private entry ::= <<entryKeyword>>
 private inline ::= <<inlineKeyword>>
 private schema ::= <<schemaKeyword>>
-//private vector ::= <<vectorKeyword>>
 
 AddressDef ::= address AddressRef AddressBlock {
     pin = 1
@@ -252,7 +245,7 @@ private ModuleItem ::= !('}' | <<eof>>) ModuleItem_item
     recoverWhile = Item_recover
 }
 // top-level recovery
-private Item_first ::= use | public | native | fun | CONST_KW | STRUCT_KW | spec | friend | Attr | entry | inline
+private Item_first ::= use | public | native | fun | CONST_KW | STRUCT_KW |ENUM_KW| spec | friend | Attr | entry | inline
 private Item_recover ::= !('}' | <<eof>> | Item_first)
 
 private ModuleItem_item ::= UseStmt
@@ -291,7 +284,7 @@ fake SpecFunction ::= Attr* spec native? fun IDENTIFIER? TypeParameterList?
         "org.sui.lang.core.psi.MvQualNamedElement"
         "org.sui.lang.core.psi.MvFunctionLike"
         "org.sui.lang.core.types.infer.MvInferenceContextOwner"
-        "org.sui.lang.core.psi.MslScopeElement"
+        "org.sui.lang.core.psi.ScopeMslOnlyElement"
     ]
     mixin = "org.sui.lang.core.psi.ext.MvSpecFunctionMixin"
     stubClass = "org.sui.lang.core.stubs.MvSpecFunctionStub"
@@ -320,14 +313,14 @@ fake SpecInlineFunction ::= Attr* native? fun IDENTIFIER? TypeParameterList?
 {
     implements = [
         "org.sui.lang.core.psi.MvFunctionLike"
-        "org.sui.lang.core.psi.MslScopeElement"
         "org.sui.lang.core.types.infer.MvInferenceContextOwner"
+        "org.sui.lang.core.psi.ScopeMslOnlyElement"
     ]
     mixin = "org.sui.lang.core.psi.ext.MvSpecInlineFunctionMixin"
     hooks = [ leftBinder = "ADJACENT_LINE_COMMENTS" ]
 }
-private SpecInlineFunctionImpl ::= SpecInlineFunctionInner
-                                    | NativeSpecInlineFunctionInner
+//private SpecInlineFunctionImpl ::= SpecInlineFunctionInner
+//                                    | NativeSpecInlineFunctionInner
 //                                    | UninterpretedSpecInlineFunctionInner
 
 SpecInlineFunctionInner ::= fun IDENTIFIER TypeParameterList?
@@ -343,7 +336,13 @@ NativeSpecInlineFunctionInner ::= (native fun) IDENTIFIER TypeParameterList?
     pin = 1
 }
 
-SpecInlineFunctionStmt ::= SpecInlineFunctionImpl
+SpecInlineFunctionStmt ::= SpecInlineFunctionInner
+                            | NativeSpecInlineFunctionInner
+{
+    implements = [
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
+}
 
 fake Struct ::= Attr* native? STRUCT_KW IDENTIFIER? TypeParameterList? AbilitiesList?
                         (';' | StructBlock)?
@@ -376,6 +375,8 @@ NativeStructInner ::= Attr* NativeStructInnerFirst IDENTIFIER TypeParameterList?
 }
 private StructItem ::= StructInner | NativeStructInner
 
+// EnumDef ::= ENUM_KW IDENTIFIER '{' <<comma_separated_list IDENTIFIER>> '}' { pin = 1 }
+
 fake Function ::= Attr* native? FunctionVisibilityModifier? entry? inline?
                     fun? IDENTIFIER? TypeParameterList? FunctionParameterList?
                         ReturnType? AcquiresType?
@@ -401,14 +402,8 @@ FunctionInner ::= Attr* FunctionInnerFirst FunctionSignatureInner CodeBlock
 {
     pin = FunctionInnerFirst
     elementType = Function
-//    recoverWhile = "FunctionSignature__recover"
     hooks = [ leftBinder = "ADJACENT_LINE_COMMENTS" ]
 }
-//
-//private NativeFunctionInnerNoVisFirst ::= native fun
-//private NativeFunctionInnerVisFirst ::= ((native FunctionVisibilityModifier)
-//                                        | (FunctionVisibilityModifier native)) fun { pin = 1 }
-//private NativeFunctionInnerFirst ::= NativeFunctionInnerNoVisFirst | NativeFunctionInnerVisFirst
 
 NativeFunctionInner ::= Attr* NativeFunctionModifierSetInner fun FunctionSignatureInner ';'
 {
@@ -427,20 +422,10 @@ private FunctionSignatureInner ::= IDENTIFIER TypeParameterList?
 private FunctionSignatureInner_recover ::= !('{' | '}' | ';' | <<eof>> | Item_first)
 
 private friend ::= <<friendKeyword>>
-
-//fake FunctionModifierSet ::= native? FunctionVisibilityModifier? entry?
+private for ::= <<forKeyword>>
 
 private FunctionModifierSetInner ::= <<functionModifierSet FunctionVisibilityModifier>>
-//{
-//    name = "modifier"
-//}
 private NativeFunctionModifierSetInner ::= <<nativeFunctionModifierSet FunctionVisibilityModifier>>
-//{
-//    elementType = FunctionModifierSet
-//}
-//NativeFunctionModifierSet ::= <<nativeFunctionModifierSet FunctionVisibilityModifier entry>>
-
-//NativeFunctionModifierSet ::= <<functionModifierSet FunctionVisibilityModifier entry true>>
 
 FunctionVisibilityModifier ::= public ('(' (SCRIPT_KW | friend) ')')?
 
@@ -478,26 +463,6 @@ private AcquiresType_items ::= <<non_empty_comma_sep_items PathType>>
 }
 private AcquiresType_items_recover ::= !(';' | '{')
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Structs
-///////////////////////////////////////////////////////////////////////////////////////////////////
-//StructSignature ::= STRUCT_KW IDENTIFIER TypeParameterList? AbilitiesList?
-//{
-//    pin = "struct"
-//    implements = [
-//        "org.sui.lang.core.psi.MvTypeParametersOwner"
-//        "org.sui.lang.core.psi.MvNameIdentifierOwner"
-//    ]
-//    mixin = "org.sui.lang.core.psi.ext.MvStructMixin"
-//}
-
-//StructDef ::= Attr* StructSignature StructFieldsDefBlock
-//{
-//    pin = 2
-//    implements = [ "org.sui.lang.core.psi.ext.MvDocAndAttributeOwner" ]
-//    hooks = [ leftBinder = "ADJACENT_LINE_COMMENTS" ]
-//}
-
 AbilitiesList ::= has <<non_empty_comma_sep_items Ability>> { pin = 1 }
 Ability ::= copy | IDENTIFIER
 {
@@ -524,11 +489,6 @@ StructField ::= Attr* IDENTIFIER TypeAnnotation &(',' | '}')
     hooks = [ leftBinder = "ADJACENT_LINE_COMMENTS" ]
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Imports
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// 'use 0x0::Transaction as MyTransaction;'
-
 FriendDecl ::= Attr* friend FQModuleRef ';'
 {
     pin = "friend"
@@ -544,7 +504,7 @@ ModuleUseSpeck ::= (AddressRef !'::') | FQModuleRef UseAlias?
     name = "qual path to module"
     implements = [
         "org.sui.lang.core.psi.MvNamedElement"
-        "org.sui.lang.core.psi.MvUseSpeck"
+//        "org.sui.lang.core.psi.MvUseSpeck"
     ]
     mixin = "org.sui.lang.core.psi.ext.MvModuleUseSpeckMixin"
 }
@@ -552,9 +512,9 @@ ItemUseSpeck ::= FQModuleRef '::' (UseItem | UseItemGroup)
 {
     pin = 2
     name = "qual path to imported item"
-    implements = [
-        "org.sui.lang.core.psi.MvUseSpeck"
-    ]
+//    implements = [
+//        "org.sui.lang.core.psi.MvUseSpeck"
+//    ]
 }
 
 UseItemGroup ::= '{' <<non_empty_comma_sep_items MultiItemUse_member_with_recovery>>? '}'
@@ -583,6 +543,11 @@ UseAlias ::= as IDENTIFIER
     mixin = "org.sui.lang.core.psi.ext.MvUseAliasMixin"
 }
 
+//UseFunDeclaration ::= USE_FUN_KW FunctionCall ';'
+//FunctionCall ::= Expr '.' IDENTIFIER '(' FunctionArgs ')'
+//FunctionArgs ::= Expr (',' Expr)*
+//
+//FunctionCallOld ::= IDENTIFIER '(' FunctionArgs ')'
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Types
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -607,16 +572,15 @@ PathType ::= Path
 }
 
 TupleType ::= '(' Type ',' (Type ','?)* ')' { pin = 3 }
-//TupleType ::= ('(' !')') TupleTypeItem_with_recover+ ')' { pin = 1 }
-//private TupleTypeItem_with_recover ::= !')' Type (',' | &')')
-//{
-//    pin = 1
-//    recoverWhile = TupleTypeItem_recover
-//}
-//private TupleTypeItem_recover ::= !(')' | '{' | IDENTIFIER)
 
 LambdaType ::= '|' <<non_empty_comma_sep_items LambdaTypeParam>>? '|' Type? { pin = 1 }
 LambdaTypeParam ::= Type
+
+// enum
+//EnumDeclaration ::= 'public'? ENUM_KW IDENTIFIER '{' EnumVariant* '}' ';'
+//EnumVariant ::= IDENTIFIER EnumVariantBody? ','
+//EnumVariantBody ::= '{' EnumField* '}' | '(' Type ')'
+//EnumField ::= IDENTIFIER ':' Type ','
 
 TypeParameterList ::= '<' TypeParameter_with_recover* '>'
 {
@@ -666,9 +630,6 @@ Pat ::= TuplePat
         | BindingPat
 
 WildPat ::= '_'
-//DerefPat ::= '*' Pat
-//BorrowPat ::= '&' Pat
-//DotPat ::= IDENTIFIER '.' IDENTIFIER { pin = 2 }
 
 BindingPat ::= IDENTIFIER {
     implements = [
@@ -694,6 +655,7 @@ StructPatField ::= (BindingPat !':') | (IDENTIFIER StructPatFieldBinding)
 {
     implements = [
         "org.sui.lang.core.resolve.ref.MvStructPatFieldReferenceElement"
+        "org.sui.lang.core.resolve.ref.MvStructRefField"
     ]
     mixin = "org.sui.lang.core.psi.ext.MvStructPatFieldMixin"
 }
@@ -719,9 +681,6 @@ private SpecExprStmt_items ::= AssumeSpecExpr | AssertSpecExpr | AbortsIfSpecExp
                 | RequiresSpecExpr | DecreasesSpecExpr
                 | EnsuresSpecExpr | ModifiesSpecExpr | InvariantSpecExpr | AxiomSpecExpr
                 | EmitsSpecExpr
-//{
-//    recoverWhile = ExprStmt_recover
-//}
 
 private post ::= <<postKeyword>>
 fake LetStmt ::= let post? Pat? TypeAnnotation? Initializer? ';'?
@@ -741,11 +700,7 @@ LetMslStmt ::= (let post?) Pat TypeAnnotation? Initializer? ';'
 }
 
 ExprStmt ::= (ExprStmt_expr !('}')) ';' { pin = 1 }
-private ExprStmt_expr ::= ItemSpecBlockExpr
-                            | Expr
-//IfExpr
-//                            | LoopExpr
-//                            | WhileExpr
+private ExprStmt_expr ::= ItemSpecBlockExpr | Expr
 {
     recoverWhile = "ExprStmt_recover"
 }
@@ -792,7 +747,6 @@ private CodeBlock_items_recover ::= !('}' | <<eof>>)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // from lowest to highest
 Expr ::= AssignmentExpr
-//        | SpecVisRestrictedExpr
         | RangeExpr
         | (ForallQuantExpr | ExistsQuantExpr | ChooseQuantExpr)
         | CastExpr
@@ -832,7 +786,7 @@ private MulExpr_items ::= DivBinExpr | MulBinExpr | ModBinExpr
 private AddExpr_items ::= PlusBinExpr | MinusBinExpr
 private LogicalEqExpr_items ::= EqualsBinExpr | NotEqualsBinExpr | LessEqualsBinExpr | LessBinExpr | GreaterEqualsBinExpr | GreaterBinExpr
 
-private ControlFlowExpr_items ::= IfExpr | LoopExpr | WhileExpr
+private ControlFlowExpr_items ::= IfExpr | LoopExpr | WhileExpr | ForExpr
 private UnaryExpr ::= CopyExpr | MoveExpr | DerefExpr | BangExpr
                       | ReturnExpr | ContinueExpr | BreakExpr | AbortExpr
 private AtomExpr ::=
@@ -842,7 +796,7 @@ private AtomExpr ::=
                     | VectorLitExpr
                     | DotExpr
                     | IndexExpr
-                    | (CallExpr | MacroCallExpr)
+                    | (CallExpr | AssertBangExpr)
                     | RefExpr
                     | LambdaExpr
                     | LitExpr
@@ -921,9 +875,6 @@ CopyExpr ::= copy Expr
 MoveExpr ::= move Expr
 
 ReturnExpr ::= return Expr?
-//private ReturnExpr ::= EmptyReturnExpr | ValueReturnExpr
-//EmptyReturnExpr ::= return { elementType = ReturnExpr }
-//ValueReturnExpr ::= return Expr { elementType = ReturnExpr }
 
 AbortExpr ::= abort Expr
 BreakExpr ::= break
@@ -952,6 +903,7 @@ StructLitField ::= IDENTIFIER StructLitFieldInit?
 {
     implements = [
         "org.sui.lang.core.resolve.ref.MvStructFieldLitReferenceElement"
+		"org.sui.lang.core.resolve.ref.MvStructRefField"
     ]
     mixin = "org.sui.lang.core.psi.ext.MvStructLitFieldMixin"
 }
@@ -973,15 +925,6 @@ upper TupleLitExprUpper ::= ',' [ Expr (',' Expr)* ','? ] ')' {
     pin = 1
     elementType = TupleLitExpr
 }
-
-//ParensExpr ::= '(' Expr !':' ')'
-//TupleLitExpr ::= '(' Expr ',' <<comma_sep_items Expr>>? ')' { pin = 3 }
-
-//TupleOrParenExpr ::= OuterAttr* '(' AnyExpr (TupleExprUpper | ')') {
-//  pin = 2
-//  elementType = ParenExpr
-//}
-//upper TupleExprUpper ::= ',' [ AnyExpr (',' AnyExpr)* ','? ] ')' { pin = 1 elementType = TupleExpr }
 
 LambdaExpr ::= '|' <<non_empty_comma_sep_items BindingPat>> '|' Expr { pin = 1 }
 
@@ -1020,15 +963,6 @@ ValueArgument ::= !')' Expr &(',' | ')') {
 }
 private ValueArgument_recover ::= !(<<mslOnly SpecExpr_first>> | Expr_first | ')' | '}' | ';' | ',')
 
-//ValueArgument ::= Expr
-
-//private ValueArgumentList_items ::= <<comma_sep_items ValueArgument>>
-//{
-//    recoverWhile = ValueArgumentList_items_recovery
-//}
-//private ValueArgumentList_items_recovery ::= !(';' | ')')
-
-
 IfExpr ::= if Condition AnyBlock ElseBlock? { pin = 1 }
 
 Condition ::= '(' ConditionBody ')' { pin = 1 }
@@ -1037,8 +971,21 @@ private ConditionBody_recover ::= !')'
 
 ElseBlock ::= else AnyBlock { pin = 1 }
 
-LoopExpr ::= loop AnyBlock { pin = 1 }
-WhileExpr ::= while Condition AnyBlock { pin = 1 }
+LoopExpr ::= loop AnyBlock {
+    pin = 1
+    implements = [ "org.sui.lang.core.psi.MvLoopLike" ]
+}
+WhileExpr ::= while Condition AnyBlock {
+    pin = 1
+    implements = [ "org.sui.lang.core.psi.MvLoopLike" ]
+}
+ForExpr ::= for ForIterCondition AnyBlock {
+    pin = 1
+    implements = [ "org.sui.lang.core.psi.MvLoopLike" ]
+}
+ForIterCondition ::= '(' BindingPat in Expr ')' {
+    pin = 1
+}
 
 AssignmentExpr ::= Expr Initializer { rightAssociative = true }
 Initializer ::= '=' Expr { pin = 1 }
@@ -1053,7 +1000,7 @@ private DotExpr_field ::= '.' (!'.') StructDotField {
 }
 StructDotField ::= !(<<VECTOR_IDENTIFIER>> ('[' | '<')) IDENTIFIER !('(' | '::' | '!' | '{')
 {
-    implements = ["org.sui.lang.core.resolve.ref.MvStructDotFieldReferenceElement"]
+    implements = ["org.sui.lang.core.resolve.ref.MvMandatoryReferenceElement"]
     mixin = "org.sui.lang.core.psi.ext.MvStructDotFieldMixin"
 }
 
@@ -1065,34 +1012,20 @@ RefExpr ::= Path !'{' {
     implements = ["org.sui.lang.core.psi.PathExpr"]
 }
 
-//private Path ::= QualPath | LocalPath
-//fake Path ::= (ModuleRef '::')? IDENTIFIER? TypeArgumentList?
-//{
-//    implements = ["org.sui.lang.core.resolve.ref.MvReferenceElement"]
-//    mixin = "org.sui.lang.core.psi.ext.MvPathMixin"
-//}
-
-//LocalPath ::= IDENTIFIER TypeArgumentList? { pin = 1 elementType = Path }
-//QualPath ::= ModuleRef '::' IDENTIFIER TypeArgumentList? { pin = 1 elementType = Path }
-
 Path ::= (ModulePathIdent | FQModulePathIdent | LocalPathIdent) TypeArgumentList?
 {
     implements = ["org.sui.lang.core.resolve.ref.MvPathReferenceElement"]
     mixin = "org.sui.lang.core.psi.ext.MvPathMixin"
 }
 
-//fake PathIdent ::= ((FQModuleRef | ModuleRef) '::')? IDENTIFIER?
-
 private LocalPathIdent ::= IDENTIFIER
 private ModulePathIdent ::= ModuleRef ('::' !(IDENTIFIER '::')) IDENTIFIER
 {
     pin = 2
-//    elementType = PathIdent
 }
 private FQModulePathIdent ::= FQModuleRef '::' IDENTIFIER
 {
     pin = 1
-//    elementType = PathIdent
 }
 
 ModuleRef ::= IDENTIFIER | FQModuleRef
@@ -1124,12 +1057,10 @@ NamedAddress ::= IDENTIFIER
 }
 
 /// Macros
-MacroCallExpr ::= MacroIdent ValueArgumentList { pin = 1 }
-MacroIdent ::= IDENTIFIER '!'
+AssertBangExpr ::= <<ASSERT_IDENTIFIER>> '!' ValueArgumentList { pin = 2 }
+//AssertBangExpr ::= MacroIdent ValueArgumentList { pin = 1 }
+//MacroIdent ::= IDENTIFIER '!'
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Specs
-///////////////////////////////////////////////////////////////////////////////////////////////////
 private assert ::= <<assertKeyword>>
 private assume ::= <<assumeKeyword>>
 private modifies ::= <<modifiesKeyword>>
@@ -1159,10 +1090,6 @@ private to ::= <<toKeyword>>
 private apply ::= <<applyKeyword>>
 private except ::= <<exceptKeyword>>
 
-//private SpecItem_first ::= assert | assume | modifies | requires | ensures | aborts_if | include | choose | axiom
-//                         | invariant | pragma | local | global | emits
-//private SpecItem_recover ::= !('}' | <<eof>> | SpecItem_first)
-
 ModuleSpec ::= Attr* spec FQModuleRef ModuleSpecBlock
 {
     pin = "spec"
@@ -1177,7 +1104,7 @@ ModuleSpecBlock ::= '{' ModuleSpecBlock_item_with_recover* '}'
     pin = 1
     implements = [
         "org.sui.lang.core.psi.MvImportsOwner"
-        "org.sui.lang.core.psi.MslScopeElement"
+        "org.sui.lang.core.psi.ScopeMslOnlyElement"
         "org.sui.lang.core.psi.AnyBlock"
     ]
 }
@@ -1189,18 +1116,13 @@ private ModuleSpecBlock_item_with_recover ::= !('}' | <<eof>>) ModuleSpecBlock_i
 }
 private ModuleSpecBlock_item ::= UseStmt | SpecFunctionItem | Schema | ModuleItemSpec | ItemSpec
 private ModuleSpecBlock_item_recover ::= !('}' | <<eof>> | spec | use)
-// top-level recovery
-//private Item_first ::= use | public | native | fun | CONST_KW | STRUCT_KW | spec | friend | Attr | entry
-//private Item_recover ::= !('}' | <<eof>> | Item_first)
-
-//AnySpec ::= ItemSpec | ModuleKeywordSpec
 
 ModuleItemSpec ::= spec MODULE_KW <<msl SpecCodeBlock>>
 {
     pin = 2
     implements = [
         "org.sui.lang.core.types.infer.MvInferenceContextOwner"
-        "org.sui.lang.core.psi.MslScopeElement"
+        "org.sui.lang.core.psi.ScopeMslOnlyElement"
     ]
 }
 ItemSpec ::= (spec !MODULE_KW) ItemSpecRef ItemSpecSignature? <<msl SpecCodeBlock>>
@@ -1208,8 +1130,8 @@ ItemSpec ::= (spec !MODULE_KW) ItemSpecRef ItemSpecSignature? <<msl SpecCodeBloc
     pin = 1
     implements = [
         "org.sui.lang.core.types.infer.MvInferenceContextOwner"
-        "org.sui.lang.core.psi.MslScopeElement"
         "org.sui.lang.core.psi.MvModificationTrackerOwner"
+        "org.sui.lang.core.psi.ScopeMslOnlyElement"
     ]
     mixin = "org.sui.lang.core.psi.ext.MvItemSpecMixin"
 }
@@ -1257,21 +1179,9 @@ ItemSpecFunctionParameter ::= IDENTIFIER TypeAnnotation {
 
 ItemSpecRef ::= IDENTIFIER
 {
-    implements = ["org.sui.lang.core.resolve.ref.MvReferenceElement"]
+    implements = ["org.sui.lang.core.resolve.ref.MvMandatoryReferenceElement"]
     mixin = "org.sui.lang.core.psi.ext.MvItemSpecRefMixin"
 }
-
-//ItemSpec ::= (spec IDENTIFIER) <<msl ItemSpecBlock>>
-//{
-//    pin = 1
-////    extends = AnySpec
-//    implements = ["org.sui.lang.core.resolve.ref.MvMandatoryReferenceElement"]
-//    mixin = "org.sui.lang.core.psi.ext.MvItemSpecMixin"
-//}
-//ModuleKeywordSpec ::= (spec MODULE_KW) <<msl ItemSpecBlock>> {
-//    pin = 1
-////    extends = AnySpec
-//}
 
 Schema ::= (spec schema) IDENTIFIER TypeParameterList? <<msl SpecCodeBlock>> {
     pin = 1
@@ -1280,7 +1190,7 @@ Schema ::= (spec schema) IDENTIFIER TypeParameterList? <<msl SpecCodeBlock>> {
         "org.sui.lang.core.psi.MvQualNamedElement"
         "org.sui.lang.core.psi.MvNameIdentifierOwner"
         "org.sui.lang.core.types.infer.MvInferenceContextOwner"
-        "org.sui.lang.core.psi.MslScopeElement"
+        "org.sui.lang.core.psi.ScopeMslOnlyElement"
     ]
     mixin = "org.sui.lang.core.psi.ext.MvSchemaMixin"
     stubClass = "org.sui.lang.core.stubs.MvSchemaStub"
@@ -1289,7 +1199,7 @@ Schema ::= (spec schema) IDENTIFIER TypeParameterList? <<msl SpecCodeBlock>> {
 
 ItemSpecBlockExpr ::= spec <<msl SpecCodeBlock>> {
     implements = [
-        "org.sui.lang.core.psi.MslScopeElement"
+        "org.sui.lang.core.psi.ScopeMslOnlyElement"
     ]
 }
 
@@ -1299,7 +1209,7 @@ SpecCodeBlock ::= '{' ItemSpecBlock_items '}'
     implements = [
         "org.sui.lang.core.psi.MvImportsOwner"
         "org.sui.lang.core.psi.AnyBlock"
-//        "org.sui.lang.core.types.infer.MvInferenceContextOwner"
+        "org.sui.lang.core.psi.MslOnlyElement"
     ]
     mixin = "org.sui.lang.core.psi.ext.MvSpecCodeBlockMixin"
 }
@@ -1309,58 +1219,22 @@ private ItemSpecBlock_items ::= (SpecStmt | ExprStmt)* (SpecExprStmt_items | Exp
 }
 private ItemSpecBlock_items_recover ::= !('}' | <<eof>>)
 
-//private SpecExpr_item ::= SpecExprStmt_items | ExprStmt_items
-
-//private SpecItem ::= !('}' | <<eof>>) SpecStmt
-//{
-//    pin = 1
-//    recoverWhile = SpecItem_recover
-//}
-
-//private SpecItemExpr ::= SpecBlockFinishingExpr
-//private SpecBlockStmt_with_recover ::= SpecStmt
-//private SpecBlockFinishingExpr_with_recover ::= !('}' | <<eof>>) SpecBlockFinishingExpr
-
 private SpecStmt ::= UseStmt
                        | SchemaFieldStmtImpl
                        | GlobalVariableStmt
                        | SpecInlineFunctionStmt
-//                       | NativeFunctionDefSpecStmt
-//                       | UninterpretedFunctionDefSpecStmt
                        | PragmaSpecStmt
-//                               | AssumeSpecStmt
-//                               | AssertSpecStmt
-//                               | AbortsIfSpecStmt
-//                               | RequiresSpecStmt
-//                               | EnsuresSpecStmt
-//                               | ModifiesSpecStmt
-                               | IncludeStmt
-                               | UpdateSpecStmt
-//                               | IncludeStmts
-//                               | InvariantSpecStmt
-//                               | AxiomSpecStmt
-                               | ApplySchemaStmt
-//                               | EmitsSpecStmt
-//                               | AggregatePredicateSpecStmt
-//                               | SpecBlockSpecStmt
-                               | LetMslStmt
-//                               | ChooseSpecStmt
-//                               | ExprSpecStmt
-                               | SpecExprStmt
-//{
-//    recoverWhile = SpecStmt_recover
-//}
-//private SpecStmt_recover ::= !'}'
-
-//ExprSpecStmt ::= ExprSpecStmt_item ';'
-//private ExprSpecStmt_item ::= SpecExpr | AggregateExpr | Expr
-//
-//private SpecBlockFinishingExpr ::= SpecExpr | AggregateExpr | Expr
+                       | IncludeStmt
+                       | UpdateSpecStmt
+                       | ApplySchemaStmt
+                       | LetMslStmt
+                       | SpecExprStmt
 
 fake SchemaFieldStmt ::= local? BindingPat TypeAnnotation ';'
 {
     implements = [
         "org.sui.lang.core.psi.MvTypeAnnotationOwner"
+		"org.sui.lang.core.psi.MslOnlyElement"
     ]
 }
 
@@ -1381,51 +1255,99 @@ GlobalVariableStmt ::= global IDENTIFIER TypeParameterList? TypeAnnotation ('=' 
     implements = [
         "org.sui.lang.core.psi.MvNameIdentifierOwner"
         "org.sui.lang.core.psi.MvTypeAnnotationOwner"
+		"org.sui.lang.core.psi.MslOnlyElement"
     ]
     mixin = "org.sui.lang.core.psi.ext.MvGlobalVariableMixin"
 }
 
-//private post ::= <<postKeyword>>
-//LetSpecStmt ::= (let post?) Pat TypeAnnotation? Initializer? ';' { pin = 1 }
-PragmaSpecStmt ::= pragma <<non_empty_comma_sep_items PragmaAttribute>> ';' { pin = 1 }
-PragmaAttribute ::= IDENTIFIER ('=' Expr)?
+PragmaSpecStmt ::= pragma <<non_empty_comma_sep_items PragmaAttribute>> ';' {
+    pin = 1
+    implements = [ "org.sui.lang.core.psi.MslOnlyElement" ]
+}
+PragmaAttribute ::= IDENTIFIER ('=' Expr)? {
+    implements = [ "org.sui.lang.core.psi.MslOnlyElement" ]
+}
 
 AbortsIfSpecExpr ::= aborts_if SpecPropertyList? Expr AbortsIfWith? {
     pin = 1
-    implements = [ "org.sui.lang.core.psi.MvBoolSpecExpr" ]
+    implements = [
+        "org.sui.lang.core.psi.MvBoolSpecExpr"
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
 }
-AbortsIfWith ::= with Expr { pin = 1 }
+AbortsIfWith ::= with Expr {
+    pin = 1
+    implements = [ "org.sui.lang.core.psi.MslOnlyElement" ]
+}
 
-AbortsWithSpecExpr ::= aborts_with SpecPropertyList? <<non_empty_comma_sep_items Expr>> { pin = 1 }
+AbortsWithSpecExpr ::= aborts_with SpecPropertyList? <<non_empty_comma_sep_items Expr>> {
+    pin = 1
+    implements = [ "org.sui.lang.core.psi.MslOnlyElement" ]
+}
 
 AssertSpecExpr ::= assert SpecPropertyList? Expr {
     pin = 1
-    implements = [ "org.sui.lang.core.psi.MvBoolSpecExpr" ]
+    implements = [
+        "org.sui.lang.core.psi.MvBoolSpecExpr"
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
 }
 AssumeSpecExpr ::= assume SpecPropertyList? Expr {
     pin = 1
-    implements = [ "org.sui.lang.core.psi.MvBoolSpecExpr" ]
+    implements = [
+        "org.sui.lang.core.psi.MvBoolSpecExpr"
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
 }
 EnsuresSpecExpr ::= ensures SpecPropertyList? SpecExpr {
     pin = 1
-    implements = [ "org.sui.lang.core.psi.MvBoolSpecExpr" ]
+    implements = [
+        "org.sui.lang.core.psi.MvBoolSpecExpr"
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
 }
 RequiresSpecExpr ::= requires SpecPropertyList? Expr {
     pin = 1
-    implements = [ "org.sui.lang.core.psi.MvBoolSpecExpr" ]
+    implements = [
+        "org.sui.lang.core.psi.MvBoolSpecExpr"
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
 }
-DecreasesSpecExpr ::= decreases SpecPropertyList? Expr { pin = 1 }
+DecreasesSpecExpr ::= decreases SpecPropertyList? Expr {
+    pin = 1
+    implements = [
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
+}
 
-ModifiesSpecExpr ::= modifies SpecPropertyList? Expr { pin = 1 }
+ModifiesSpecExpr ::= modifies SpecPropertyList? Expr {
+    pin = 1
+    implements = [
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
+}
 
-IncludeStmt ::= include SpecPropertyList? IncludeItem ';' { pin = 1 }
+IncludeStmt ::= include SpecPropertyList? IncludeItem ';' {
+    pin = 1
+    implements = [
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
+}
 
 UpdateSpecStmt ::= update UpdateExpr_items '=' Expr ';' {
     pin = 1
+    implements = [
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
 }
 private UpdateExpr_items ::= UnaryExpr | BorrowExpr | AtomExpr
 
 IncludeItem ::= SchemaIncludeItem | AndIncludeItem | IfElseIncludeItem | ImplyIncludeItem
+{
+    implements = [
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
+}
 
 SchemaIncludeItem ::= SchemaLit &(';' | '}' | SpecExprStmt_first)
 {
@@ -1445,6 +1367,11 @@ IfElseIncludeItem ::= if Condition SchemaLit else SchemaLit
 }
 
 SchemaLit ::= Path SchemaFieldsBlock?
+{
+    implements = [
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
+}
 
 SchemaFieldsBlock ::= '{' SchemaField_with_recover* '}' { pin = 1 }
 private SchemaField_with_recover ::= !'}' SchemaLitField (',' | &'}')
@@ -1458,6 +1385,7 @@ SchemaLitField ::= IDENTIFIER SchemaLitFieldInit?
 {
     implements = [
         "org.sui.lang.core.resolve.ref.MvSchemaRefFieldReferenceElement"
+		"org.sui.lang.core.psi.MslOnlyElement"
     ]
     mixin = "org.sui.lang.core.psi.ext.MvSchemaLitFieldMixin"
 }
@@ -1466,17 +1394,18 @@ private SchemaLitFieldInit ::= ':' Expr { pin = 1 }
 private PatternVis ::= <<patternVisibility>>
 private PatternIdent ::= <<patternIdent>>
 
-//fake FunctionPatternIdent ::= ('*' | IDENTIFIER)+
 FunctionPattern ::= PatternVis? PatternIdent TypeParameterList? {
     pin = 2
-//    implements = [ "org.sui.lang.core.psi.MvTypeParametersOwner" ]
+    implements = [
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
 }
 
 InvariantSpecExpr ::= invariant TypeParameterList? update? SpecPropertyList? Expr {
     pin = 1
     implements = [
         "org.sui.lang.core.psi.MvBoolSpecExpr"
-//        "org.sui.lang.core.psi.MvTypeParametersOwner"
+        "org.sui.lang.core.psi.MslOnlyElement"
     ]
 }
 
@@ -1485,58 +1414,78 @@ AxiomSpecExpr ::= axiom TypeParameterList? SpecPropertyList? Expr {
     implements = [
         "org.sui.lang.core.psi.MvBoolSpecExpr"
         "org.sui.lang.core.psi.MvTypeParametersOwner"
+		"org.sui.lang.core.psi.MslOnlyElement"
     ]
 }
 
-SpecPropertyList ::= '[' SpecPropertyList_items? ']'
+SpecPropertyList ::= '[' SpecPropertyList_items? ']' {
+    implements = [
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
+}
 private SpecPropertyList_items ::= SpecProperty (',' SpecProperty)* ','?
 
 SpecProperty ::= !']' IDENTIFIER ('=' LitExpr)? &(',' | ']') {
     pin = 1
-//    recoverWhile = SpecProperty_recover
+    implements = [
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
 }
-//private SpecProperty_recover ::= !(<<mslOnly SpecExpr_first>> | Expr_first | ']' | '}' | ';' | ',')
 
-EmitsSpecExpr ::= emits SpecPropertyList? Expr to Expr EmitsCondition? { pin = 1 }
-EmitsCondition ::= if Expr { pin = 1 }
+EmitsSpecExpr ::= emits SpecPropertyList? Expr to Expr EmitsCondition? {
+    pin = 1
+    implements = [ "org.sui.lang.core.psi.MslOnlyElement" ]
+}
+EmitsCondition ::= if Expr {
+    pin = 1
+    implements = [ "org.sui.lang.core.psi.MslOnlyElement" ]
+}
 
-ApplySchemaStmt ::= apply SchemaRef ApplyTo ApplyExcept? ';' { pin = 1 }
-ApplyTo ::= to <<non_empty_comma_sep_items FunctionPattern>> { pin = 1 }
-ApplyExcept ::= except <<non_empty_comma_sep_items FunctionPattern>> { pin = 1 }
+ApplySchemaStmt ::= apply SchemaRef ApplyTo ApplyExcept? ';' {
+    pin = 1
+    implements = [ "org.sui.lang.core.psi.MslOnlyElement" ]
+}
+ApplyTo ::= to <<non_empty_comma_sep_items FunctionPattern>> {
+    pin = 1
+    implements = [ "org.sui.lang.core.psi.MslOnlyElement" ]
+}
+ApplyExcept ::= except <<non_empty_comma_sep_items FunctionPattern>> {
+    pin = 1
+    implements = [ "org.sui.lang.core.psi.MslOnlyElement" ]
+}
 
 SchemaRef ::= Path ('{' <<non_empty_comma_sep_items ApplySchemaNameAttribute>> '}')?
-//{
-//    implements = [
-//        "org.sui.lang.core.psi.MvQualSchemaReferenceElement"
-//    ]
-//    mixin = "org.sui.lang.core.psi.ext.MvApplySchemaNameMixin"
-//}
+{
+    implements = [ "org.sui.lang.core.psi.MslOnlyElement" ]
+}
 ApplySchemaNameAttribute ::= IDENTIFIER ':' Expr
-
-//SpecVisRestrictedExpr ::= SpecVisibility Expr
-
-//AggregatePredicateSpecStmt ::= AggregateExpr ';'
-//AggregateExpr ::= QuantExpr_items (':' Expr)?
-//{
-//    rightAssociative = true
-//}
+{
+    implements = [ "org.sui.lang.core.psi.MslOnlyElement" ]
+}
 
 QuantWhere ::= where Expr
 {
     pin = 1
+    implements = [ "org.sui.lang.core.psi.MslOnlyElement" ]
 }
 
 ForallQuantExpr ::= <<mslOnly forall>> QuantBindings QuantWhere? ':' Expr
 {
     pin = 1
     rightAssociative = true
-    implements = [ "org.sui.lang.core.psi.ext.MvQuantExpr" ]
+    implements = [
+        "org.sui.lang.core.psi.ext.MvQuantExpr"
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
 }
 ExistsQuantExpr ::= <<mslOnly exists>> QuantBindings QuantWhere? ':' Expr
 {
     pin = 1
     rightAssociative = true
-    implements = [ "org.sui.lang.core.psi.ext.MvQuantExpr" ]
+    implements = [
+        "org.sui.lang.core.psi.ext.MvQuantExpr"
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
 }
 QuantBindings ::= <<non_empty_comma_sep_items QuantBinding>>
 
@@ -1544,9 +1493,15 @@ QuantBindings ::= <<non_empty_comma_sep_items QuantBinding>>
 ChooseQuantExpr ::= choose min? QuantBindings QuantWhere?
 {
     pin = 1
-    implements = [ "org.sui.lang.core.psi.ext.MvQuantBindingsOwner" ]
+    implements = [
+        "org.sui.lang.core.psi.ext.MvQuantBindingsOwner"
+        "org.sui.lang.core.psi.MslOnlyElement"
+    ]
 }
 QuantBinding ::= RangeQuantBinding | TypeQuantBinding
+{
+    implements = [ "org.sui.lang.core.psi.MslOnlyElement" ]
+}
 
 RangeQuantBinding ::= BindingPat in Expr {
     pin = 2
@@ -1557,6 +1512,14 @@ TypeQuantBinding ::= BindingPat ':' Type {
     extends = QuantBinding
 }
 
+//IDENTIFIER ::= IDENTIFIER | '`' KEYWORD '`'
+// move 2024 new grammar rules
+// type
+//TypeDeclaration ::= TYPE_KW IDENTIFIER '=' Type ';'
+//// match
+//MatchExpression ::= MATCH_KW Expr '{' MatchBranches '}'
+//MatchBranches ::= (MatchBranch ',')* MatchBranch?
+//MatchBranch ::= IDENTIFIER '=>' Expr
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Meta rules
@@ -1574,3 +1537,5 @@ private lt_eqeq_gt ::= <<lteqeqgtImpl>>
 private dotdot ::= <<dotdotImpl>>
 
 private meta non_empty_comma_sep_items ::= <<param>> ( ',' <<param>> )* ','?
+private meta comma_separated_list ::= <<param>> ( ',' <<param>> )* ','?
+private meta list_element ::= !'>' <<param>> (',' | &'>') { pin = 2 }

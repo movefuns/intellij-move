@@ -10,6 +10,7 @@ import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.PsiModificationTracker
 import org.sui.cli.manifest.MoveToml
 import org.sui.cli.manifest.SuiConfigYaml
+import org.sui.lang.MoveFile
 import org.sui.lang.core.types.Address
 import org.sui.lang.core.types.AddressLit
 import org.sui.lang.toMoveFile
@@ -104,7 +105,7 @@ data class MoveProject(
 
     val profiles: Set<String> = this.suiConfigYaml?.profiles.orEmpty()
 
-    fun processMoveFiles(processFile: (org.sui.lang.MoveFile) -> Boolean) {
+    fun processMoveFiles(processFile: (MoveFile) -> Boolean) {
         val folders = sourceFolders()
         var stopped = false
         for (folder in folders) {

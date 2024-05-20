@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiFile
-import org.sui.cli.moveProjects
+import org.sui.cli.moveProjectsService
 import org.sui.lang.MoveFile
 import org.sui.lang.core.psi.MvVisitor
 import org.sui.openapiext.common.isUnitTestMode
@@ -19,7 +19,7 @@ abstract class MvLocalInspectionTool : LocalInspectionTool() {
         session: LocalInspectionToolSession
     ): PsiElementVisitor {
         val file = session.file
-        return if (file is org.sui.lang.MoveFile && isApplicableTo(file)) {
+        return if (file is MoveFile && isApplicableTo(file)) {
             buildVisitor(holder, isOnTheFly)
         } else {
             PsiElementVisitor.EMPTY_VISITOR
@@ -41,10 +41,10 @@ abstract class MvLocalInspectionTool : LocalInspectionTool() {
      * - are included in module tree, i.e. have a crate root
      * - belong to a project with a configured and valid Rust toolchain
      */
-    private fun isApplicableTo(file: org.sui.lang.MoveFile): Boolean {
+    private fun isApplicableTo(file: MoveFile): Boolean {
         if (isUnitTestMode) return true
         if (isSyntaxOnly) return true
-        return file.project.moveProjects.findMoveProject(file) != null
+        return file.project.moveProjectsService.findMoveProjectForPsiElement(file) != null
     }
 }
 

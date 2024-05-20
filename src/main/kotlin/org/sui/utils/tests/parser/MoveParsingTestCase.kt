@@ -6,7 +6,7 @@ import org.sui.lang.MoveParserDefinition
 import org.sui.utils.tests.base.TestCase
 
 abstract class MvParsingTestCase(@NonNls dataPath: String) : ParsingTestCase(
-    "org/move/lang/parser/$dataPath",
+    "org/sui/lang/parser/$dataPath",
     "move",
     true,
     MoveParserDefinition()

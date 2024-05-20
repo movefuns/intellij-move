@@ -6,6 +6,7 @@ import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.PsiParserFacade
 import org.intellij.lang.annotations.Language
 import org.sui.ide.utils.FunctionSignature
+import org.sui.lang.MoveFile
 import org.sui.lang.MoveFileType
 import org.sui.lang.core.psi.ext.childOfType
 import org.sui.lang.core.psi.ext.descendantOfTypeStrict
@@ -179,7 +180,7 @@ class MvPsiFactory(val project: Project) {
                 "$moduleName.move",
                 MoveFileType,
                 "module $moduleName { $text }"
-            ) as org.sui.lang.MoveFile
+            ) as MoveFile
         val functions = dummyFile.childOfType<MvModule>()?.moduleBlock?.functionList.orEmpty()
         return functions
     }
@@ -197,13 +198,13 @@ class MvPsiFactory(val project: Project) {
 
     fun createNewline(): PsiElement = createWhitespace("\n")
 
-    inline fun <reified T : MvElement> createFromText(@Language("Move") code: CharSequence): T? {
+    inline fun <reified T : MvElement> createFromText(@Language("Sui Move") code: CharSequence): T? {
         val dummyFile = PsiFileFactory.getInstance(project)
             .createFileFromText(
                 "DUMMY.move",
                 MoveFileType,
                 code
-            ) as org.sui.lang.MoveFile
+            ) as MoveFile
         return dummyFile.descendantOfTypeStrict()
     }
 }

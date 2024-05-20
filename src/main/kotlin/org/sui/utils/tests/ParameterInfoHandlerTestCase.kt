@@ -10,10 +10,10 @@ import org.intellij.lang.annotations.Language
 open class ParameterInfoHandlerTestCase<A : PsiElement, B>(
     private val handler: ParameterInfoHandler<A, B>,
 ) : MvTestBase() {
-    protected fun checkByText(@Language("Move") code: String, hint: String, index: Int) =
+    protected fun checkByText(@Language("Sui Move") code: String, hint: String, index: Int) =
         checkByText(code, hint to index)
 
-    protected fun checkByText(@Language("Move") code: String, vararg hintWithIndex: Pair<String, Int>) {
+    protected fun checkByText(@Language("Sui Move") code: String, vararg hintWithIndex: Pair<String, Int>) {
         myFixture.configureByText("main.move", replaceCaretMarker(code))
         val createContext = MockCreateParameterInfoContext(myFixture.editor, myFixture.file)
 

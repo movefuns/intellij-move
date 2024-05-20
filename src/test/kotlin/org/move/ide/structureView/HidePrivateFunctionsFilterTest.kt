@@ -1,6 +1,4 @@
-package org.move.ide.structureView
-
-import org.sui.ide.structureView.HidePrivateFunctionsFilter
+package org.sui.ide.structureView
 
 class HidePrivateFunctionsFilterTest: StructureViewToggleableActionTestBase() {
     fun `test hide private functions filter`() = doTest("""

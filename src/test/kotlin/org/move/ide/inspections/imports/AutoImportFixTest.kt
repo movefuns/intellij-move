@@ -1,14 +1,11 @@
-package org.move.ide.inspections.imports
+package org.sui.ide.inspections.imports
 
 import org.intellij.lang.annotations.Language
-import org.sui.ide.inspections.SuiMvUnresolvedReferenceInspection
-import org.sui.ide.inspections.imports.AutoImportFix
-import org.sui.ide.inspections.imports.ImportItemUi
-import org.sui.ide.inspections.imports.withMockImportItemUi
+import org.sui.ide.inspections.MvUnresolvedReferenceInspection
 import org.sui.ide.utils.imports.ImportCandidate
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class AutoImportFixTest : InspectionTestBase(SuiMvUnresolvedReferenceInspection::class) {
+class AutoImportFixTest : InspectionTestBase(MvUnresolvedReferenceInspection::class) {
     fun `test method`() = checkAutoImportFixByText(
         """
 module 0x1::M {
@@ -516,7 +513,7 @@ module 0x1::Main {
         @Language("Move") after: String,
     ) = doTest { checkFixByText(AutoImportFix.NAME, before, after) }
 
-    private fun checkAutoImportFixIsUnavailable(@Language("Move") text: String) =
+    private fun checkAutoImportFixIsUnavailable(@Language("Sui Move") text: String) =
         doTest { checkFixIsUnavailable(AutoImportFix.NAME, text) }
 
     protected fun checkAutoImportFixByTextWithMultipleChoice(
@@ -542,7 +539,7 @@ module 0x1::Main {
     }
 
     private inline fun doTest(action: () -> Unit) {
-        val inspection = inspection as SuiMvUnresolvedReferenceInspection
+        val inspection = inspection as MvUnresolvedReferenceInspection
         val defaultValue = inspection.ignoreWithoutQuickFix
         try {
             inspection.ignoreWithoutQuickFix = false

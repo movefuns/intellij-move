@@ -1,6 +1,5 @@
-package org.move.ide.docs
+package org.sui.ide.docs
 
-import org.sui.ide.docs.MvDocumentationProvider
 import org.sui.utils.tests.MvDocumentationProviderProjectTestCase
 
 class MvNamedAddressDocumentationTest : MvDocumentationProviderProjectTestCase() {

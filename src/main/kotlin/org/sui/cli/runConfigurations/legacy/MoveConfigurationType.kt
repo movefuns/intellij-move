@@ -1,7 +1,5 @@
 package org.sui.cli.runConfigurations.legacy
 
-import com.intellij.execution.configurations.ConfigurationFactory
-import com.intellij.execution.configurations.ConfigurationTypeUtil
 import com.intellij.execution.configurations.RunConfiguration
 import com.intellij.execution.configurations.SimpleConfigurationType
 import com.intellij.openapi.project.Project
@@ -17,12 +15,5 @@ class MoveConfigurationType :
     ) {
     override fun createTemplateConfiguration(project: Project): RunConfiguration {
         return MoveCommandConfiguration(project, this)
-    }
-
-    val factory: ConfigurationFactory get() = configurationFactories.single()
-
-    companion object {
-        fun getInstance() =
-            ConfigurationTypeUtil.findConfigurationType(MoveConfigurationType::class.java)
     }
 }

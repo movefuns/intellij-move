@@ -1,7 +1,5 @@
-package org.move.ide.hints
+package org.sui.ide.hints
 
-import org.sui.ide.hints.TypeParameterInfoHandler
-import org.sui.ide.hints.TypeParamsDescription
 import org.sui.lang.core.psi.MvTypeArgumentList
 import org.sui.utils.tests.ParameterInfoHandlerTestCase
 

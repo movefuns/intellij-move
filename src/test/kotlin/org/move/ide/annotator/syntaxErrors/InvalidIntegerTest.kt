@@ -1,4 +1,4 @@
-package org.move.ide.annotator.syntaxErrors
+package org.sui.ide.annotator.syntaxErrors
 
 import org.sui.ide.annotator.MvSyntaxErrorAnnotator
 import org.sui.utils.tests.annotation.AnnotatorTestCase

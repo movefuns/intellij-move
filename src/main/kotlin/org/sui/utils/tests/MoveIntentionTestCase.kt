@@ -34,8 +34,8 @@ abstract class MvIntentionTestCase(private val intentionClass: KClass<out Intent
         ?: error("No ${path.fileName} found for $intentionClass ($path)")
 
     protected fun doAvailableTest(
-        @Language("Move") before: String,
-        @Language("Move") after: String,
+        @Language("Sui Move") before: String,
+        @Language("Sui Move") after: String,
         fileName: String = "main.move"
     ) {
         InlineFile(myFixture, before.trimIndent(), fileName).withCaret()
@@ -65,7 +65,7 @@ abstract class MvIntentionTestCase(private val intentionClass: KClass<out Intent
         myFixture.launchAction(intention)
     }
 
-    protected fun doUnavailableTest(@Language("Move") before: String, fileName: String = "main.move") {
+    protected fun doUnavailableTest(@Language("Sui Move") before: String, fileName: String = "main.move") {
         InlineFile(myFixture, before, fileName).withCaret()
         val intention = findIntention()
         check(intention == null) {

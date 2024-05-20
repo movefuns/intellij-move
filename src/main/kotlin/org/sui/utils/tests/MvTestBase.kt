@@ -9,6 +9,7 @@ import com.intellij.codeInspection.InspectionProfileEntry
 import com.intellij.testFramework.enableInspectionTool
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.intellij.lang.annotations.Language
+import org.sui.cli.settings.Blockchain
 import org.sui.cli.settings.moveSettings
 import org.sui.utils.tests.base.MvTestCase
 import org.sui.utils.tests.base.TestCase
@@ -26,6 +27,11 @@ annotation class DebugMode(val enabled: Boolean)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class WithEnabledInspections(vararg val inspections: KClass<out InspectionProfileEntry>)
 
+@Inherited
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class WithBlockchain(val blockchain: Blockchain)
+
 abstract class MvTestBase : BasePlatformTestCase(),
                             MvTestCase {
     protected val fileName: String
@@ -38,8 +44,14 @@ abstract class MvTestBase : BasePlatformTestCase(),
         setupInspections()
 
         val settingsState = project.moveSettings.state
-        val isDevMode = this.findAnnotationInstance<DebugMode>()?.enabled ?: true
-        project.moveSettings.state = settingsState.copy(debugMode = isDevMode)
+
+        val debugMode = this.findAnnotationInstance<DebugMode>()?.enabled ?: true
+        val blockchain = this.findAnnotationInstance<WithBlockchain>()?.blockchain ?: Blockchain.APTOS
+        // triggers projects refresh
+        project.moveSettings.state = settingsState.copy(
+            debugMode = debugMode,
+            blockchain = blockchain
+        )
     }
 
     private fun setupInspections() {
@@ -54,7 +66,7 @@ abstract class MvTestBase : BasePlatformTestCase(),
         return TestCase.camelOrWordsToSnake(camelCase)
     }
 
-    protected fun inlineFile(@Language("Move") code: String, name: String = "main.move"): InlineFile {
+    protected fun inlineFile(@Language("Sui Move") code: String, name: String = "main.move"): InlineFile {
         return InlineFile(myFixture, code, name)
     }
 

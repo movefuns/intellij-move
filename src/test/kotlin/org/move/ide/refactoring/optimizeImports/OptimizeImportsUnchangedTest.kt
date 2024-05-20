@@ -1,4 +1,4 @@
-package org.move.ide.refactoring.optimizeImports
+package org.sui.ide.refactoring.optimizeImports
 
 import org.intellij.lang.annotations.Language
 
@@ -113,5 +113,5 @@ class OptimizeImportsUnchangedTest : OptimizeImportsTestBase() {
     """
     )
 
-    private fun checkNotChanged(@Language("Move") code: String) = doTest(code, code)
+    private fun checkNotChanged(@Language("Sui Move") code: String) = doTest(code, code)
 }

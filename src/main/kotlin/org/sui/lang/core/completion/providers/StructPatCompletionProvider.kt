@@ -10,10 +10,10 @@ import org.sui.lang.core.completion.createCompletionLookupElement
 import org.sui.lang.core.psi.MvBindingPat
 import org.sui.lang.core.psi.MvLetStmt
 import org.sui.lang.core.psi.containingModule
-import org.sui.lang.core.psi.itemScope
+import org.sui.lang.core.psi.namedItemScopes
 import org.sui.lang.core.psiElement
-import org.sui.lang.core.resolve.ItemVis
-import org.sui.lang.core.resolve.MslLetScope
+import org.sui.lang.core.resolve.ContextScopeInfo
+import org.sui.lang.core.resolve.LetStmtScope
 import org.sui.lang.core.resolve.processModuleItems
 import org.sui.lang.core.resolve.ref.Namespace
 import org.sui.lang.core.resolve.ref.Visibility
@@ -34,13 +34,13 @@ object StructPatCompletionProvider : MvCompletionProvider() {
         val bindingPat = parameters.position.parent as MvBindingPat
         val module = bindingPat.containingModule ?: return
 
-        val itemVis = ItemVis(
-            namespaces = setOf(Namespace.TYPE),
-            visibilities = setOf(Visibility.Internal),
-            mslLetScope = MslLetScope.NONE,
-            itemScope = bindingPat.itemScope,
-        )
-        processModuleItems(module, itemVis) {
+        val namespaces = setOf(Namespace.TYPE)
+        val contextScopeInfo =
+            ContextScopeInfo(
+                letStmtScope = LetStmtScope.NONE,
+                refItemScopes = bindingPat.namedItemScopes,
+            )
+        processModuleItems(module, namespaces, setOf(Visibility.Internal), contextScopeInfo) {
             val lookup = it.element.createCompletionLookupElement()
             result.addElement(lookup)
             false

@@ -6,6 +6,7 @@ import com.intellij.ide.util.treeView.smartTree.TreeElement
 import com.intellij.navigation.ItemPresentation
 import com.intellij.openapi.ui.Queryable
 import com.intellij.psi.NavigatablePsiElement
+import org.sui.lang.MoveFile
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.openapiext.common.isUnitTestMode
@@ -23,11 +24,11 @@ class MvStructureViewTreeElement(val element: NavigatablePsiElement): StructureV
 
     val isTestFunction: Boolean
         get() =
-            (element as? MvFunction)?.isTest ?: false
+            (element as? MvFunction)?.hasTestAttr ?: false
 
     val isTestOnlyItem: Boolean
         get() =
-            (element as? MvDocAndAttributeOwner)?.isTestOnly ?: false
+            (element as? MvDocAndAttributeOwner)?.hasTestOnlyAttr ?: false
 
     override fun navigate(requestFocus: Boolean) = element.navigate(requestFocus)
     override fun canNavigate(): Boolean = element.canNavigate()
@@ -36,7 +37,7 @@ class MvStructureViewTreeElement(val element: NavigatablePsiElement): StructureV
 
     override fun getChildren(): Array<TreeElement> {
         val items = when (element) {
-            is org.sui.lang.MoveFile -> {
+            is MoveFile -> {
                 listOf(
                     element.modules().toList(),
                     element.scriptBlocks().flatMap { it.functionList }

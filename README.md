@@ -4,8 +4,15 @@
 
 ## Installation
 
+### Online
+
 Open in your IDE, search for _Sui Move Language_ and install the plugin.
 `Settings > Plugins > Marketplace`
+s
+
+### Local
+
+[install file](./resources/intellij-sui-move-1.0.0.223.zip)
 
 ## Features
 

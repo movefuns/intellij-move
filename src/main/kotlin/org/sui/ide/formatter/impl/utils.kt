@@ -21,7 +21,7 @@ val ONE_LINE_ITEMS = ts(USE_STMT, CONST)
 
 val PAREN_DELIMITED_BLOCKS = ts(
     PARENS_EXPR, TUPLE_PAT, TUPLE_TYPE, TUPLE_LIT_EXPR, CONDITION,
-    FUNCTION_PARAMETER_LIST, VALUE_ARGUMENT_LIST, ATTR_ITEM_ARGUMENTS
+    FUNCTION_PARAMETER_LIST, VALUE_ARGUMENT_LIST, ATTR_ITEM_LIST
 )
 val ANGLE_DELIMITED_BLOCKS = ts(TYPE_PARAMETER_LIST, TYPE_ARGUMENT_LIST)
 val BRACKET_DELIMITED_BLOCKS = ts(VECTOR_LIT_ITEMS)
@@ -44,7 +44,7 @@ fun ASTNode?.isWhitespaceOrEmpty() = this == null || textLength == 0 || elementT
 
 val PsiElement.isTopLevelItem: Boolean
     get() = (this is MvModule || this is MvAddressDef || this is MvScript || this is MvModuleSpec)
-            && parent is org.sui.lang.MoveFile
+            && parent is MoveFile
 
 val PsiElement.isModuleItem: Boolean
     get() = this is MvFunction || this is MvConst || this is MvStruct || this is MvUseStmt

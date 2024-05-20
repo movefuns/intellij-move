@@ -1,9 +1,8 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiFieldInitShorthandInspection
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class SuiFieldInitShorthandInspectionTest : InspectionTestBase(SuiFieldInitShorthandInspection::class) {
+class SuiFieldInitShorthandInspectionTest : InspectionTestBase(FieldInitShorthandInspection::class) {
 
     fun `test not applicable`() = checkFixIsUnavailable(
         "Use initialization shorthand", """

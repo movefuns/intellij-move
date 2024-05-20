@@ -1,10 +1,9 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiMvUnresolvedReferenceInspection
 import org.sui.utils.tests.DebugMode
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class SuiMvUnresolvedReferenceInspectionTest : InspectionTestBase(SuiMvUnresolvedReferenceInspection::class) {
+class SuiMvUnresolvedReferenceInspectionTest : InspectionTestBase(MvUnresolvedReferenceInspection::class) {
     fun `test unresolved variable`() = checkByText("""
         module 0x1::M {
             fun main() {

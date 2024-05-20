@@ -1,9 +1,8 @@
-package org.move.ide.inspections
+package org.sui.ide.inspections
 
-import org.sui.ide.inspections.SuiUnusedTestSignerInspection
 import org.sui.utils.tests.annotation.InspectionTestBase
 
-class SuiUnusedTestSignerInspectionTest : InspectionTestBase(SuiUnusedTestSignerInspection::class) {
+class SuiUnusedTestSignerInspectionTest : InspectionTestBase(UnusedTestSignerInspection::class) {
     fun `test all signers are used`() = checkByText("""
     module 0x1::M {
         #[test(acc_1 = @0x1, acc_2 = @0x2)]

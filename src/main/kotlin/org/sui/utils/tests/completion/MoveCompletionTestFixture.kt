@@ -13,13 +13,13 @@ class MvCompletionTestFixture(
     private val defaultFileName: String = "main.move"
 ) : BaseFixture() {
 
-    fun invokeCompletion(@Language("Move") code: String): List<LookupElement> {
+    fun invokeCompletion(@Language("Sui Move") code: String): List<LookupElement> {
         prepare(code)
         val completions = myFixture.completeBasic()
         return completions.toList()
     }
 
-    fun doFirstCompletion(@Language("Move") code: String, @Language("Move") after: String) {
+    fun doFirstCompletion(@Language("Sui Move") code: String, @Language("Move") after: String) {
         check(hasCaretMarker(after)) { "No /*caret*/ marker in `after`" }
         checkByText(code, after.trimIndent()) {
             val variants = myFixture.completeBasic()
@@ -29,7 +29,7 @@ class MvCompletionTestFixture(
         }
     }
 
-    fun doSingleCompletion(@Language("Move") code: String, @Language("Move") after: String) {
+    fun doSingleCompletion(@Language("Sui Move") code: String, @Language("Move") after: String) {
         check(hasCaretMarker(after)) { "No /*caret*/ marker in `after`" }
         checkByText(code, after.trimIndent()) { executeSoloCompletion() }
     }
@@ -49,7 +49,7 @@ class MvCompletionTestFixture(
         }
     }
 
-    fun checkNoCompletion(@Language("Move") code: String) {
+    fun checkNoCompletion(@Language("Sui Move") code: String) {
         prepare(code)
         val lookups = myFixture.completeBasic()
         checkNotNull(lookups) {
@@ -61,10 +61,10 @@ class MvCompletionTestFixture(
         }
     }
 
-    fun checkContainsCompletion(@Language("Move") code: String, variant: String) =
+    fun checkContainsCompletion(@Language("Sui Move") code: String, variant: String) =
         checkContainsCompletion(code, listOf(variant))
 
-    fun checkContainsCompletion(@Language("Move") code: String, variants: List<String>) {
+    fun checkContainsCompletion(@Language("Sui Move") code: String, variants: List<String>) {
         prepare(code)
         val lookups = myFixture.completeBasic()
 
@@ -78,7 +78,7 @@ class MvCompletionTestFixture(
         }
     }
 
-    fun checkNotContainsCompletion(@Language("Move") code: String, variant: String) {
+    fun checkNotContainsCompletion(@Language("Sui Move") code: String, variant: String) {
         prepare(code)
         val lookups = myFixture.completeBasic()
 //        checkNotNull(lookups) {
@@ -89,7 +89,7 @@ class MvCompletionTestFixture(
         }
     }
 
-    fun checkNotContainsCompletion(@Language("Move") code: String, variants: List<String>) {
+    fun checkNotContainsCompletion(@Language("Sui Move") code: String, variants: List<String>) {
         prepare(code)
         val lookups = myFixture.completeBasic()
 //        checkNotNull(lookups) {

@@ -2,7 +2,12 @@
 
 ## 安装
 
+### 在线
 在你的 IDE 中打开 `Settings > Plugins > Marketplace`，搜索 Sui Move Language 并安装该插件。
+
+### 本地
+
+[安装文件](./resources/intellij-sui-move-1.0.0.223.zip)
 
 ## 特性
 

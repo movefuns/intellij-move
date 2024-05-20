@@ -2,23 +2,27 @@ package org.sui.lang.core.resolve.ref
 
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.isSelf
-import org.sui.lang.core.psi.ext.useSpeck
-import org.sui.lang.core.resolve.resolveSingleItem
+import org.sui.lang.core.psi.ext.itemUseSpeck
+import org.sui.lang.core.resolve.resolveLocalItem
 import org.sui.stdext.wrapWithList
 
 class MvModuleReferenceImpl(
     element: MvModuleRef,
-) : MvReferenceCached<MvModuleRef>(element) {
+) : MvPolyVariantReferenceCached<MvModuleRef>(element) {
 
-    override fun resolveInner(): List<MvNamedElement> {
+    override fun multiResolveInner(): List<MvNamedElement> {
         if (element.isSelf) return element.containingModule.wrapWithList()
 
-        val resolved = resolveSingleItem(element, setOf(Namespace.MODULE))
+        check(element !is MvFQModuleRef) {
+            "That element has different reference item"
+        }
+
+        val resolved = resolveLocalItem(element, setOf(Namespace.MODULE)).firstOrNull()
         if (resolved is MvUseAlias) {
             return resolved.wrapWithList()
         }
         val moduleRef = when {
-            resolved is MvUseItem && resolved.text == "Self" -> resolved.useSpeck().fqModuleRef
+            resolved is MvUseItem && resolved.text == "Self" -> resolved.itemUseSpeck.fqModuleRef
             resolved is MvModuleUseSpeck -> resolved.fqModuleRef
             else -> return emptyList()
         }

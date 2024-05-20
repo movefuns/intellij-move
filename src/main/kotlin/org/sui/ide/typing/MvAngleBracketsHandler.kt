@@ -10,6 +10,7 @@ import com.intellij.openapi.editor.highlighter.HighlighterIterator
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
+import org.sui.lang.MoveFileBase
 import org.sui.lang.MvElementTypes.*
 import org.sui.lang.core.tokenSetOf
 import org.sui.openapiext.isValidOffset
@@ -26,7 +27,7 @@ class MvAngleBraceTypedHandler : TypedHandlerDelegate() {
         file: PsiFile,
         fileType: FileType
     ): Result {
-        if (file !is org.sui.lang.MoveFileBase) return Result.CONTINUE
+        if (file !is MoveFileBase) return Result.CONTINUE
 
         if (CodeInsightSettings.getInstance().AUTOINSERT_PAIR_BRACKET) {
             when (c) {
@@ -46,7 +47,7 @@ class MvAngleBraceTypedHandler : TypedHandlerDelegate() {
     }
 
     override fun charTyped(c: Char, project: Project, editor: Editor, file: PsiFile): Result {
-        if (file !is org.sui.lang.MoveFileBase) return Result.CONTINUE
+        if (file !is MoveFileBase) return Result.CONTINUE
 
         if (ltTyped) {
             ltTyped = false
@@ -77,7 +78,7 @@ class MvAngleBracketsBackspaceHandler : BackspaceHandlerDelegate() {
      * Determine whether this handler applies to given context and perform necessary actions before deleting [c].
      */
     fun deleting(c: Char, file: PsiFile, editor: Editor): Boolean {
-        if (c == '<' && file is org.sui.lang.MoveFileBase) {
+        if (c == '<' && file is MoveFileBase) {
             val offset = editor.caretModel.offset
             val iterator = (editor as EditorEx).highlighter.createIterator(offset)
             return iterator.tokenType == GT
