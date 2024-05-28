@@ -119,6 +119,20 @@ data class MoveProject(
         }
     }
 
+    fun processPreLoadMoveFiles(processFile: (MoveFile) -> Boolean) {
+        val folders = sourceFolders()
+        var stopped = false
+        for (folder in folders) {
+            if (stopped) break
+            folder.iterateMoveVirtualFiles {
+                val moveFile = it.toMoveFile(project) ?: return@iterateMoveVirtualFiles true
+                val continueForward = processFile(moveFile)
+                stopped = !continueForward
+                continueForward
+            }
+        }
+    }
+
     override fun toString(): String {
         return "MoveProject(" +
                 "root=${this.contentRoot.path}, " +

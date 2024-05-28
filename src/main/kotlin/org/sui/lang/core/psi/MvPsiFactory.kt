@@ -193,6 +193,10 @@ class MvPsiFactory(val project: Project) {
         createFromText("module $moduleName { $text } ")
             ?: error("Failed to create a function from text: `$text`")
 
+    fun specModule(text: String): MvModule =
+        createFromText("module sui::$text {} ")
+            ?: error("Failed to create a module from text: `$text`")
+
     fun createWhitespace(ws: String): PsiElement =
         PsiParserFacade.getInstance(project).createWhiteSpaceFromText(ws)
 

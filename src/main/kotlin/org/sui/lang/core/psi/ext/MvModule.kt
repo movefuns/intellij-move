@@ -7,6 +7,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.util.CachedValuesManager.getProjectPsiDependentCache
 import org.sui.ide.MoveIcons
+import org.sui.ide.annotator.PRELOAD_STD_MODULES
+import org.sui.ide.annotator.PRELOAD_SUI_MODULES
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.resolve.ref.Visibility
 import org.sui.lang.core.stubs.MvFunctionStub
@@ -66,6 +68,10 @@ fun MvModule.testFunctions(): List<MvFunction> =
     getProjectPsiDependentCache(this) {
         it.allFunctions().filter { f -> f.hasTestAttr }
     }
+fun builtinFqModuleRef(text: String, project: Project): MvSpecFunction {
+    val trimmedText = text.trimIndent()
+    return project.psiFactory.specFunction(trimmedText, moduleName = "builtin_spec_functions")
+}
 
 fun MvModule.builtinFunctions(): List<MvFunction> {
     return getProjectPsiDependentCache(this) {
@@ -140,6 +146,21 @@ fun MvModule.structs(): List<MvStruct> {
 }
 
 fun MvModule.schemas(): List<MvSchema> = moduleBlock?.schemaList.orEmpty()
+
+fun MvModule.builtinModules(): List<MvModule> {
+    return getProjectPsiDependentCache(this) {
+        val project = it.project
+        listOf(
+            builtinModule("transfer", project),
+            builtinModule("object", project),
+        )
+    }
+}
+
+fun builtinModule(text: String, project: Project): MvModule {
+    val trimmedText = text.trimIndent()
+    return project.psiFactory.specModule(trimmedText)
+}
 
 fun MvModule.builtinSpecFunctions(): List<MvSpecFunction> {
     return getProjectPsiDependentCache(this) {
@@ -233,6 +254,11 @@ fun MvModule.allModuleSpecBlocks(): List<MvModuleSpecBlock> {
     return this.allModuleSpecs().mapNotNull { it.moduleSpecBlock }
 }
 
+fun MvModule.isPreload(): Boolean {
+    return this.addressRef?.namedAddress?.text == "sui" && PRELOAD_SUI_MODULES.contains(this.identifier?.text)
+            || this.addressRef?.namedAddress?.text == "std" && PRELOAD_STD_MODULES.contains(this.identifier?.text)
+}
+
 abstract class MvModuleMixin : MvStubbedNamedElementImpl<MvModuleStub>,
                                MvModule {
 
@@ -263,4 +289,5 @@ abstract class MvModuleMixin : MvStubbedNamedElementImpl<MvModuleStub>,
             val address = this.address(moveProject) ?: Address.Value("0x0")
             return ItemQualName(this, address, null, moduleName)
         }
+
 }

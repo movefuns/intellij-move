@@ -14,9 +14,7 @@ import org.sui.cli.Consts
 import org.sui.cli.MoveProject
 import org.sui.cli.moveProjectsService
 import org.sui.lang.core.psi.*
-import org.sui.lang.core.psi.ext.ancestorOrSelf
-import org.sui.lang.core.psi.ext.childrenOfType
-import org.sui.lang.core.psi.ext.modules
+import org.sui.lang.core.psi.ext.*
 import org.sui.openapiext.resolveAbsPath
 import org.sui.openapiext.toPsiFile
 import org.sui.stdext.chain
@@ -78,6 +76,16 @@ class MoveFile(fileViewProvider: FileViewProvider) : MoveFileBase(fileViewProvid
     }
 
     fun moduleSpecs(): List<MvModuleSpec> = this.childrenOfType()
+
+    fun preloadModules(): Sequence<MvModule> {
+        return getProjectPsiDependentCache(this) { it ->
+            it.childrenOfType<MvModule>()
+                .chain(it.childrenOfType<MvAddressDef>().flatMap { a -> a.modules() })
+                .filter {
+                    it.isPreload()
+                }
+        }
+    }
 }
 
 val VirtualFile.isMoveFile: Boolean get() = fileType == MoveFileType
@@ -94,3 +102,18 @@ fun MoveFile.isTempFile(): Boolean =
 
 inline fun <reified T : PsiElement> PsiFile.elementAtOffset(offset: Int): T? =
     this.findElementAt(offset)?.ancestorOrSelf<T>()
+
+fun MoveFile.preLoadItems(): List<MvStruct> {
+    if (this.fileType != MoveFileType) return emptyList()
+    val resultList = mutableListOf<MvStruct>()
+    this.modules().forEach { mvModule ->
+        if (mvModule.isPreload() && mvModule.identifier?.text == "tx_context") {
+            mvModule.structs().filter { it.identifier?.text == "TxContext" }.let { resultList.addAll(it) }
+        }
+        if (mvModule.isPreload() && mvModule.identifier?.text == "object") {
+            mvModule.structs().filter { it.identifier?.text == "ID" || it.identifier?.text == "UID" }
+                .let { resultList.addAll(it) }
+        }
+    }
+    return resultList
+}

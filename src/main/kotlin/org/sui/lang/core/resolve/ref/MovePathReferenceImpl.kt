@@ -1,10 +1,7 @@
 package org.sui.lang.core.resolve.ref
 
 import org.sui.lang.core.psi.*
-import org.sui.lang.core.psi.ext.isSelf
-import org.sui.lang.core.psi.ext.isUpdateFieldArg2
-import org.sui.lang.core.psi.ext.itemUseSpeck
-import org.sui.lang.core.psi.ext.namespaces
+import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.resolve.*
 
 class MvPathReferenceImpl(
@@ -43,6 +40,19 @@ class MvPathReferenceImpl(
                     contextScopeInfo
                 )
             }
+
+            var resolved: MvModule? = null
+            // process preload module
+            processModuleRef(moduleRef) {
+                if (it.name == moduleRef.referenceName) {
+                    resolved = it.element
+                    true
+                } else {
+                    false
+                }
+            }
+            if (resolved != null) return resolveModuleItem(resolved!!, refName, pathNamespaces, vs, contextScopeInfo)
+
             val useSpeckFQModuleRef = resolveIntoFQModuleRefInUseSpeck(moduleRef) ?: return emptyList()
             val useSpeckModule =
                 useSpeckFQModuleRef.reference?.resolve() as? MvModule ?: return emptyList()
@@ -51,6 +61,25 @@ class MvPathReferenceImpl(
             // if it's NAME
             // special case second argument of update_field function in specs
             if (element.isUpdateFieldArg2) return emptyList()
+
+            // process preload module item
+            val preLoadResolved: MutableList<MvNamedElement> = mutableListOf()
+            if ((element.parent?.parent is MvTypeAnnotation || element.parent?.parent is MvRefType) && listOf(
+                    "UID",
+                    "ID",
+                    "TxContext"
+                ).contains(element.identifierName)
+            ) {
+                processPreLoadModuleItem(element) {
+                    if (it.name == element.identifierName) {
+                        preLoadResolved.add(it.element)
+                        true
+                    } else {
+                        false
+                    }
+                }
+            }
+            if (preLoadResolved.isNotEmpty()) return preLoadResolved.toList()
 
             // try local names
             val item = resolveLocalItem(element, pathNamespaces).firstOrNull() ?: return emptyList()

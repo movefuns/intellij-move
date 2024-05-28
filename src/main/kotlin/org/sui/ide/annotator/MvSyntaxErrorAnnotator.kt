@@ -5,6 +5,7 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
+import org.sui.lang.core.types.ty.Ability
 import org.sui.lang.utils.Diagnostic
 import org.sui.lang.utils.addToHolder
 
@@ -32,6 +33,14 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
                 // no error if #[test]
                 if (function.hasTestAttr) return
                 val returnType = function.returnType ?: return
+                // entry function can return type which has drop ability
+                if (HAS_DROP_ABILITY_TYPES.contains(returnType.lastChild.text)) return
+                if (returnType is MvStruct) {
+                    val returnStruct = returnType as MvStruct
+                    if (returnStruct.abilities.contains(Ability.DROP)) {
+                        return
+                    }
+                }
                 Diagnostic
                     .EntryFunCannotHaveReturnValue(returnType)
                     .addToHolder(holder)

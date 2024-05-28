@@ -15,7 +15,6 @@
                                         implementationClass="org.sui.ide.lineMarkers.ItemSpecsLineMarkerProvider"/>
 
         <!-- PSI managing -->
-
         <projectService serviceInterface="org.sui.lang.core.psi.MvPsiManager"
                         serviceImplementation="org.sui.lang.core.psi.MvPsiManagerImpl"/>
 
@@ -144,9 +143,9 @@
                                    implementationClass="org.sui.ide.hints.type.MvInlayTypeHintsProvider"/>
 
         <defaultLiveTemplates file="liveTemplates/Move.xml"/>
-        <liveTemplateContext implementation="org.sui.ide.liveTemplates.MvContextType$Generic"/>
-        <liveTemplateContext implementation="org.sui.ide.liveTemplates.MvContextType$Module"/>
-        <liveTemplateContext implementation="org.sui.ide.liveTemplates.MvContextType$Block"/>
+        <liveTemplateContext implementation="org.sui.ide.liveTemplates.MvContextType$Generic" contextId="Sui Move"/>
+        <liveTemplateContext implementation="org.sui.ide.liveTemplates.MvContextType$Module" contextId="Sui Move"/>
+        <liveTemplateContext implementation="org.sui.ide.liveTemplates.MvContextType$Block" contextId="Sui Move"/>
 
         <renamePsiElementProcessor implementation="org.sui.ide.refactoring.MvRenameProcessor"
                                    order="first"
@@ -160,10 +159,10 @@
 
         <declarationRangeHandler
                 key="org.sui.lang.core.psi.MvModule"
-                implementationClass="org.sui.ide.navigation.ModuleDeclarationRangeHandler"/>
+                implementationClass="org.sui.ide.hints.ModuleDeclarationRangeHandler"/>
         <declarationRangeHandler
                 key="org.sui.lang.core.psi.MvFunction"
-                implementationClass="org.sui.ide.navigation.FunctionDeclarationRangeHandler"/>
+                implementationClass="org.sui.ide.hints.FunctionDeclarationRangeHandler"/>
 
         <breadcrumbsInfoProvider implementation="org.sui.ide.MvBreadcrumbsProvider"/>
 
@@ -292,7 +291,7 @@
 
         <additionalLibraryRootsProvider implementation="org.sui.cli.BuildLibraryRootsProvider"/>
 
-        <applicationService serviceImplementation="org.sui.openapiext.OpenSSLInfoService"/>
+        <!--        <applicationService serviceImplementation="org.sui.openapiext.OpenSSLInfoService"/>-->
         <additionalLibraryRootsProvider
                 implementation="org.sui.cli.BuildLibraryRootsProvider"/>
         <!-- Notifications -->
