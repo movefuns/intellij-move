@@ -3,6 +3,7 @@ package org.sui.lang.index
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.stubs.StringStubIndexExtension
+import com.intellij.psi.stubs.StubIndex
 import com.intellij.psi.stubs.StubIndexKey
 import org.sui.lang.core.psi.MvModuleSpec
 import org.sui.lang.core.stubs.impl.MvFileStub
@@ -24,6 +25,11 @@ class MvModuleSpecIndex : StringStubIndexExtension<MvModuleSpec>() {
         ): Collection<MvModuleSpec> {
             checkCommitIsNotInProgress(project)
             return getElements(KEY, moduleName, project, scope)
+        }
+
+        fun getAllKeys(project: Project): Collection<String> {
+            checkCommitIsNotInProgress(project)
+            return StubIndex.getInstance().getAllKeys(MvNamedElementIndex.KEY, project)
         }
     }
 }

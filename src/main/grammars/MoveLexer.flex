@@ -47,7 +47,7 @@ import static org.sui.lang.MoveParserDefinition.*;
 %unicode
 
 %s IN_BLOCK_COMMENT
-
+%s IN_LIFETIME_OR_CHAR
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Whitespaces
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -75,7 +75,7 @@ HEX_INTEGER_LITERAL=0x[0-9a-zA-Z_]*
 HEX_STRING_LITERAL=x\" ( [0-9a-zA-Z]* ) (\")?
 BYTE_STRING_LITERAL=b\" ( [^\\\"\n] | \\[^] )* (\")?
 
-IDENTIFIER=[_a-zA-Z][_a-zA-Z0-9]*
+IDENTIFIER=[_a-zA-Z][_a-zA-Z0-9]* | `type`
 
 %%
 <YYINITIAL> {
@@ -119,6 +119,7 @@ IDENTIFIER=[_a-zA-Z][_a-zA-Z0-9]*
       "|"        { return OR; }
       "@"        { return AT; }
       "#"        { return HASH; }
+      "`"        { return BACKTICK;}
 
       // keywords
       "script"         { return SCRIPT_KW; }
@@ -143,11 +144,13 @@ IDENTIFIER=[_a-zA-Z][_a-zA-Z0-9]*
       "loop"           { return LOOP; }
       "while"          { return WHILE; }
       "let"            { return LET; }
-      "phantom"            { return PHANTOM; }
+      "phantom"        { return PHANTOM; }
       "spec"           { return SPEC; }
       "enum"           { return ENUM_KW; }
       "type"           { return TYPE_KW; }
-      "match"           { return MATCH_KW; }
+      "`type`"         { return IDENTIFIER; }
+      "`for`"          { return IDENTIFIER; }
+      "match"          { return MATCH_KW; }
 
   {DIEM_ADDRESS}          { return DIEM_ADDRESS; }
   {PLACEHOLDER_ADDRESS}          { return PLACEHOLDER_ADDRESS; }
@@ -176,5 +179,8 @@ IDENTIFIER=[_a-zA-Z][_a-zA-Z0-9]*
  }
   [^]     { }
 }
-
+<IN_LIFETIME_OR_CHAR> {
+  \'{IDENTIFIER}                        { yybegin(YYINITIAL); return QUOTE_IDENTIFIER; }
+  <<EOF>>                               { yybegin(YYINITIAL); return BAD_CHARACTER; }
+}
 [^] { return BAD_CHARACTER; }

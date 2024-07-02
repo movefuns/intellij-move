@@ -12,7 +12,7 @@ fun prop(name: String): String =
         ?: error("Property `$name` is not defined in gradle.properties for environment `$shortPlatformVersion`")
 
 val shortPlatformVersion = prop("shortPlatformVersion")
-val codeVersion = "1.2.1"
+val codeVersion = "1.3.2"
 val pluginVersion = "$codeVersion.$shortPlatformVersion"
 val pluginGroup = "org.sui.move"
 val javaVersion = JavaVersion.VERSION_17

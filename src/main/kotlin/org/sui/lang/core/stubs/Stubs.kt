@@ -279,7 +279,37 @@ class MvStructStub(
         override fun indexStub(stub: MvStructStub, sink: IndexSink) = sink.indexStructStub(stub)
     }
 }
+class MvEnumStub(
+    parent: StubElement<*>?,
+    elementType: IStubElementType<*, *>,
+    override val name: String?,
+    override val flags: Int,
+) : MvAttributeOwnerStubBase<MvEnum>(parent, elementType), MvNamedStub {
+    object Type : MvStubElementType<MvEnumStub, MvEnum>("ENUM") {
+        override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): MvEnumStub {
+            val name = dataStream.readNameAsString()
+            val flags = dataStream.readInt()
+            return MvEnumStub(parentStub, this, name, flags)
+        }
 
+        override fun serialize(stub: MvEnumStub, dataStream: StubOutputStream) =
+            with(dataStream) {
+                writeName(stub.name)
+                writeInt(stub.flags)
+            }
+
+        override fun createPsi(stub: MvEnumStub): MvEnum =
+            MvEnumImpl(stub, this)
+
+        override fun createStub(psi: MvEnum, parentStub: StubElement<*>?): MvEnumStub {
+//            val attrs = QueryAttributes()
+//            val flags = MvAttributeOwnerStub.extractFlags(attrs)
+            return MvEnumStub(parentStub, this, psi.name, 1)
+        }
+
+        override fun indexStub(stub: MvEnumStub, sink: IndexSink) = sink.indexEnumStub(stub)
+    }
+}
 class MvSchemaStub(
     parent: StubElement<*>?,
     elementType: IStubElementType<*, *>,
@@ -379,6 +409,6 @@ fun factory(name: String): MvStubElementType<*, *> = when (name) {
     "SCHEMA" -> MvSchemaStub.Type
     "CONST" -> MvConstStub.Type
     "MODULE_SPEC" -> MvModuleSpecStub.Type
-
+    "ENUM" -> MvEnumStub.Type
     else -> error("Unknown element $name")
 }

@@ -26,6 +26,9 @@ val MvStruct.fieldsMap: Map<String, MvStructField>
 
 val MvStruct.fieldNames: List<String> get() = fields.map { it.name }
 
+val MvStruct.isPublic: Boolean
+    get() = this.node.findChildByType(MvElementTypes.PUBLIC) != null
+
 //fun MvStruct.getField(fieldName: String): MvStructField? =
 //    this.descendantsOfType<MvStructField>().find { it.name == fieldName }
 

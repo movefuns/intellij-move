@@ -4,6 +4,7 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.util.descendantsOfType
 import org.sui.cli.settings.isDebugModeEnabled
+import org.sui.ide.annotator.BUILTIN_TYPE_IDENTIFIERS
 import org.sui.ide.inspections.imports.AutoImportFix
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
@@ -25,6 +26,8 @@ class MvUnresolvedReferenceInspection : MvLocalInspectionTool() {
         if (candidates.isEmpty() && ignoreWithoutQuickFix) return
 
         val referenceName = element.referenceName ?: return
+        if (BUILTIN_TYPE_IDENTIFIERS.contains(referenceName)) return
+
         val parent = element.parent
         val description = when (parent) {
             is MvPathType -> "Unresolved type: `$referenceName`"

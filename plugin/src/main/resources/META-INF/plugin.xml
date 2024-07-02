@@ -7,6 +7,14 @@
     <description>
         <![CDATA[
             <p>
+                <ul>Support Move 2024 grammar.
+                  <li>syntax highlighting.</li>
+                  <li>struct declarations.</li>
+                  <li>new keywords.</li>
+                  <li>preload item.</li>
+                  <li>other grammars are being adapted(Method syntax,Positional fields,Loop labels).</li>
+                </ul>
+
                 <p>This plugin provides enhanced support for Sui Move, a language tailored for blockchain development. It bolsters coding efficiency and workflow with a suite of features:</p>
                 <ul>
                   <li><strong>Efficient Syntax Highlighting:</strong> For improved code clarity and error reduction.</li>
@@ -37,7 +45,7 @@
             <p>Click the <strong>Move</strong> to add a new customer configuration.</p>
             <p>Its configuration process is similar to Sui Command.</p>
             <p><strong>Note:</strong> Ensure the working directory is in the current project.</p>
-            <p>Issues or feature requests? Visit our GitHub repository[https://github.com/movefuns/intellij-move]</a>.</p>
+            <p>Issues or feature requests? Visit our GitHub repository<a>[https://github.com/movefuns/intellij-move]</a>.</p>
         ]]>
     </description>
 

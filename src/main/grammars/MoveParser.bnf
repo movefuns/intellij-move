@@ -92,12 +92,13 @@
         EQ_EQ_GT        = '==>'
         LT_EQ_EQ_GT     = '<==>'
         DOT_DOT     = '..'
-
+        BACKTICK = '`'
         ADDRESS     = 'address_kw'
         HAS     = 'has_kw'
         ENTRY     = 'entry_kw'
         INLINE     = 'inline_kw'
         FRIEND     = 'friend_kw'
+        PACKAGE     = 'package_kw'
         FOR     = 'for_kw'
 
         SCRIPT_KW     = 'script_kw'
@@ -148,8 +149,6 @@
     ]
 }
 
-// USE_FUN_KW = 'use fun'
-
 // Naming convention:
 //
 //   * tokens are lowercase: for, if, identifier
@@ -194,7 +193,7 @@ private ScriptItem ::= !('}' | <<eof>>) ScriptItem_item
     recoverWhile = ScriptItem_recover
 }
 // top-level recovery
-private ScriptItemFirst ::= use | CONST_KW | fun
+private ScriptItemFirst ::= use | CONST_KW | fun | UseFunFirst
 private ScriptItem_recover ::= !('}' | <<eof>> | ScriptItemFirst)
 
 private ScriptItem_item ::= UseStmt | Const | FunctionInner
@@ -245,12 +244,14 @@ private ModuleItem ::= !('}' | <<eof>>) ModuleItem_item
     recoverWhile = Item_recover
 }
 // top-level recovery
-private Item_first ::= use | public | native | fun | CONST_KW | STRUCT_KW |ENUM_KW| spec | friend | Attr | entry | inline
+private Item_first ::= use | public | native | fun | CONST_KW | STRUCT_KW |ENUM_KW| spec | friend | Attr | entry | inline | UseFunFirst
 private Item_recover ::= !('}' | <<eof>> | Item_first)
 
-private ModuleItem_item ::= UseStmt
+private ModuleItem_item ::= PublicUseFun
+                            | UseStmt
                             | FriendDecl
                             | StructItem
+                            | EnumItem
                             | FunctionItem
                             | SpecFunctionItem
                             | Const
@@ -343,39 +344,80 @@ SpecInlineFunctionStmt ::= SpecInlineFunctionInner
         "org.sui.lang.core.psi.MslOnlyElement"
     ]
 }
+private PublicKeyword ::= 'public'
 
-fake Struct ::= Attr* native? STRUCT_KW IDENTIFIER? TypeParameterList? AbilitiesList?
-                        (';' | StructBlock)?
+fake Struct ::= Attr* PublicKeyword? native? STRUCT_KW IDENTIFIER? TypeParameterList? AbilitiesList?
+                     (';' | StructBlock)?
 {
-    implements = [
-        "org.sui.lang.core.psi.MvQualNamedElement"
-        "org.sui.lang.core.psi.ext.MvDocAndAttributeOwner"
-        "org.sui.lang.core.psi.MvTypeParametersOwner"
-        "org.sui.lang.core.psi.MvNameIdentifierOwner"
-    ]
-    mixin = "org.sui.lang.core.psi.ext.MvStructMixin"
-    stubClass = "org.sui.lang.core.stubs.MvStructStub"
-    elementTypeFactory = "org.sui.lang.core.stubs.StubsKt.factory"
+ implements = [
+     "org.sui.lang.core.psi.MvQualNamedElement"
+     "org.sui.lang.core.psi.ext.MvDocAndAttributeOwner"
+     "org.sui.lang.core.psi.MvTypeParametersOwner"
+     "org.sui.lang.core.psi.MvNameIdentifierOwner"
+ ]
+ mixin = "org.sui.lang.core.psi.ext.MvStructMixin"
+ stubClass = "org.sui.lang.core.stubs.MvStructStub"
+ elementTypeFactory = "org.sui.lang.core.stubs.StubsKt.factory"
 }
 
 private StructInnerFirst ::= STRUCT_KW
-StructInner ::= Attr* StructInnerFirst IDENTIFIER TypeParameterList? AbilitiesList?
-                            StructBlock
+StructInner ::= Attr* PublicKeyword? StructInnerFirst IDENTIFIER TypeParameterList? AbilitiesList?
+                         StructBlock
 {
-    pin = StructInnerFirst
-    elementType = Struct
-    hooks = [ leftBinder = "ADJACENT_LINE_COMMENTS" ]
+ pin = StructInnerFirst
+ elementType = Struct
+ hooks = [ leftBinder = "ADJACENT_LINE_COMMENTS" ]
 }
 private NativeStructInnerFirst ::= native STRUCT_KW
-NativeStructInner ::= Attr* NativeStructInnerFirst IDENTIFIER TypeParameterList? AbilitiesList? ';'
+NativeStructInner ::= Attr* PublicKeyword NativeStructInnerFirst IDENTIFIER TypeParameterList? AbilitiesList? ';'
 {
-    pin = NativeStructInnerFirst
-    elementType = Struct
-    hooks = [ leftBinder = "ADJACENT_LINE_COMMENTS" ]
+ pin = StructInnerFirst
+ elementType = Struct
+ hooks = [ leftBinder = "ADJACENT_LINE_COMMENTS" ]
 }
 private StructItem ::= StructInner | NativeStructInner
 
-// EnumDef ::= ENUM_KW IDENTIFIER '{' <<comma_separated_list IDENTIFIER>> '}' { pin = 1 }
+private EnumItem ::= EnumInner
+
+private EnumInnerFirst ::= ENUM_KW
+
+EnumInner ::= PublicKeyword? EnumInnerFirst IDENTIFIER TypeParameterList?
+                          (';' | EnumBody)?
+{
+ pin = EnumInnerFirst
+ elementType = Enum
+ hooks = [ leftBinder = "ADJACENT_LINE_COMMENTS" ]
+}
+
+fake Enum ::= 'public' enum IDENTIFIER TypeParameterList? EnumBody {
+   pin = "enum"
+   implements = [
+            "org.sui.lang.core.psi.MvQualNamedElement"
+            "org.sui.lang.core.psi.MvTypeParametersOwner"
+            "org.sui.lang.core.psi.MvNameIdentifierOwner"
+        ]
+     mixin = "org.sui.lang.core.psi.ext.MvEnumMixin"
+     stubClass = "org.sui.lang.core.stubs.MvEnumStub"
+     elementTypeFactory = "org.sui.lang.core.stubs.StubsKt.factory"
+ }
+
+ EnumBody ::= '{' [ <<comma_separated_list EnumVariant>> ] '}' {
+   pin = 1
+   recoverWhile = EnumVariant_recover
+ }
+
+private EnumVariant ::= IDENTIFIER VariantArgs? {
+  pin = 2
+  hooks = [ leftBinder = "ADJACENT_LINE_COMMENTS" ]
+}
+private EnumVariant_recover ::= !('}' | IDENTIFIER)
+private VariantArgs ::= [StructPat | TuplePat]
+
+UseFunFirst::= 'use fun'
+// public use fun sui::pay::split_vec as Coin.split_vec;
+PublicUseFun ::= 'public'? 'use' 'fun' Path? 'as' IDENTIFIER'.'IDENTIFIER ';' {
+    pin=3
+}
 
 fake Function ::= Attr* native? FunctionVisibilityModifier? entry? inline?
                     fun? IDENTIFIER? TypeParameterList? FunctionParameterList?
@@ -421,13 +463,15 @@ private FunctionSignatureInner ::= IDENTIFIER TypeParameterList?
 }
 private FunctionSignatureInner_recover ::= !('{' | '}' | ';' | <<eof>> | Item_first)
 
+
 private friend ::= <<friendKeyword>>
+private package::= <<packageKeyword>>
 private for ::= <<forKeyword>>
 
 private FunctionModifierSetInner ::= <<functionModifierSet FunctionVisibilityModifier>>
 private NativeFunctionModifierSetInner ::= <<nativeFunctionModifierSet FunctionVisibilityModifier>>
 
-FunctionVisibilityModifier ::= public ('(' (SCRIPT_KW | friend) ')')?
+FunctionVisibilityModifier ::= public ('(' (SCRIPT_KW | package | friend) ')')?
 
 FunctionParameterList ::= '(' FunctionParameter_with_recover* ')' { pin = 1 }
 private FunctionParameter_with_recover ::= !(')' | '{' | ';') FunctionParameter (',' | &')')
@@ -435,7 +479,7 @@ private FunctionParameter_with_recover ::= !(')' | '{' | ';') FunctionParameter 
     pin = 1
     recoverWhile = FunctionParameter_recover
 }
-private FunctionParameter_recover ::= !(')' | '{' | ';' | IDENTIFIER)
+private FunctionParameter_recover ::= !(')' | '{' | ';' | IDENTIFIER | mut)
 
 FunctionParameter ::= BindingPat TypeAnnotation {
     pin = 1
@@ -526,7 +570,7 @@ private MultiItemUse_member_with_recovery ::= !('}' | ';' | <<eof>>) UseItem
     pin = 1
 }
 
-UseItem ::= IDENTIFIER UseAlias?
+UseItem ::= IDENTIFIER UseAlias? | ModuleRef
 {
     pin = 1
     name = "item name"
@@ -575,12 +619,6 @@ TupleType ::= '(' Type ',' (Type ','?)* ')' { pin = 3 }
 
 LambdaType ::= '|' <<non_empty_comma_sep_items LambdaTypeParam>>? '|' Type? { pin = 1 }
 LambdaTypeParam ::= Type
-
-// enum
-//EnumDeclaration ::= 'public'? ENUM_KW IDENTIFIER '{' EnumVariant* '}' ';'
-//EnumVariant ::= IDENTIFIER EnumVariantBody? ','
-//EnumVariantBody ::= '{' EnumField* '}' | '(' Type ')'
-//EnumField ::= IDENTIFIER ':' Type ','
 
 TypeParameterList ::= '<' TypeParameter_with_recover* '>'
 {
@@ -631,7 +669,7 @@ Pat ::= TuplePat
 
 WildPat ::= '_'
 
-BindingPat ::= IDENTIFIER {
+BindingPat ::= mut? IDENTIFIER {
     implements = [
         "org.sui.lang.core.psi.MvMandatoryNameIdentifierOwner"
     ]
@@ -683,17 +721,17 @@ private SpecExprStmt_items ::= AssumeSpecExpr | AssertSpecExpr | AbortsIfSpecExp
                 | EmitsSpecExpr
 
 private post ::= <<postKeyword>>
-fake LetStmt ::= let post? Pat? TypeAnnotation? Initializer? ';'?
+fake LetStmt ::= let post? Pat? 'mut'? TypeAnnotation? Initializer? ';'?
 {
     implements = ["org.sui.lang.core.psi.MvTypeAnnotationOwner"]
 }
 
-LetMoveStmt ::= let Pat TypeAnnotation? Initializer? ';'
+LetMoveStmt ::= let mut? Pat TypeAnnotation? Initializer? ';'
 {
     pin = 1
     elementType = LetStmt
 }
-LetMslStmt ::= (let post?) Pat TypeAnnotation? Initializer? ';'
+LetMslStmt ::= (let post? ) mut? Pat TypeAnnotation? Initializer? ';'
 {
     pin = 1
     elementType = LetStmt
@@ -970,6 +1008,7 @@ private ConditionBody ::= Expr { recoverWhile = "ConditionBody_recover" }
 private ConditionBody_recover ::= !')'
 
 ElseBlock ::= else AnyBlock { pin = 1 }
+LabelDecl ::= QUOTE_IDENTIFIER ':'
 
 LoopExpr ::= loop AnyBlock {
     pin = 1
@@ -993,11 +1032,16 @@ Initializer ::= '=' Expr { pin = 1 }
 BorrowExpr ::= '&' mut? Expr
 
 DotExpr ::= Expr DotExpr_field
+
 // Do not inline this rule, it breaks expression parsing
-private DotExpr_field ::= '.' (!'.') StructDotField {
+private DotExpr_field ::= '.' (!'.') MethodOrField {
     pin = 2
     consumeTokenMethod = "consumeTokenFast"
 }
+private MethodOrField ::= () (MethodCall | StructDotField) { pin = 1}
+
+MethodCall ::= IDENTIFIER TypeArgumentList? ValueArgumentList
+
 StructDotField ::= !(<<VECTOR_IDENTIFIER>> ('[' | '<')) IDENTIFIER !('(' | '::' | '!' | '{')
 {
     implements = ["org.sui.lang.core.resolve.ref.MvMandatoryReferenceElement"]
@@ -1511,15 +1555,6 @@ TypeQuantBinding ::= BindingPat ':' Type {
     pin = 2
     extends = QuantBinding
 }
-
-//IDENTIFIER ::= IDENTIFIER | '`' KEYWORD '`'
-// move 2024 new grammar rules
-// type
-//TypeDeclaration ::= TYPE_KW IDENTIFIER '=' Type ';'
-//// match
-//MatchExpression ::= MATCH_KW Expr '{' MatchBranches '}'
-//MatchBranches ::= (MatchBranch ',')* MatchBranch?
-//MatchBranch ::= IDENTIFIER '=>' Expr
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Meta rules

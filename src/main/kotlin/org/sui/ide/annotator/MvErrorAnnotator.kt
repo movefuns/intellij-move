@@ -124,6 +124,7 @@ class MvErrorAnnotator : MvAnnotatorBase() {
                 }
             }
 
+            // TODO support move 2024
             override fun visitCallExpr(callExpr: MvCallExpr) {
                 val msl = callExpr.path.isMslScope
                 if (msl) return
@@ -227,11 +228,13 @@ class MvErrorAnnotator : MvAnnotatorBase() {
                     moveHolder, nameElement, o.fieldNames.toSet(), struct
                 )
             }
+
         }
         element.accept(visitor)
     }
 
     private fun checkStruct(holder: MvAnnotationHolder, struct: MvStruct) {
+        checkStructVisibility(holder, struct)
         checkStructDuplicates(holder, struct)
     }
 
@@ -343,6 +346,15 @@ private fun checkDuplicates(
     Diagnostic
         .DuplicateDefinitions(identifier, elementName)
         .addToHolder(holder)
+}
+
+private fun checkStructVisibility(holder: MvAnnotationHolder, struct: MvStruct) {
+    // 检查struct是否有public关键字
+    if (!struct.isPublic) {
+        // 如果没有public关键字，创建一个错误注解
+        val identifier = struct.nameIdentifier ?: struct
+        holder.createErrorAnnotation(identifier, "Struct definition must be public")
+    }
 }
 
 private fun checkFunctionDuplicates(

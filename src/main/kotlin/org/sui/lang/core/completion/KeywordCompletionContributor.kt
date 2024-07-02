@@ -86,7 +86,7 @@ class KeywordCompletionContributor : CompletionContributor() {
         extend(
             CompletionType.BASIC,
             moduleBlock().and(onStmtBeginning("native")),
-            KeywordCompletionProvider(*VISIBILITY_MODIFIERS, "fun", "struct")
+            KeywordCompletionProvider(*VISIBILITY_MODIFIERS, "fun", "struct", "enum")
         )
         extend(
             CompletionType.BASIC,

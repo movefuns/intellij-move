@@ -77,5 +77,15 @@ class MvMissingAcquiresInspection : MvLocalInspectionTool() {
                     )
                 }
             }
+
+//            override fun visitLetStmt(letStmt: MvLetStmt) {
+//                if (!letStmt.hasMut()) {
+//                    holder.registerProblem(
+//                        letStmt,
+//                        "The 'let' statement should use the 'mut' keyword",
+//                        ProblemHighlightType.GENERIC_ERROR_OR_WARNING
+//                    )
+//                }
+//            }
         }
 }

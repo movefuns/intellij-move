@@ -151,7 +151,7 @@ class MvBraceMatcher : PairedBraceMatcherAdapter(MvPairedBraceMatcher(), MoveLan
 //                UNDERSCORE, SELF, SUPER,
                 COMMA,
 //                SEMICOLON,
-//                QUOTE_IDENTIFIER,
+                QUOTE_IDENTIFIER,
                 PLUS,
                 COLON,
 //                EQ,
