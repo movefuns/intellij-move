@@ -13,6 +13,8 @@ import org.sui.ide.annotator.MvAnnotationHolder
 import org.sui.ide.annotator.fixes.ItemSpecSignatureFix
 import org.sui.ide.annotator.fixes.WrapWithParensExprFix
 import org.sui.ide.annotator.pluralise
+import org.sui.ide.inspections.fixes.CompilerV2Feat.*
+import org.sui.ide.inspections.fixes.EnableCompilerV2FeatureFix
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.endOffset
 import org.sui.lang.core.psi.ext.itemSpecBlock
@@ -167,6 +169,48 @@ sealed class Diagnostic(
             return PreparedAnnotation(
                 ERROR,
                 "Entry functions cannot have a return value"
+            )
+        }
+    }
+
+    class IndexExprIsNotSupportedInCompilerV1(indexExpr: MvIndexExpr) : Diagnostic(indexExpr) {
+
+        override fun prepare(): PreparedAnnotation {
+            return PreparedAnnotation(
+                ERROR,
+                "Index operator is not supported in Aptos Move V1 outside specs",
+                fixes = listOf(EnableCompilerV2FeatureFix(element, INDEXING))
+            )
+        }
+    }
+
+    class PublicPackageIsNotSupportedInCompilerV1(modifier: MvVisibilityModifier) : Diagnostic(modifier) {
+
+        override fun prepare(): PreparedAnnotation {
+            return PreparedAnnotation(
+                ERROR,
+                "public(package) is not supported in Aptos Move V1",
+                fixes = listOf(EnableCompilerV2FeatureFix(element, PUBLIC_PACKAGE))
+            )
+        }
+    }
+
+    class ReceiverStyleFunctionsIsNotSupportedInCompilerV1(methodCall: MvMethodCall) : Diagnostic(methodCall) {
+
+        override fun prepare(): PreparedAnnotation {
+            return PreparedAnnotation(
+                ERROR,
+                "receiver-style functions are not supported in Aptos Move V1",
+                fixes = listOf(EnableCompilerV2FeatureFix(element, RECEIVER_STYLE_FUNCTIONS))
+            )
+        }
+    }
+
+    class PackageAndFriendModifiersCannotBeUsedTogether(modifier: MvVisibilityModifier) : Diagnostic(modifier) {
+        override fun prepare(): PreparedAnnotation {
+            return PreparedAnnotation(
+                ERROR,
+                "public(package) and public(friend) cannot be used together in the same module"
             )
         }
     }

@@ -32,5 +32,14 @@ class MvNamedElementIndex : StringStubIndexExtension<MvNamedElement>() {
             StubIndex.getInstance()
                 .processElements(KEY, target, project, scope, MvNamedElement::class.java, processor)
         }
+
+        fun getElementsByName(
+            project: Project,
+            name: String,
+            scope: GlobalSearchScope,
+        ): Collection<MvNamedElement> {
+            checkCommitIsNotInProgress(project)
+            return StubIndex.getElements(KEY, name, project, scope, MvNamedElement::class.java)
+        }
     }
 }

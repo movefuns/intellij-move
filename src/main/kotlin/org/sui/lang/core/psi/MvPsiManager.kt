@@ -5,7 +5,6 @@
 
 package org.sui.lang.core.psi
 
-import com.intellij.ProjectTopics
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
@@ -103,7 +102,7 @@ class MvPsiManagerImpl(val project: Project) : MvPsiManager, Disposable {
         PsiManager.getInstance(project).addPsiTreeChangeListener(CacheInvalidator(), this)
 
         project.messageBus.connect()
-            .subscribe(ProjectTopics.PROJECT_ROOTS, object : ModuleRootListener {
+            .subscribe(ModuleRootListener.TOPIC, object : ModuleRootListener {
                 override fun rootsChanged(event: ModuleRootEvent) {
                     incStructureModificationCount()
                 }
@@ -189,7 +188,8 @@ class MvPsiManagerImpl(val project: Project) : MvPsiManager, Disposable {
         // about it because it is a rare case and implementing it differently
         // is much more difficult.
 
-        val owner = if (DumbService.isDumb(project)) null else psi.findModificationTrackerOwner(!isChildrenChange)
+        val owner =
+            if (DumbService.isDumb(project)) null else psi.findModificationTrackerOwner(!isChildrenChange)
 
         // Whitespace/comment changes are meaningful for macros only
         // (b/c they affect range mappings and body hashes)
@@ -206,7 +206,8 @@ class MvPsiManagerImpl(val project: Project) : MvPsiManager, Disposable {
         if (isStructureModification) {
             incRustStructureModificationCount(file, psi)
         }
-        project.messageBus.syncPublisher(MOVE_PSI_CHANGE_TOPIC).movePsiChanged(file, psi, isStructureModification)
+        project.messageBus.syncPublisher(MOVE_PSI_CHANGE_TOPIC)
+            .movePsiChanged(file, psi, isStructureModification)
     }
 
 //    private val isMacroExpansionModeNew

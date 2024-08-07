@@ -14,7 +14,6 @@ import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.elementType
 import com.intellij.psi.util.nextLeaf
-import org.sui.cli.settings.collapseSpecs
 import org.sui.lang.MoveFile
 import org.sui.lang.MoveParserDefinition.Companion.BLOCK_COMMENT
 import org.sui.lang.MoveParserDefinition.Companion.EOL_DOC_COMMENT
@@ -54,10 +53,8 @@ class MvFoldingBuilder : CustomFoldingBuilder(), DumbAware {
         PsiTreeUtil.processElements(root) { it.accept(visitor); true }
     }
 
-    override fun isRegionCollapsedByDefault(node: ASTNode): Boolean {
-        return node.psi.project.collapseSpecs && node.elementType == MODULE_SPEC_BLOCK
-                || CodeFoldingSettings.getInstance().isDefaultCollapsedNode(node)
-    }
+    override fun isRegionCollapsedByDefault(node: ASTNode): Boolean =
+        CodeFoldingSettings.getInstance().isDefaultCollapsedNode(node)
 
     private class FoldingVisitor(
         private val descriptors: MutableList<FoldingDescriptor>,

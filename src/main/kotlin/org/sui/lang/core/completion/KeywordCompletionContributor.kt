@@ -8,6 +8,7 @@ import com.intellij.patterns.PlatformPatterns
 import com.intellij.patterns.PlatformPatterns.psiElement
 import com.intellij.patterns.PsiElementPattern
 import com.intellij.psi.PsiElement
+import org.sui.cli.settings.moveSettings
 import org.sui.lang.MvElementTypes.*
 import org.sui.lang.core.MvPsiPatterns
 import org.sui.lang.core.MvPsiPatterns.addressBlock
@@ -75,7 +76,7 @@ class KeywordCompletionContributor : CompletionContributor() {
         )
         extend(
             CompletionType.BASIC,
-            function().with(MvPsiPatterns.AfterSibling(FUNCTION_VISIBILITY_MODIFIER)),
+            function().with(MvPsiPatterns.AfterSibling(VISIBILITY_MODIFIER)),
             KeywordCompletionProvider("fun", "entry", "inline")
         )
         extend(
@@ -130,7 +131,14 @@ class KeywordCompletionContributor : CompletionContributor() {
                 psiElement()
                     .with(MvPsiPatterns.AfterAnySibling(TYPES))
             ),
-            KeywordCompletionProvider("acquires")
+            KeywordCompletionProvider {
+                buildList {
+                    add("acquires")
+                    if (it.moveSettings.enableResourceAccessControl) {
+                        addAll(listOf("reads", "writes", "pure"))
+                    }
+                }
+            }
         )
         extend(
             CompletionType.BASIC,
@@ -155,6 +163,11 @@ class KeywordCompletionContributor : CompletionContributor() {
     }
 
     companion object {
-        private val VISIBILITY_MODIFIERS = arrayOf("public", "public(script)", "public(friend)")
+        private val VISIBILITY_MODIFIERS = arrayOf(
+            "public",
+            "public(script)",
+            "public(friend)",
+            "public(package)"
+        )
     }
 }

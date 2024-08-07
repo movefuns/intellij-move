@@ -14,6 +14,10 @@ import org.sui.lang.core.resolve.resolveModuleItem
 val MvUseItem.itemUseSpeck: MvItemUseSpeck
     get() = ancestorStrict() ?: error("MvUseItem outside MvItemUseSpeck")
 
+//val MvUseItem.mixItemSpeck: MvMixUseSpeck?
+//    get() = ancestorStrict()
+
+
 val MvUseItem.annotationItem: MvElement
     get() {
         val parent = this.parent
@@ -63,7 +67,7 @@ class MvUseItemReferenceElement(
             Namespace.SCHEMA,
             Namespace.CONST
         )
-        val vs = Visibility.buildSetOfVisibilities(fqModuleRef)
+        val vs = Visibility.visibilityScopesForElement(fqModuleRef)
 
         // import has MAIN+VERIFY, and TEST if it or any of the parents has test
         val useItemScopes = mutableSetOf(NamedItemScope.MAIN, NamedItemScope.VERIFY)

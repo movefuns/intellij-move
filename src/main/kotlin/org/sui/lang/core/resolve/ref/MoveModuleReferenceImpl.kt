@@ -1,7 +1,7 @@
 package org.sui.lang.core.resolve.ref
 
 import org.sui.lang.core.psi.*
-import org.sui.lang.core.psi.ext.isSelf
+import org.sui.lang.core.psi.ext.isSelfModuleRef
 import org.sui.lang.core.psi.ext.itemUseSpeck
 import org.sui.lang.core.resolve.processModuleRef
 import org.sui.lang.core.resolve.resolveLocalItem
@@ -12,7 +12,7 @@ class MvModuleReferenceImpl(
 ) : MvPolyVariantReferenceCached<MvModuleRef>(element) {
 
     override fun multiResolveInner(): List<MvNamedElement> {
-        if (element.isSelf) return element.containingModule.wrapWithList()
+        if (element.isSelfModuleRef) return element.containingModule.wrapWithList()
 
         check(element !is MvFQModuleRef) {
             "That element has different reference item"
@@ -38,6 +38,17 @@ class MvModuleReferenceImpl(
         val moduleRef = when {
             resolved is MvUseItem && resolved.text == "Self" -> resolved.itemUseSpeck.fqModuleRef
             resolved is MvModuleUseSpeck -> resolved.fqModuleRef
+//            resolved is MvMixUseItem -> {
+//                if (resolved.mixPathItem.moduleRef.text == element.text) {
+//                    val elementList = MvNamedElementIndex.getElementsByName(
+//                        element.project, element.text, GlobalSearchScope.allScope(element.project)
+//                    )
+//                    val filter = elementList.filterIsInstance<MvModule>()
+//                        .filter { it.addressRef?.text == resolved.ancestorStrict<MvMixUseSpeck>()?.addressRef?.text }
+//                    return listOf(filter.first())
+//                }
+//                return emptyList()
+//            }
             else -> return emptyList()
         }
         return moduleRef?.reference?.resolve().wrapWithList()

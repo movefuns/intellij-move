@@ -1,6 +1,7 @@
 package org.sui.lang.core.types.infer
 
 import com.intellij.codeInspection.LocalQuickFix
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import org.sui.ide.inspections.fixes.IntegerCastFix
 import org.sui.ide.presentation.name
@@ -17,6 +18,8 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
 
     override fun innerVisitWith(visitor: TypeVisitor): Boolean = true
 
+    open fun range(): TextRange = element.textRange
+
     open fun fix(): LocalQuickFix? = null
 
     data class TypeMismatch(
@@ -27,7 +30,9 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
         override fun message(): String {
             return when (element) {
                 is MvReturnExpr -> "Invalid return type '${actualTy.name()}', expected '${expectedTy.name()}'"
-                else -> "Incompatible type '${actualTy.name()}', expected '${expectedTy.name()}'"
+                else -> {
+                    "Incompatible type '${actualTy.name()}', expected '${expectedTy.name()}'"
+                }
             }
         }
 
@@ -163,6 +168,19 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
 
         override fun innerFoldWith(folder: TypeFolder): TypeError {
             return InvalidDereference(element, folder.fold(actualTy))
+        }
+    }
+
+    data class IndexingIsNotAllowed(
+        override val element: PsiElement,
+        val actualTy: Ty,
+    ) : TypeError(element) {
+        override fun message(): String {
+            return "Indexing receiver type should be vector or resource, got '${actualTy.text(fq = false)}'"
+        }
+
+        override fun innerFoldWith(folder: TypeFolder): TypeError {
+            return IndexingIsNotAllowed(element, folder.fold(actualTy))
         }
     }
 }

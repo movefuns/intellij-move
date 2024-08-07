@@ -3,21 +3,25 @@ package org.sui.ide.hints
 import com.intellij.codeInsight.hints.InlayInfo
 import com.intellij.psi.PsiElement
 import org.sui.ide.utils.FunctionSignature
-import org.sui.lang.core.psi.MvCallExpr
+import org.sui.lang.core.psi.MvMethodCall
 import org.sui.lang.core.psi.MvRefExpr
 import org.sui.lang.core.psi.MvStructLitExpr
-import org.sui.lang.core.psi.ext.callArgumentExprs
+import org.sui.lang.core.psi.ext.MvCallable
+import org.sui.lang.core.psi.ext.argumentExprs
 import org.sui.lang.core.psi.ext.startOffset
 
 @Suppress("UnstableApiUsage")
 object InlayParameterHints {
-    fun provideHints(elem: PsiElement): List<InlayInfo> {
-        if (elem !is MvCallExpr) return emptyList()
-
-        val signature = FunctionSignature.resolve(elem) ?: return emptyList()
-        return signature.parameters
+    fun provideHints(element: PsiElement): List<InlayInfo> {
+        if (element !is MvCallable) return emptyList()
+        val signature = FunctionSignature.resolve(element) ?: return emptyList()
+        val parameters = when (element) {
+            is MvMethodCall -> signature.parameters.drop(1)
+            else -> signature.parameters
+        }
+        return parameters
             .map { it.name }
-            .zip(elem.callArgumentExprs)
+            .zip(element.argumentExprs)
             .asSequence()
             .filter { (_, arg) -> arg != null }
             // don't show argument, if just function call / variable / struct literal

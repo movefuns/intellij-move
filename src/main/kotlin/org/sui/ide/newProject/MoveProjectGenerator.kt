@@ -12,14 +12,18 @@ import com.intellij.platform.DirectoryProjectGenerator
 import com.intellij.platform.DirectoryProjectGeneratorBase
 import com.intellij.platform.ProjectGeneratorPeer
 import org.sui.cli.PluginApplicationDisposable
-import org.sui.cli.runConfigurations.InitProjectCli
-import org.sui.cli.settings.Blockchain
+import org.sui.cli.moveProjectsService
+import org.sui.cli.runConfigurations.sui.Sui
 import org.sui.cli.settings.moveSettings
+import org.sui.cli.settings.sui.SuiExecType
 import org.sui.ide.MoveIcons
 import org.sui.openapiext.computeWithCancelableProgress
 import org.sui.stdext.unwrapOrThrow
 
-data class MoveProjectConfig(val blockchain: Blockchain, val initCli: InitProjectCli)
+data class MoveProjectConfig(
+    val suiExecType: SuiExecType,
+    val localSuiPath: String?,
+)
 
 class MoveProjectGenerator : DirectoryProjectGeneratorBase<MoveProjectConfig>(),
     CustomStepProjectGenerator<MoveProjectConfig> {
@@ -27,7 +31,7 @@ class MoveProjectGenerator : DirectoryProjectGeneratorBase<MoveProjectConfig>(),
     private val disposable = service<PluginApplicationDisposable>()
 
     override fun getName() = "Sui Move"
-    override fun getLogo() = MoveIcons.MOVE_LOGO
+    override fun getLogo() = MoveIcons.SUI_LOGO
     override fun createPeer(): ProjectGeneratorPeer<MoveProjectConfig> = MoveProjectGeneratorPeer(disposable)
 
     override fun generateProject(
@@ -37,35 +41,34 @@ class MoveProjectGenerator : DirectoryProjectGeneratorBase<MoveProjectConfig>(),
         module: Module
     ) {
         val packageName = project.name
-        val blockchain = projectConfig.blockchain
-        val projectCli = projectConfig.initCli
+        val suiPath =
+            SuiExecType.suiExecPath(projectConfig.suiExecType, projectConfig.localSuiPath)
+                ?: error("validated before")
+        val sui = Sui(suiPath, disposable)
         val manifestFile =
-            project.computeWithCancelableProgress("Generating $blockchain project...") {
+            project.computeWithCancelableProgress("Generating Sui project...") {
                 val manifestFile =
-                    projectCli.init(
+                    sui.init(
                         project,
-                        disposable,
                         rootDirectory = baseDir,
                         packageName = packageName
                     )
                         .unwrapOrThrow() // TODO throw? really??
                 manifestFile
             }
-        // update settings (and refresh Aptos projects too)
+        // update settings (and refresh Sui projects too)
         project.moveSettings.modify {
-            it.blockchain = blockchain
-            when (projectCli) {
-                is InitProjectCli.Aptos -> {
-                    it.aptosPath = projectCli.aptosExec.pathToSettingsFormat()
+            it.suiExecType = projectConfig.suiExecType
+            it.localSuiPath = projectConfig.localSuiPath
                 }
 
-                is InitProjectCli.Sui -> {
-                    it.suiPath = projectCli.suiExec.pathToSettingsFormat()
-                }
-            }
-        }
         ProjectInitializationSteps.createDefaultCompileConfigurationIfNotExists(project)
+        // NOTE:
+        // this cannot be moved to a ProjectActivity, as Move.toml files
+        // are not created by the time those activities are executed
         ProjectInitializationSteps.openMoveTomlInEditor(project, manifestFile)
+
+        project.moveProjectsService.scheduleProjectsRefresh("After `sui move init`")
     }
 
     override fun createStep(

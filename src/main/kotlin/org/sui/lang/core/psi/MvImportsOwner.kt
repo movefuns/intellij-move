@@ -20,7 +20,11 @@ fun MvImportsOwner.moduleUseItems(): List<MvNamedElement> =
         moduleUseSpecksAliases(),
         selfModuleUseItemNoAliases(),
         selfModuleUseItemAliases(),
+//        mixUseSpecksNoAliases(),
     ).flatten()
+
+//fun MvImportsOwner.mixUseSpecksNoAliases(): List<MvMixUseItem> =
+//    mixUseSpecks().mapNotNull { it.mixUseItemGroup?.mixUseItemList}.flatten()
 
 fun MvImportsOwner.moduleUseSpecksNoAliases(): List<MvModuleUseSpeck> =
     moduleUseSpecks()
@@ -36,8 +40,18 @@ private fun MvImportsOwner.moduleUseSpecks(): List<MvModuleUseSpeck> {
     }
 }
 
+//private fun MvImportsOwner.mixUseSpecks(): List<MvMixUseSpeck> {
+//    return getProjectPsiDependentCache(this) {
+//        useStmtList.mapNotNull { it.mixUseSpeck }
+//    }
+//}
+
 fun MvImportsOwner.psiUseItems(): List<MvUseItem> {
     return getProjectPsiDependentCache(this) { importsOwner ->
+//        val mixItems = importsOwner.useStmtList.mapNotNull { it.mixUseSpeck }.flatMap {
+//            it.mixUseItemGroup?.mixUseItemList?.mapNotNull { it.useItem } ?: emptyList()
+//        }
+
         importsOwner
             .useStmtList
             .mapNotNull { it.itemUseSpeck }
@@ -48,6 +62,7 @@ fun MvImportsOwner.psiUseItems(): List<MvUseItem> {
                 } else
                     it.useItemGroup?.useItemList.orEmpty()
             }
+//            .plus(mixItems)
 
     }
 }

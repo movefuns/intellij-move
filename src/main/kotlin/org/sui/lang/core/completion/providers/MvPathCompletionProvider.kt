@@ -12,7 +12,10 @@ import org.sui.lang.core.completion.CompletionContext
 import org.sui.lang.core.completion.UNIMPORTED_ITEM_PRIORITY
 import org.sui.lang.core.completion.createLookupElement
 import org.sui.lang.core.psi.*
-import org.sui.lang.core.psi.ext.*
+import org.sui.lang.core.psi.ext.ancestors
+import org.sui.lang.core.psi.ext.endOffset
+import org.sui.lang.core.psi.ext.isMslScope
+import org.sui.lang.core.psi.ext.isSelfModuleRef
 import org.sui.lang.core.resolve.*
 import org.sui.lang.core.resolve.ref.MvReferenceElement
 import org.sui.lang.core.resolve.ref.Namespace
@@ -48,17 +51,23 @@ abstract class MvPathCompletionProvider : MvCompletionProvider() {
         val msl = pathElement.isMslScope
         val expectedTy = getExpectedTypeForEnclosingPathOrDotExpr(pathElement, msl)
 
-        val ctx = CompletionContext(pathElement, namespaces, pathScopeInfo, expectedTy)
+        val structAsType = this.namespace == Namespace.TYPE
+        val ctx = CompletionContext(
+            pathElement,
+            pathScopeInfo,
+            expectedTy
+        )
 
         if (moduleRef != null) {
             val module = moduleRef.reference?.resolveWithAliases() as? MvModule
                 ?: return
             val vs = when {
-                moduleRef.isSelf -> setOf(Visibility.Internal)
-                else -> Visibility.buildSetOfVisibilities(pathElement)
+                moduleRef.isSelfModuleRef -> setOf(Visibility.Internal)
+                else -> Visibility.visibilityScopesForElement(pathElement)
             }
             processModuleItems(module, namespaces, vs, pathScopeInfo) {
-                val lookup = it.element.createLookupElement(ctx)
+                val lookup =
+                    it.element.createLookupElement(ctx, structAsType = structAsType)
                 result.addElement(lookup)
                 false
             }
@@ -72,7 +81,11 @@ abstract class MvPathCompletionProvider : MvCompletionProvider() {
             }
             processedNames.add(name)
             result.addElement(
-                element.createLookupElement(ctx, priority = element.completionPriority)
+                element.createLookupElement(
+                    ctx,
+                    structAsType = structAsType,
+                    priority = element.completionPriority
+                )
             )
             false
         }
@@ -97,6 +110,7 @@ abstract class MvPathCompletionProvider : MvCompletionProvider() {
         candidates.forEach { candidate ->
             val lookupElement = candidate.element.createLookupElement(
                 ctx,
+                structAsType = structAsType,
                 priority = UNIMPORTED_ITEM_PRIORITY,
                 insertHandler = ImportInsertHandler(parameters, candidate)
             )
@@ -176,7 +190,7 @@ object SchemasCompletionProvider : MvPathCompletionProvider() {
     }
 }
 
-private fun getExpectedTypeForEnclosingPathOrDotExpr(element: MvReferenceElement, msl: Boolean): Ty? {
+fun getExpectedTypeForEnclosingPathOrDotExpr(element: MvReferenceElement, msl: Boolean): Ty? {
     for (ancestor in element.ancestors) {
         if (element.endOffset < ancestor.endOffset) continue
         if (element.endOffset > ancestor.endOffset) break

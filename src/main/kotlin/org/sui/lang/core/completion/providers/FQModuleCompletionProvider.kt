@@ -13,7 +13,6 @@ import org.sui.lang.core.psi.refItemScopes
 import org.sui.lang.core.resolve.ContextScopeInfo
 import org.sui.lang.core.resolve.letStmtScope
 import org.sui.lang.core.resolve.processFQModuleRef
-import org.sui.lang.core.resolve.ref.Namespace
 import org.sui.lang.core.types.Address
 import org.sui.lang.core.types.address
 import org.sui.lang.core.withParent
@@ -36,12 +35,11 @@ object FQModuleCompletionProvider : MvCompletionProvider() {
                 ?: directParent.parent as MvFQModuleRef
         if (parameters.position !== fqModuleRef.referenceNameElement) return
 
-        val namespaces = setOf(Namespace.MODULE)
         val contextScopeInfo = ContextScopeInfo(
             letStmtScope = fqModuleRef.letStmtScope,
             refItemScopes = fqModuleRef.refItemScopes,
         )
-        val completionContext = CompletionContext(fqModuleRef, namespaces, contextScopeInfo)
+        val completionContext = CompletionContext(fqModuleRef, contextScopeInfo)
 
         val moveProj = fqModuleRef.moveProject
         val positionAddress = fqModuleRef.addressRef.address(moveProj)

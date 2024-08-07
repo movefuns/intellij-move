@@ -8,15 +8,27 @@ import com.intellij.execution.testframework.sm.runner.OutputToGeneralTestEventsC
 import com.intellij.execution.testframework.sm.runner.SMTRunnerConsoleProperties
 import com.intellij.execution.testframework.sm.runner.SMTestLocator
 
-class AptosTestConsoleProperties(runconfig: RunConfiguration, executor: Executor) :
-    SMTRunnerConsoleProperties(runconfig, "Aptos Test", executor),
+class AptosTestConsoleProperties(
+    runconfig: RunConfiguration,
+    executor: Executor
+) :
+    SMTRunnerConsoleProperties(runconfig, TEST_FRAMEWORK_NAME, executor),
     SMCustomMessagesParsing {
 
-    override fun getTestLocator(): SMTestLocator = AptosTestLocator
+    init {
+        isIdBasedTestTree = false
+    }
+
+    override fun getTestLocator(): SMTestLocator = SuiTestLocator
 
     override fun createTestEventsConverter(
         testFrameworkName: String,
         consoleProperties: TestConsoleProperties
     ): OutputToGeneralTestEventsConverter =
-        AptosTestEventsConverter(consoleProperties, testFrameworkName)
+        SuiTestEventsConverter(testFrameworkName, consoleProperties)
+
+    companion object {
+        const val TEST_FRAMEWORK_NAME: String = "Sui Test"
+        const val TEST_TOOL_WINDOW_SETTING_KEY: String = "org.move.sui.test.tool.window"
+    }
 }

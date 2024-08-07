@@ -8,29 +8,33 @@ import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import org.sui.cli.runConfigurations.aptos.any.AnyCommandConfiguration
-import org.sui.cli.runConfigurations.sui.SuiCommandConfiguration
+import org.sui.cli.runConfigurations.aptos.cmd.AptosCommandConfiguration
+import org.sui.cli.runConfigurations.sui.cmd.SuiCommandConfiguration
 import org.sui.openapiext.common.isHeadlessEnvironment
 
 val Project.runManager: RunManager get() = RunManager.getInstance(this)
 
-fun Project.aptosCommandConfigurations(): List<AnyCommandConfiguration> =
+fun Project.aptosCommandConfigurations(): List<AptosCommandConfiguration> =
     runManager.allConfigurationsList
-        .filterIsInstance<AnyCommandConfiguration>()
-
-fun Project.suiRunConfigurations(): List<AnyCommandConfiguration> =
-    runManager.allConfigurationsList
-        .filterIsInstance<AnyCommandConfiguration>()
+        .filterIsInstance<AptosCommandConfiguration>()
 
 fun Project.aptosCommandConfigurationsSettings(): List<RunnerAndConfigurationSettings> =
     runManager.allSettings
-        .filter { it.configuration is AnyCommandConfiguration }
+        .filter { it.configuration is AptosCommandConfiguration }
+
+fun Project.suiCommandConfigurations(): List<SuiCommandConfiguration> =
+    runManager.allConfigurationsList
+        .filterIsInstance<SuiCommandConfiguration>()
 
 fun Project.suiCommandConfigurationsSettings(): List<RunnerAndConfigurationSettings> =
     runManager.allSettings
         .filter { it.configuration is SuiCommandConfiguration }
 
-inline fun <reified T : Configurable> Project.showSettings() {
+
+//fun Project.aptosBuildRunConfigurations(): List<MoveCommandConfiguration> =
+//    aptosCommandConfigurations().filter { it.command.startsWith("move compile") }
+
+inline fun <reified T : Configurable> Project.showSettingsDialog() {
     ShowSettingsUtil.getInstance().showSettingsDialog(this, T::class.java)
 }
 

@@ -89,6 +89,12 @@ class MvPsiFactory(val project: Project) {
         createFromText("module 0x1::_DummyModule { fun call() { let _ = $text; } }")
             ?: error("Failed to create expr")
 
+    fun wrapWithParens(expr: MvExpr): MvParensExpr {
+        val parensExpr = this.expr<MvParensExpr>("(dummy_ident)")
+        parensExpr.expr?.replace(expr)
+        return parensExpr
+    }
+
     fun type(text: String): MvType =
         createFromText("module 0x1::_DummyModule { fun call() { let _: $text; } }")
             ?: error("Failed to create type")
@@ -165,6 +171,12 @@ class MvPsiFactory(val project: Project) {
             ?: error("Failed to create a type parameter from text: `$text`")
     }
 
+    fun valueArgumentList(parameters: List<String>): MvValueArgumentList {
+        return createFromText<MvValueArgumentList>(
+            "module 0x1::main { fun main() { call(${parameters.joinToString(", ")}); } }"
+        ) ?: error("unreachable")
+    }
+
     fun path(text: String): MvPath {
         return createFromText("module 0x1::_DummyModule { fun main() { $text(); } } ")
             ?: error("`$text`")
@@ -179,7 +191,7 @@ class MvPsiFactory(val project: Project) {
             .createFileFromText(
                 "$moduleName.move",
                 MoveFileType,
-                "module $moduleName { $text }"
+                "module 0x0::$moduleName { $text }"
             ) as MoveFile
         val functions = dummyFile.childOfType<MvModule>()?.moduleBlock?.functionList.orEmpty()
         return functions
@@ -192,10 +204,6 @@ class MvPsiFactory(val project: Project) {
     fun specFunction(text: String, moduleName: String = "_Dummy"): MvSpecFunction =
         createFromText("module $moduleName { $text } ")
             ?: error("Failed to create a function from text: `$text`")
-
-    fun specModule(text: String): MvModule =
-        createFromText("module sui::$text {} ")
-            ?: error("Failed to create a module from text: `$text`")
 
     fun createWhitespace(ws: String): PsiElement =
         PsiParserFacade.getInstance(project).createWhiteSpaceFromText(ws)

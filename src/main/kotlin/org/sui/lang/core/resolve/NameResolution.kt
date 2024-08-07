@@ -1,9 +1,15 @@
 package org.sui.lang.core.resolve
 
 import com.intellij.psi.search.GlobalSearchScope
+import org.sui.cli.containingMovePackage
+import org.sui.cli.settings.moveSettings
 import org.sui.lang.MoveFile
 import org.sui.lang.core.psi.*
+import org.sui.lang.core.psi.NamedItemScope.MAIN
+import org.sui.lang.core.psi.NamedItemScope.VERIFY
 import org.sui.lang.core.psi.ext.*
+import org.sui.lang.core.resolve.LetStmtScope.EXPR_STMT
+import org.sui.lang.core.resolve.LetStmtScope.NONE
 import org.sui.lang.core.resolve.ref.MvReferenceElement
 import org.sui.lang.core.resolve.ref.Namespace
 import org.sui.lang.core.resolve.ref.Visibility
@@ -26,6 +32,12 @@ data class ContextScopeInfo(
         ) return false
         if (!itemElement.isVisibleInContext(this.refItemScopes)) return false
         return true
+    }
+
+    companion object {
+        /// really does not affect anything, created just to allow creating CompletionContext everywhere
+        fun default(): ContextScopeInfo = ContextScopeInfo(setOf(MAIN), NONE)
+        fun msl(): ContextScopeInfo = ContextScopeInfo(setOf(VERIFY), EXPR_STMT)
     }
 }
 
@@ -114,6 +126,16 @@ fun processQualItem(
                         val itemModule = item.module ?: return false
                         val currentModule = vis.currentModule.element ?: return false
                         if (currentModule.fqModule() in itemModule.declaredFriendModules) {
+                            processor.match(contextScopeInfo, item)
+                        }
+                    }
+
+                    vis is Visibility.PublicPackage && item.visibility == FunctionVisibility.PUBLIC_PACKAGE -> {
+                        if (!item.project.moveSettings.enablePublicPackage) {
+                            return false
+                        }
+                        val itemPackage = item.containingMovePackage ?: return false
+                        if (vis.originPackage == itemPackage) {
                             processor.match(contextScopeInfo, item)
                         }
                     }

@@ -16,8 +16,8 @@ import com.intellij.ui.popup.list.ListPopupImpl
 import com.intellij.ui.popup.list.PopupListElementRenderer
 import org.jetbrains.annotations.TestOnly
 import org.sui.ide.utils.imports.ImportCandidate
-import org.sui.utils.ui.NavigationUtilCompat
 import org.sui.openapiext.common.isUnitTestMode
+import org.sui.utils.ui.NavigationUtilCompat
 import java.awt.BorderLayout
 import javax.swing.Icon
 import javax.swing.JPanel

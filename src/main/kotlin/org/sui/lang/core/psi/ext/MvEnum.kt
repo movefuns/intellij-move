@@ -10,6 +10,7 @@ import org.sui.lang.core.psi.MvModule
 import org.sui.lang.core.psi.generics
 import org.sui.lang.core.psi.tyTypeParams
 import org.sui.lang.core.stubs.MvEnumStub
+//import org.sui.lang.core.stubs.MvEnumStub
 import org.sui.lang.core.stubs.MvModuleStub
 import org.sui.lang.core.stubs.MvStubbedNamedElementImpl
 import org.sui.lang.core.types.ItemQualName

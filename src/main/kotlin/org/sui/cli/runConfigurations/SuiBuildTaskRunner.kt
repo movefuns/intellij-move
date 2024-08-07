@@ -8,7 +8,7 @@ import com.intellij.task.*
 import org.jetbrains.concurrency.Promise
 import org.jetbrains.concurrency.resolvedPromise
 import org.sui.cli.moveProjectRoot
-import org.sui.cli.runConfigurations.sui.SuiCommandConfiguration
+import org.sui.cli.runConfigurations.sui.cmd.SuiCommandConfiguration
 import org.sui.ide.newProject.ProjectInitializationSteps
 import org.sui.openapiext.runManager
 import org.sui.openapiext.suiCommandConfigurationsSettings
@@ -27,9 +27,15 @@ class SuiBuildTaskRunner : ProjectTaskRunner() {
     ): Promise<Result> {
         val compileConfigurationWithSettings =
             project.suiCommandConfigurationsSettings()
-                .find { (it.configuration as SuiCommandConfiguration).command == "move compile" }
+                .find { (it.configuration as SuiCommandConfiguration).command == "move build" }
                 ?: ProjectInitializationSteps.createDefaultCompileConfiguration(project, false)
-
+//        val compileConfiguration =
+//            project.aptosCommandConfigurations().find { it.command.startsWith("move compile") }
+////            project.aptosBuildRunConfigurations().firstOrNull()
+//                ?: ProjectInitialization.createDefaultCompileConfiguration(project, false)
+//        val configurationSettings =
+//            project.runManager.findConfigurationByName(compileConfiguration.name)
+//                ?: return resolvedPromise(TaskRunnerResults.ABORTED)
         project.runManager.selectedConfiguration = compileConfigurationWithSettings
 
         val environment = ExecutionEnvironmentBuilder.createOrNull(
@@ -46,3 +52,4 @@ class SuiBuildTaskRunner : ProjectTaskRunner() {
         }
     }
 }
+

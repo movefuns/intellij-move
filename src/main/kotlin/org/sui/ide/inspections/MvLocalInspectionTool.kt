@@ -107,6 +107,9 @@ abstract class DiagnosticIntentionFix<T : PsiElement>(element: T) :
     override fun generatePreview(project: Project, previewDescriptor: ProblemDescriptor): IntentionPreviewInfo =
         IntentionPreviewInfo.EMPTY
 
+    override fun generatePreview(project: Project, editor: Editor, file: PsiFile): IntentionPreviewInfo =
+        IntentionPreviewInfo.EMPTY
+
     override fun getFamilyName(): String = text
 
     override fun isAvailable(

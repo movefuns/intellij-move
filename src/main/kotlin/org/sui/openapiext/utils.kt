@@ -5,6 +5,7 @@
 
 package org.sui.openapiext
 
+import com.intellij.execution.Platform
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
@@ -14,9 +15,11 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.Service.Level.PROJECT
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.impl.TrailingSpacesStripper
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
@@ -37,6 +40,7 @@ import com.intellij.psi.stubs.StubIndex
 import com.intellij.psi.stubs.StubIndexKey
 import com.intellij.util.concurrency.AppExecutorUtil
 import org.jdom.Element
+import org.sui.ide.annotator.RsExternalLinterPass
 import org.sui.lang.toNioPathOrNull
 import org.sui.openapiext.common.isHeadlessEnvironment
 import org.sui.openapiext.common.isUnitTestMode
@@ -75,6 +79,28 @@ fun Document.getOffsetPosition(offset: Int): Pair<Int, Int> {
 }
 
 fun saveAllDocuments() = FileDocumentManager.getInstance().saveAllDocuments()
+
+/**
+ * Calling of [saveAllDocuments] uses [TrailingSpacesStripper] to format all unsaved documents.
+ *
+ * In case of [RsExternalLinterPass] it backfires:
+ * 1. Calling [TrailingSpacesStripper.strip] on *every* file change.
+ * 2. Double run of external linter, because [TrailingSpacesStripper.strip] generates new "PSI change" events.
+ *
+ * This function saves all documents "as they are" (see [FileDocumentManager.saveDocumentAsIs]), but also fires that
+ * these documents should be stripped later (when [saveAllDocuments] is called).
+ */
+fun saveAllDocumentsAsTheyAre() {
+    val documentManager = FileDocumentManager.getInstance()
+//    val rustfmtWatcher = RustfmtWatcher.getInstance()
+//    rustfmtWatcher.withoutReformatting {
+    for (document in documentManager.unsavedDocuments) {
+        documentManager.saveDocumentAsIs(document)
+//            documentManager.stripDocumentLater(document)
+//        if (reformatLater) rustfmtWatcher.reformatDocumentLater(document)
+    }
+//    }
+}
 
 inline fun testAssert(action: () -> Boolean, lazyMessage: () -> Any) {
     if (isUnitTestMode && !action()) {
@@ -121,7 +147,8 @@ val Project.contentRoots: Sequence<VirtualFile>
     get() = this.modules.asSequence()
         .flatMap { ModuleRootManager.getInstance(it).contentRoots.asSequence() }
 
-val Project.syntheticLibraries: Collection<SyntheticLibrary> get() {
+val Project.syntheticLibraries: Collection<SyntheticLibrary>
+    get() {
     val libraries = AdditionalLibraryRootsProvider.EP_NAME
         .extensionList
         .flatMap { it.getAdditionalProjectLibraries(this) }
@@ -180,22 +207,19 @@ inline fun <R> Project.nonBlocking(crossinline block: () -> R, crossinline uiCon
             block()
         })
             .inSmartMode(this)
-            .expireWith(MvPluginDisposable.getInstance(this))
+            .expireWith(this.rootPluginDisposable)
             .finishOnUiThread(ModalityState.current()) { result ->
                 uiContinuation(result)
             }.submit(AppExecutorUtil.getAppExecutorService())
     }
 }
 
-@Service
-class MvPluginDisposable : Disposable {
-    companion object {
-        @JvmStatic
-        fun getInstance(project: Project): Disposable = project.service<MvPluginDisposable>()
-    }
-
+@Service(PROJECT)
+class RootPluginDisposable : Disposable {
     override fun dispose() {}
 }
+
+val Project.rootPluginDisposable get() = this.service<RootPluginDisposable>()
 
 fun checkCommitIsNotInProgress(project: Project) {
     val app = ApplicationManager.getApplication()
@@ -213,3 +237,9 @@ inline fun <Key: Any, reified Psi : PsiElement> getElements(
     scope: GlobalSearchScope?
 ): Collection<Psi> =
     StubIndex.getElements(indexKey, key, project, scope, Psi::class.java)
+
+fun joinPathArray(segments: Array<String>) =
+    segments.joinTo(StringBuilder(), Platform.current().fileSeparator.toString()).toString()
+
+fun joinPath(vararg segments: String) =
+    segments.joinTo(StringBuilder(), Platform.current().fileSeparator.toString()).toString()

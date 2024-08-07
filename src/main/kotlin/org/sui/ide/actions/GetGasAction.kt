@@ -1,12 +1,10 @@
 package org.sui.ide.actions
 
 import com.intellij.execution.process.ProcessOutput
-import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import org.sui.common.NOTIFACATION_GROUP
+import org.sui.ide.notifications.MvNotifications
 
 class GetGasAction : AnAction() {
 
@@ -25,14 +23,11 @@ class GetGasAction : AnAction() {
                 }
                 println(message)
             } else {
-                Notifications.Bus.notify(
-                    Notification(
-                        NOTIFACATION_GROUP,
-                        "Switch address",
-                        "Execution failure, please check the sui cli path.",
-                        NotificationType.ERROR
-                    )
-                )
+                MvNotifications.pluginNotifications().createNotification(
+                    "Switch address",
+                    "Execution failure, please check the sui cli path.",
+                    NotificationType.ERROR
+                ).notify(project)
             }
         }
 //        project.suiExec.toExecutor()?.simpleCommand(project, "client", listOf("gas"), onProcessComplete)

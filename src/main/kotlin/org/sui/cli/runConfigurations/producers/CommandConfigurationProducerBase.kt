@@ -2,25 +2,20 @@ package org.sui.cli.runConfigurations.producers
 
 import com.intellij.execution.actions.ConfigurationContext
 import com.intellij.execution.actions.LazyRunConfigurationProducer
+import com.intellij.execution.configuration.EnvironmentVariablesData
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.parentOfType
 import org.sui.cli.runConfigurations.CommandConfigurationBase
-import org.sui.cli.settings.Blockchain
-import org.sui.cli.settings.moveSettings
 
-abstract class CommandConfigurationProducerBase(val blockchain: Blockchain) :
+abstract class CommandConfigurationProducerBase :
     LazyRunConfigurationProducer<CommandConfigurationBase>() {
 
-    fun configFromLocation(location: PsiElement, climbUp: Boolean = true): CommandLineArgsFromContext? {
-        val project = location.project
-        if (project.moveSettings.state.blockchain != blockchain) {
-            return null
-        }
-        return fromLocation(location, climbUp)
-    }
 
-    abstract fun fromLocation(location: PsiElement, climbUp: Boolean = true): CommandLineArgsFromContext?
+    fun configFromLocation(location: PsiElement, climbUp: Boolean = true): SuiCommandLineFromContext? =
+        fromLocation(location, climbUp)
+
+    abstract fun fromLocation(location: PsiElement, climbUp: Boolean = true): SuiCommandLineFromContext?
 
     override fun setupConfigurationFromContext(
         templateConfiguration: CommandConfigurationBase,
@@ -30,34 +25,26 @@ abstract class CommandConfigurationProducerBase(val blockchain: Blockchain) :
         val cmdConf = configFromLocation(sourceElement.get()) ?: return false
         templateConfiguration.name = cmdConf.configurationName
 
-        val commandLine = cmdConf.commandLineArgs
+        val commandLine = cmdConf.commandLine
         templateConfiguration.command = commandLine.joinArgs()
         templateConfiguration.workingDirectory = commandLine.workingDirectory
 
-        var envVars = commandLine.environmentVariables
-        if (blockchain == Blockchain.APTOS
-            && context.project.moveSettings.state.disableTelemetry
-        ) {
-            envVars = envVars.with(mapOf("APTOS_DISABLE_TELEMETRY" to "true"))
-        }
-        templateConfiguration.environmentVariables = envVars
+        val environment = commandLine.environmentVariables.envs
+        templateConfiguration.environmentVariables = EnvironmentVariablesData.create(environment, true)
         return true
+
     }
 
     override fun isConfigurationFromContext(
         configuration: CommandConfigurationBase,
         context: ConfigurationContext
     ): Boolean {
-        val project = context.project
-        if (project.moveSettings.state.blockchain != blockchain) {
-            return false
-        }
         val location = context.psiLocation ?: return false
         val cmdConf = configFromLocation(location) ?: return false
         return configuration.name == cmdConf.configurationName
-                && configuration.command == cmdConf.commandLineArgs.joinArgs()
-                && configuration.workingDirectory == cmdConf.commandLineArgs.workingDirectory
-                && configuration.environmentVariables == cmdConf.commandLineArgs.environmentVariables
+                && configuration.command == cmdConf.commandLine.joinArgs()
+                && configuration.workingDirectory == cmdConf.commandLine.workingDirectory
+                && configuration.environmentVariables == cmdConf.commandLine.environmentVariables
     }
 
     companion object {

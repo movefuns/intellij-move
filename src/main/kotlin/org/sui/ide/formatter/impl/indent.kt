@@ -52,6 +52,9 @@ fun MoveFmtBlock.computeChildIndent(childNode: ASTNode): Indent? {
         //     .myotherfield
         parentPsi is MvExpr -> Indent.getContinuationWithoutFirstIndent()
 
+        // same thing as previous one, but for spec statements
+        parentPsi.isSpecStmt -> Indent.getContinuationWithoutFirstIndent()
+
         else -> Indent.getNoneIndent()
     }
 }

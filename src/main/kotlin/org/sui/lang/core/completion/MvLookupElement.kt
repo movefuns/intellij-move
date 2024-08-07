@@ -3,10 +3,7 @@ package org.sui.lang.core.completion
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementDecorator
 import org.sui.lang.core.psi.*
-import org.sui.lang.core.types.infer.compatAbilities
-import org.sui.lang.core.types.infer.inference
-import org.sui.lang.core.types.infer.isCompatible
-import org.sui.lang.core.types.infer.loweredType
+import org.sui.lang.core.types.infer.*
 import org.sui.lang.core.types.ty.TyUnknown
 
 fun LookupElement.toMvLookupElement(properties: LookupElementProperties): MvLookupElement =
@@ -15,7 +12,8 @@ fun LookupElement.toMvLookupElement(properties: LookupElementProperties): MvLook
 class MvLookupElement(
     delegate: LookupElement,
     val props: LookupElementProperties
-) : LookupElementDecorator<LookupElement>(delegate) {
+) :
+    LookupElementDecorator<LookupElement>(delegate) {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -54,12 +52,17 @@ data class LookupElementProperties(
     val typeHasAllRequiredAbilities: Boolean = false,
 )
 
-fun lookupProperties(element: MvNamedElement, context: CompletionContext): LookupElementProperties {
+fun getLookupElementProperties(
+    element: MvNamedElement,
+    subst: Substitution,
+    context: CompletionContext
+): LookupElementProperties {
     var props = LookupElementProperties()
-    val msl = context.contextScopeInfo.isMslScope
     val expectedTy = context.expectedTy
     if (expectedTy != null) {
-        val itemTy = when (element) {
+        val msl = context.isMsl()
+        val declaredTy =
+            when (element) {
             is MvFunctionLike -> element.declaredType(msl).retType
             is MvStruct -> element.declaredType(msl)
             is MvConst -> element.type?.loweredType(msl) ?: TyUnknown
@@ -69,9 +72,12 @@ fun lookupProperties(element: MvNamedElement, context: CompletionContext): Looku
                 // so changing to infallible getPatTypeOrUnknown()
                 inference?.getPatTypeOrUnknown(element) ?: TyUnknown
             }
+                is MvStructField -> element.type?.loweredType(msl) ?: TyUnknown
             else -> TyUnknown
         }
-        // it is required for the TyInfer.TyVar to always have a different underlying unification table
+        val itemTy = declaredTy.substitute(subst)
+
+        // NOTE: it is required for the TyInfer.TyVar to always have a different underlying unification table
         val isCompat = isCompatible(expectedTy, itemTy, msl) && compatAbilities(expectedTy, itemTy, msl)
         props = props.copy(
             isReturnTypeConformsToExpectedType = isCompat

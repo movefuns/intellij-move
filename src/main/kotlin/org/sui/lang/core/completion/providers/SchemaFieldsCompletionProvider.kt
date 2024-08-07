@@ -6,12 +6,14 @@ import com.intellij.patterns.ElementPattern
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiElement
 import com.intellij.util.ProcessingContext
-import org.sui.lang.core.completion.createCompletionLookupElement
+import org.sui.lang.core.completion.CompletionContext
+import org.sui.lang.core.completion.createLookupElement
 import org.sui.lang.core.psi.MvSchemaLitField
 import org.sui.lang.core.psi.ext.fieldBindings
 import org.sui.lang.core.psi.ext.fieldNames
 import org.sui.lang.core.psi.ext.schema
 import org.sui.lang.core.psi.ext.schemaLit
+import org.sui.lang.core.resolve.ContextScopeInfo
 import org.sui.lang.core.withParent
 
 object SchemaFieldsCompletionProvider : MvCompletionProvider() {
@@ -31,8 +33,11 @@ object SchemaFieldsCompletionProvider : MvCompletionProvider() {
         val schema = schemaLit.schema ?: return
         val providedFieldNames = schemaLit.fieldNames
 
+        val completionCtx = CompletionContext(element, ContextScopeInfo.msl())
         for (fieldBinding in schema.fieldBindings.filter { it.name !in providedFieldNames }) {
-            result.addElement(fieldBinding.createCompletionLookupElement())
+            result.addElement(
+                fieldBinding.createLookupElement(completionCtx)
+            )
         }
     }
 }

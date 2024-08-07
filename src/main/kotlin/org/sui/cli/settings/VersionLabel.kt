@@ -2,34 +2,52 @@ package org.sui.cli.settings
 
 import com.intellij.openapi.Disposable
 import com.intellij.ui.JBColor
-import org.sui.cli.runConfigurations.CliCommandLineArgs
+import com.intellij.ui.components.JBLabel
+import org.sui.cli.runConfigurations.SuiCommandLine
 import org.sui.openapiext.UiDebouncer
 import org.sui.openapiext.checkIsBackgroundThread
 import org.sui.openapiext.common.isUnitTestMode
 import org.sui.openapiext.execute
 import org.sui.openapiext.isSuccess
 import java.nio.file.Path
-import javax.swing.JLabel
+import javax.swing.Icon
+
+open class TextOrErrorLabel(icon: Icon?) : JBLabel(icon) {
+    fun isError(): Boolean = this.foreground == JBColor.RED
+
+    fun setText(text: String, errorHighlighting: Boolean) {
+        if (errorHighlighting) {
+            this.text = text
+            this.foreground = JBColor.RED
+        } else {
+            this.text = text
+                .split("\n")
+                .joinToString("<br>", "<html>", "</html>")
+            this.foreground = JBColor.foreground()
+        }
+    }
+}
 
 class VersionLabel(
     parentDisposable: Disposable,
     private val versionUpdateListener: (() -> Unit)? = null
-) : JLabel() {
+) :
+    TextOrErrorLabel(null) {
 
     private val versionUpdateDebouncer = UiDebouncer(parentDisposable)
 
-    fun updateAndNotifyListeners(execPath: Path) {
+    fun updateAndNotifyListeners(execPath: Path?) {
         versionUpdateDebouncer.update(
             onPooledThread = {
                 if (!isUnitTestMode) {
                     checkIsBackgroundThread()
                 }
-                if (!execPath.isValidExecutable()) {
+                if (execPath == null || !execPath.isValidExecutable()) {
                     return@update null
                 }
 
                 val commandLineArgs =
-                    CliCommandLineArgs(null, listOf("--version"), workingDirectory = null)
+                    SuiCommandLine(null, listOf("--version"), workingDirectory = null)
                 commandLineArgs
                     .toGeneralCommandLine(execPath)
                     .execute()
@@ -56,15 +74,15 @@ class VersionLabel(
 
     fun setTextInvalidExecutable() = this.setText("N/A (Invalid executable)", errorHighlighting = true)
 
-    fun setText(text: String, errorHighlighting: Boolean) {
-        if (errorHighlighting) {
-            this.text = text
-            this.foreground = JBColor.RED
-        } else {
-            this.text = text
-                .split("\n")
-                .joinToString("<br>", "<html>", "</html>")
-            this.foreground = JBColor.foreground()
-        }
-    }
+//    fun setText(text: String, errorHighlighting: Boolean) {
+//        if (errorHighlighting) {
+//            this.text = text
+//            this.foreground = JBColor.RED
+//        } else {
+//            this.text = text
+//                .split("\n")
+//                .joinToString("<br>", "<html>", "</html>")
+//            this.foreground = JBColor.foreground()
+//        }
+//    }
 }

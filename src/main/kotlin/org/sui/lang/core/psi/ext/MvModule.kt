@@ -6,6 +6,8 @@ import com.intellij.navigation.ItemPresentation
 import com.intellij.openapi.project.Project
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.util.CachedValuesManager.getProjectPsiDependentCache
+import org.sui.cli.containingMovePackage
+import org.sui.cli.settings.moveSettings
 import org.sui.ide.MoveIcons
 import org.sui.ide.annotator.PRELOAD_STD_MODULES
 import org.sui.ide.annotator.PRELOAD_SUI_MODULES
@@ -99,7 +101,7 @@ fun MvModule.builtinFunctions(): List<MvFunction> {
     }
 }
 
-fun MvModule.visibleFunctions(visibility: Visibility): List<MvFunction> {
+fun MvModule.functionsVisibleInScope(visibility: Visibility): List<MvFunction> {
     return when (visibility) {
         is Visibility.Public ->
             allNonTestFunctions()
@@ -117,6 +119,18 @@ fun MvModule.visibleFunctions(visibility: Visibility): List<MvFunction> {
                 && currentModule.fqModule() in this.declaredFriendModules
             ) {
                 friendFunctions
+            } else {
+                emptyList()
+            }
+        }
+
+        is Visibility.PublicPackage -> {
+            if (!project.moveSettings.enablePublicPackage) {
+                return emptyList()
+            }
+            val modulePackage = this.containingMovePackage
+            if (visibility.originPackage == modulePackage) {
+                this.allNonTestFunctions()
             } else {
                 emptyList()
             }
@@ -157,9 +171,10 @@ fun MvModule.builtinModules(): List<MvModule> {
     }
 }
 
+// TODO
 fun builtinModule(text: String, project: Project): MvModule {
     val trimmedText = text.trimIndent()
-    return project.psiFactory.specModule(trimmedText)
+    return project.psiFactory.inlineModule(trimmedText, "", "")
 }
 
 fun MvModule.builtinSpecFunctions(): List<MvSpecFunction> {
@@ -255,8 +270,8 @@ fun MvModule.allModuleSpecBlocks(): List<MvModuleSpecBlock> {
 }
 
 fun MvModule.isPreload(): Boolean {
-    return this.addressRef?.namedAddress?.text == "sui" && PRELOAD_SUI_MODULES.contains(this.identifier?.text)
-            || this.addressRef?.namedAddress?.text == "std" && PRELOAD_STD_MODULES.contains(this.identifier?.text)
+    return this.addressRef?.namedAddress?.text == "sui" && PRELOAD_SUI_MODULES.contains(this.name)
+            || this.addressRef?.namedAddress?.text == "std" && PRELOAD_STD_MODULES.contains(this.name)
 }
 
 abstract class MvModuleMixin : MvStubbedNamedElementImpl<MvModuleStub>,

@@ -11,9 +11,9 @@ import org.sui.ide.utils.imports.ImportCandidateCollector
 import org.sui.ide.utils.imports.import
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.ancestorStrict
+import org.sui.lang.core.psi.ext.asSmartPointer
 import org.sui.lang.core.psi.ext.hasAncestor
 import org.sui.lang.core.psi.ext.importCandidateNamespaces
-import org.sui.lang.core.psi.ext.smartPointer
 import org.sui.lang.core.resolve.ContextScopeInfo
 import org.sui.lang.core.resolve.letStmtScope
 import org.sui.lang.core.resolve.ref.MvReferenceElement
@@ -117,7 +117,7 @@ data class ImportContext private constructor(
             } else {
                 val module = refElement.containingModule
                 if (module != null) {
-                    setOf(Visibility.Public, Visibility.PublicFriend(module.smartPointer()))
+                    setOf(Visibility.Public, Visibility.PublicFriend(module.asSmartPointer()))
                 } else {
                     setOf(Visibility.Public)
                 }

@@ -3,6 +3,7 @@ package org.sui.ide.annotator
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
+import org.sui.cli.settings.moveSettings
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.types.ty.Ability
@@ -21,6 +22,12 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
             override fun visitStruct(s: MvStruct) = checkStruct(moveHolder, s)
             override fun visitFunction(o: MvFunction) = checkFunction(moveHolder, o)
             override fun visitSpecFunction(o: MvSpecFunction) = checkSpecFunction(moveHolder, o)
+            override fun visitIndexExpr(o: MvIndexExpr) = checkIndexExpr(moveHolder, o)
+            override fun visitMethodCall(o: MvMethodCall) = checkMethodCall(moveHolder, o)
+
+            override fun visitModule(o: MvModule) {
+                checkVisibilityModifiers(moveHolder, o)
+            }
         }
         element.accept(visitor)
     }
@@ -57,10 +64,18 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
     }
 
     private fun checkCastExpr(holder: MvAnnotationHolder, castExpr: MvCastExpr) {
-        val parent = castExpr.parent
-        if (parent !is MvParensExpr) {
+//        val parent = castExpr.parent
+//        if (parent !is MvParensExpr) {
+//            Diagnostic
+//                .ParensAreRequiredForCastExpr(castExpr)
+//                .addToHolder(holder)
+//        }
+    }
+
+    private fun checkIndexExpr(holder: MvAnnotationHolder, indexExpr: MvIndexExpr) {
+        if (!indexExpr.project.moveSettings.enableIndexExpr) {
             Diagnostic
-                .ParensAreRequiredForCastExpr(castExpr)
+                .IndexExprIsNotSupportedInCompilerV1(indexExpr)
                 .addToHolder(holder)
         }
     }
@@ -70,6 +85,43 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
         val errorRange = TextRange.create(native.startOffset, struct.structKw.endOffset)
         Diagnostic.NativeStructNotSupported(struct, errorRange)
             .addToHolder(holder)
+    }
+
+    private fun checkVisibilityModifiers(
+        holder: MvAnnotationHolder,
+        module: MvModule
+    ) {
+        if (!module.project.moveSettings.enablePublicPackage) {
+            for (function in module.allFunctions()) {
+                val modifier = function.visibilityModifier ?: continue
+                if (modifier.isPublicPackage) {
+                    Diagnostic.PublicPackageIsNotSupportedInCompilerV1(modifier)
+                        .addToHolder(holder)
+                }
+            }
+            return
+        }
+
+        val allModifiers = module.allFunctions().map { it.visibilityFromPsi() }.toSet()
+        val friendAndPackageTogether =
+            FunctionVisibility.PUBLIC_PACKAGE in allModifiers
+                    && FunctionVisibility.PUBLIC_FRIEND in allModifiers
+        if (friendAndPackageTogether) {
+            for (function in module.allFunctions()) {
+                val modifier = function.visibilityModifier ?: continue
+                if (modifier.isPublicPackage || modifier.isPublicFriend) {
+                    Diagnostic.PackageAndFriendModifiersCannotBeUsedTogether(modifier)
+                        .addToHolder(holder)
+                }
+            }
+        }
+    }
+
+    private fun checkMethodCall(holder: MvAnnotationHolder, methodCall: MvMethodCall) {
+        if (!methodCall.project.moveSettings.enableReceiverStyleFunctions) {
+            Diagnostic.ReceiverStyleFunctionsIsNotSupportedInCompilerV1(methodCall)
+                .addToHolder(holder)
+        }
     }
 
     private fun checkLitExpr(holder: MvAnnotationHolder, litExpr: MvLitExpr) {
@@ -163,6 +215,7 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
         }
     }
 
+    @Suppress("CompanionObjectInExtension")
     companion object {
         private val INTEGER_WITH_SUFFIX_REGEX =
             Regex("([0-9a-zA-Z_]+)(u[0-9]{1,4})")

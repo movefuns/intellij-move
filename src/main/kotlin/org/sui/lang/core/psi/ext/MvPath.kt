@@ -34,7 +34,7 @@ val MvPath.isUpdateFieldArg2: Boolean
             ?.let { if (it.path.textMatches("update_field")) it else null }
             ?.let {
                 val expr = this.ancestorStrict<MvRefExpr>() ?: return@let -1
-                it.callArgumentExprs.indexOf(expr)
+                it.argumentExprs.indexOf(expr)
             }
         return ind == 1
     }
@@ -66,8 +66,12 @@ fun MvPath.namespaces(): Set<Namespace> {
 //            parent is MvRefExpr && !this.nullModuleRef -> setOf(Namespace.NAME, Namespace.MODULE)
         // TODO: it's own namespace?
         parent is MvStructLitExpr || parent is MvStructPat -> setOf(Namespace.NAME)
-        else -> project.debugErrorOrFallback(
-            "Unhandled path parent ${parent.elementType}",
+        parent is MvAccessSpecifier -> setOf(Namespace.TYPE)
+        parent is MvAddressSpecifierArg -> setOf(Namespace.FUNCTION)
+        parent is MvAddressSpecifierCallParam -> setOf(Namespace.NAME)
+        parent is MvPublicUseFun -> setOf(Namespace.FUNCTION)
+        else -> debugErrorOrFallback(
+            "Cannot build path namespaces: unhandled parent type ${parent.elementType}",
             setOf(Namespace.NAME)
         )
     }

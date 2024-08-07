@@ -7,7 +7,10 @@ import com.intellij.psi.PsiElement
 import com.intellij.util.ProcessingContext
 import org.sui.ide.inspections.imports.ImportContext
 import org.sui.lang.core.MvPsiPatterns
-import org.sui.lang.core.completion.*
+import org.sui.lang.core.completion.CompletionContext
+import org.sui.lang.core.completion.IMPORTED_MODULE_PRIORITY
+import org.sui.lang.core.completion.UNIMPORTED_ITEM_PRIORITY
+import org.sui.lang.core.completion.createLookupElement
 import org.sui.lang.core.psi.MvPath
 import org.sui.lang.core.psi.containingModule
 import org.sui.lang.core.psi.containingModuleSpec
@@ -43,10 +46,10 @@ object ModulesCompletionProvider : MvCompletionProvider() {
                 letStmtScope = refElement.letStmtScope,
                 refItemScopes = refElement.refItemScopes,
             )
-        val ctx = CompletionContext(refElement, namespaces, contextScopeInfo)
+        val completionCtx = CompletionContext(refElement, contextScopeInfo)
         processItems(refElement, namespaces, contextScopeInfo) { (name, element) ->
             result.addElement(
-                element.createLookupElement(ctx, priority = IMPORTED_MODULE_PRIORITY)
+                element.createLookupElement(completionCtx, priority = IMPORTED_MODULE_PRIORITY)
             )
             processedNames.add(name)
             false
@@ -72,10 +75,11 @@ object ModulesCompletionProvider : MvCompletionProvider() {
                                              })
         candidates.forEach { candidate ->
             val lookupElement =
-                candidate.element.createCompletionLookupElement(
-                    ImportInsertHandler(parameters, candidate),
-                    importContext.namespaces,
+                candidate.element.createLookupElement(
+                    completionCtx,
+                    structAsType = Namespace.TYPE in importContext.namespaces,
                     priority = UNIMPORTED_ITEM_PRIORITY,
+                    insertHandler = ImportInsertHandler(parameters, candidate)
                 )
             result.addElement(lookupElement)
         }

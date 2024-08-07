@@ -47,7 +47,7 @@ class MvUnresolvedReferenceInspection : MvLocalInspectionTool() {
 
     override fun buildMvVisitor(holder: ProblemsHolder, isOnTheFly: Boolean) = object : MvVisitor() {
         override fun visitModuleRef(moduleRef: MvModuleRef) {
-            if (moduleRef.isMslScope && !moduleRef.project.isDebugModeEnabled) {
+            if (moduleRef.isMslScope && !isDebugModeEnabled()) {
                 return
             }
             // skip this check, as it will be checked in MvPath visitor
@@ -64,7 +64,7 @@ class MvUnresolvedReferenceInspection : MvLocalInspectionTool() {
 
         override fun visitPath(path: MvPath) {
             // skip specs in non-dev mode, too many false-positives
-            if (path.isMslScope && !path.project.isDebugModeEnabled) {
+            if (path.isMslScope && !isDebugModeEnabled()) {
                 return
             }
 //            if (path.isMslLegacy() && path.isResult) return
@@ -93,7 +93,7 @@ class MvUnresolvedReferenceInspection : MvLocalInspectionTool() {
         }
 
         override fun visitStructPatField(patField: MvStructPatField) {
-            if (patField.isMsl() && !patField.project.isDebugModeEnabled) {
+            if (patField.isMsl() && !isDebugModeEnabled()) {
                 return
             }
             val resolvedStructDef = patField.structPat.path.maybeStruct ?: return
@@ -107,7 +107,7 @@ class MvUnresolvedReferenceInspection : MvLocalInspectionTool() {
         }
 
         override fun visitStructLitField(litField: MvStructLitField) {
-            if (litField.isMsl() && !litField.project.isDebugModeEnabled) {
+            if (litField.isMsl() && !isDebugModeEnabled()) {
                 return
             }
             if (litField.isShorthand) {
@@ -170,7 +170,7 @@ class MvUnresolvedReferenceInspection : MvLocalInspectionTool() {
         }
 
         override fun visitDotExpr(dotExpr: MvDotExpr) {
-            if (dotExpr.isMsl() && !dotExpr.project.isDebugModeEnabled) {
+            if (dotExpr.isMsl() && !isDebugModeEnabled()) {
                 return
             }
             val receiverTy = dotExpr.inference(false)?.getExprType(dotExpr.expr)

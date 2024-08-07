@@ -4,8 +4,9 @@ import com.intellij.execution.RunnerAndConfigurationSettings
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.sui.cli.Consts
-import org.sui.cli.runConfigurations.sui.SuiCommandConfiguration
-import org.sui.cli.runConfigurations.sui.SuiConfigurationType
+import org.sui.cli.runConfigurations.sui.SuiCommandConfigurationType
+import org.sui.cli.runConfigurations.sui.cmd.SuiCommandConfiguration
+import org.sui.cli.runConfigurations.sui.cmd.SuiCommandConfigurationFactory
 import org.sui.ide.notifications.updateAllNotifications
 import org.sui.openapiext.addRunConfiguration
 import org.sui.openapiext.contentRoots
@@ -39,11 +40,10 @@ object ProjectInitializationSteps {
     fun createDefaultCompileConfiguration(project: Project, selected: Boolean): RunnerAndConfigurationSettings {
         val runConfigurationAndWithSettings =
             project.addRunConfiguration(selected) { runManager, _ ->
-                val configurationFactory = SuiConfigurationType.getInstance()
-                    .configurationFactories.find { it is SuiConfigurationType }
-                    ?: error("SuiConfigurationType should be present in the factories list")
-
-                runManager.createConfiguration("Build Project", configurationFactory)
+                val configurationFactory = SuiCommandConfigurationType.getInstance()
+                    .configurationFactories.find { it is SuiCommandConfigurationFactory }
+                    ?: error("SuiCommandConfigurationFactory should be present in the factories list")
+                runManager.createConfiguration("Build", configurationFactory)
                     .apply {
                         (configuration as? SuiCommandConfiguration)?.apply {
                             command = "move build"
@@ -54,4 +54,5 @@ object ProjectInitializationSteps {
         return runConfigurationAndWithSettings
     }
 }
+
 

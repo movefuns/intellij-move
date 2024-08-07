@@ -17,7 +17,6 @@ import org.sui.lang.core.psi.ext.hasTestAttr
 import org.sui.lang.core.psi.ext.hasTestOnlyAttr
 import org.sui.lang.core.psi.ext.viewFunctions
 import org.sui.stdext.iterateMoveFiles
-import java.util.concurrent.CompletableFuture
 
 class MoveProjectsTreeStructure(
     tree: MoveProjectsTree,
@@ -34,10 +33,10 @@ class MoveProjectsTreeStructure(
 
     override fun getRootElement() = root
 
-    fun reloadTreeModelAsync(moveProjects: List<MoveProject>): CompletableFuture<*> {
+    fun updateMoveProjects(moveProjects: List<MoveProject>) {
         this.moveProjects = moveProjects
         this.root = MoveSimpleNode.Root(moveProjects)
-        return treeModel.invalidateAsync()
+        treeModel.invalidateAsync()
     }
 
     sealed class MoveSimpleNode(parent: SimpleNode?) : CachingSimpleNode(parent) {
@@ -45,15 +44,15 @@ class MoveProjectsTreeStructure(
 
         class Root(private val moveProjects: List<MoveProject>) : MoveSimpleNode(null) {
             override fun buildChildren(): Array<SimpleNode> =
-                moveProjects.map { Project(it, this) }.sortedBy { it.name }.toTypedArray()
+                moveProjects.map { TreeProject(it, this) }.sortedBy { it.name }.toTypedArray()
 
             override fun getName() = ""
             override fun toTestString() = "Root"
         }
 
-        open class Package(private val movePackage: MovePackage, parent: SimpleNode) : MoveSimpleNode(parent) {
+        open class Package(val movePackage: MovePackage, parent: SimpleNode) : MoveSimpleNode(parent) {
             init {
-                icon = MoveIcons.MOVE_LOGO
+                icon = MoveIcons.SUI_LOGO
             }
 
             override fun buildChildren(): Array<SimpleNode> {
@@ -85,7 +84,7 @@ class MoveProjectsTreeStructure(
             override fun toTestString(): String = "Package($name)"
         }
 
-        class Project(val moveProject: MoveProject, parent: SimpleNode) :
+        class TreeProject(val moveProject: MoveProject, parent: SimpleNode) :
             Package(moveProject.currentPackage, parent) {
 
             override fun buildChildren(): Array<SimpleNode> {

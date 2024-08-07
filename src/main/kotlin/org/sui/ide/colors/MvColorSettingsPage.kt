@@ -16,7 +16,7 @@ class MvColorSettingsPage : ColorSettingsPage {
     }
 
     override fun getDisplayName() = "SuiMove"
-    override fun getIcon() = MoveIcons.MOVE_LOGO
+    override fun getIcon() = MoveIcons.SUI_LOGO
     override fun getHighlighter() = MvHighlighter()
     override fun getAdditionalHighlightingTagToDescriptorMap() = ANNOTATOR_TAGS
     override fun getAttributeDescriptors() = ATTRS

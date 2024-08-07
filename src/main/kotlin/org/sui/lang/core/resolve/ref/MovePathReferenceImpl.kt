@@ -12,7 +12,7 @@ class MvPathReferenceImpl(
 
     override fun multiResolveInner(): List<MvNamedElement> {
         val pathNamespaces = element.namespaces()
-        val vs = Visibility.buildSetOfVisibilities(element)
+        val vs = Visibility.visibilityScopesForElement(element)
         val contextScopeInfo =
             ContextScopeInfo(
                 refItemScopes = element.refItemScopes,
@@ -30,7 +30,7 @@ class MvPathReferenceImpl(
         // second,
         // if it's MODULE::NAME -> resolve MODULE into corresponding FQModuleRef using imports
         if (moduleRef != null) {
-            if (moduleRef.isSelf) {
+            if (moduleRef.isSelfModuleRef) {
                 val containingModule = moduleRef.containingModule ?: return emptyList()
                 return resolveModuleItem(
                     containingModule,

@@ -8,6 +8,7 @@ import org.sui.lang.core.types.infer.HasTypeFlagVisitor.Companion.HAS_TY_TYPE_PA
 import org.sui.lang.core.types.infer.HasTypeFlagVisitor.Companion.HAS_TY_UNKNOWN_VISITOR
 import org.sui.lang.core.types.infer.HasTypeFlagVisitor.Companion.NEEDS_INFER
 import org.sui.lang.core.types.infer.HasTypeFlagVisitor.Companion.NEEDS_SUBST
+import org.sui.lang.core.types.ty.Ability.COPY
 
 enum class Ability {
     DROP, COPY, STORE, KEY;
@@ -32,6 +33,8 @@ enum class Ability {
     }
 }
 
+val Ty.isCopy: Boolean get() = this.abilities().contains(COPY)
+
 val TypeFoldable<*>.hasTyInfer get() = visitWith(HAS_TY_INFER_VISITOR)
 val TypeFoldable<*>.hasTyTypeParameters get() = visitWith(HAS_TY_TYPE_PARAMETER_VISITOR)
 val TypeFoldable<*>.hasTyStruct get() = visitWith(HAS_TY_STRUCT_VISITOR)
@@ -39,6 +42,8 @@ val TypeFoldable<*>.hasTyUnknown get() = visitWith(HAS_TY_UNKNOWN_VISITOR)
 
 val TypeFoldable<*>.needsInfer get(): Boolean = visitWith(NEEDS_INFER)
 val TypeFoldable<*>.needsSubst get(): Boolean = visitWith(NEEDS_SUBST)
+
+fun Ty.knownOrNull(): Ty? = takeIf { it !is TyUnknown }
 
 abstract class Ty(val flags: TypeFlags = 0) : TypeFoldable<Ty> {
 

@@ -53,7 +53,7 @@ class MvBackgroundTaskQueue {
     private fun runTaskInCurrentThread(task: Task.Backgroundable) {
         check(isUnitTestMode)
         val pm = ProgressManager.getInstance() as ProgressManagerImpl
-        pm.runProcessWithProgressInCurrentThread(task, EmptyProgressIndicator(), ModalityState.NON_MODAL)
+        pm.runProcessWithProgressInCurrentThread(task, EmptyProgressIndicator(), ModalityState.nonModal())
     }
 
     @Synchronized
@@ -141,7 +141,7 @@ class MvBackgroundTaskQueue {
                     onFinish(this)
                     continuation.run()
                 },
-                ModalityState.NON_MODAL
+                ModalityState.nonModal()
             )
         }
 

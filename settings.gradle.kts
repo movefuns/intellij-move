@@ -1,4 +1,4 @@
-rootProject.name = "intellij-move"
+rootProject.name = "intellij-sui-move"
 
 pluginManagement {
     repositories {
@@ -7,4 +7,4 @@ pluginManagement {
     }
 }
 
-include("plugin")
+//include("ui-tests")

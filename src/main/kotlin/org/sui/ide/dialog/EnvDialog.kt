@@ -1,25 +1,25 @@
 package org.sui.ide.dialog
 
-import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.util.ExecUtil
-import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
-import org.sui.common.NOTIFACATION_GROUP
+import org.sui.cli.runConfigurations.SuiCommandLine
+import org.sui.cli.settings.suiExecPath
 import org.sui.ide.actions.OpenSwitchEnvsDialogAction
+import org.sui.ide.notifications.MvNotifications
 import java.awt.BorderLayout
 import java.awt.Dimension
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
 
-class EnvDialog(var data: OpenSwitchEnvsDialogAction.Envs) : DialogWrapper(true) {
+class EnvDialog(var data: OpenSwitchEnvsDialogAction.Envs, val project: Project) : DialogWrapper(true) {
 
-    private val BUTTON_TEXT = "Switch"
-    private val SWITCH_ENV_TITLE = "Switch Network Environment"
+    private val buttonText = "Switch"
+    private val titleText = "Switch Network Environment"
 
     init {
         init()
@@ -51,7 +51,7 @@ class EnvDialog(var data: OpenSwitchEnvsDialogAction.Envs) : DialogWrapper(true)
     }
 
     private fun setUpButton(tableModel: DefaultTableModel, table: JBTable): JButton {
-        val button = JButton(BUTTON_TEXT)
+        val button = JButton(buttonText)
         button.addActionListener {
             val row = table.selectedRow
             if (row >= 0) {
@@ -68,20 +68,20 @@ class EnvDialog(var data: OpenSwitchEnvsDialogAction.Envs) : DialogWrapper(true)
 
     private fun executeCommand(env: String) {
         ApplicationManager.getApplication().executeOnPooledThread {
-            val commandLine = GeneralCommandLine("sui", "client", "switch", "--env", env)
+            val suiCommandLine = SuiCommandLine("client switch", listOf("--env", env))
+            if (project.suiExecPath == null) return@executeOnPooledThread
+            val commandLine = suiCommandLine.toGeneralCommandLine(project.suiExecPath!!)
+
             ExecUtil.execAndGetOutput(commandLine)
             showNotification("network environment switched successfully")
         }
     }
 
     private fun showNotification(message: String) {
-        Notifications.Bus.notify(
-            Notification(
-                NOTIFACATION_GROUP,
-                SWITCH_ENV_TITLE,
-                message,
-                NotificationType.INFORMATION
-            )
-        )
+        MvNotifications.pluginNotifications().createNotification(
+            titleText,
+            message,
+            NotificationType.INFORMATION
+        ).notify(project)
     }
 }

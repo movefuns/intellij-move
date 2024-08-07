@@ -4,7 +4,6 @@ import com.intellij.extapi.psi.PsiFileBase
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.ex.temp.TempFileSystem
 import com.intellij.psi.FileViewProvider
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -79,11 +78,14 @@ class MoveFile(fileViewProvider: FileViewProvider) : MoveFileBase(fileViewProvid
 
     fun preloadModules(): Sequence<MvModule> {
         return getProjectPsiDependentCache(this) { it ->
-            it.childrenOfType<MvModule>()
-                .chain(it.childrenOfType<MvAddressDef>().flatMap { a -> a.modules() })
-                .filter {
-                    it.isPreload()
-                }
+            it.modules().filter {
+                it.isPreload()
+            }
+//            it.childrenOfType<MvModule>()
+//                .chain(it.childrenOfType<MvAddressDef>().flatMap { a -> a.modules() })
+//                .filter {
+//                    it.isPreload()
+//                }
         }
     }
 }
@@ -95,10 +97,6 @@ val VirtualFile.isMoveTomlManifestFile: Boolean get() = name == "Move.toml"
 fun VirtualFile.toMoveFile(project: Project): MoveFile? = this.toPsiFile(project) as? MoveFile
 
 fun VirtualFile.toTomlFile(project: Project): TomlFile? = this.toPsiFile(project) as? TomlFile
-
-fun MoveFile.isTempFile(): Boolean =
-    this.virtualFile == null
-            || this.virtualFile.fileSystem is TempFileSystem
 
 inline fun <reified T : PsiElement> PsiFile.elementAtOffset(offset: Int): T? =
     this.findElementAt(offset)?.ancestorOrSelf<T>()

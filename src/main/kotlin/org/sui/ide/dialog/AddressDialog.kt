@@ -1,22 +1,22 @@
 package org.sui.ide.dialog
 
-import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.util.ExecUtil
-import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
-import org.sui.common.NOTIFACATION_GROUP
+import org.sui.cli.runConfigurations.SuiCommandLine
+import org.sui.cli.settings.suiExecPath
+import org.sui.ide.notifications.MvNotifications
 import java.awt.BorderLayout
 import java.awt.Dimension
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
 
 
-class AddressDialog(var data: List<List<String>>) : DialogWrapper(true) {
+class AddressDialog(var data: List<List<String>>, val project: Project) : DialogWrapper(true) {
     val NOTIFICATION_TITLE = "Active Address"
     val SWITCH_SUCCESS_MSG = "active address switched successfully"
 
@@ -58,7 +58,10 @@ class AddressDialog(var data: List<List<String>>) : DialogWrapper(true) {
 
     fun switchAddressAndNotify(address: String) {
         ApplicationManager.getApplication().executeOnPooledThread {
-            val commandLine = GeneralCommandLine("sui", "client", "switch", "--address", address)
+            val suiCommandLine = SuiCommandLine("client switch", listOf("--address", address))
+            if (project.suiExecPath == null) return@executeOnPooledThread
+            val commandLine = suiCommandLine.toGeneralCommandLine(project.suiExecPath!!)
+
             val output = ExecUtil.execAndGetOutput(commandLine)
             val notificationType = if (output.exitCode == 0) NotificationType.INFORMATION else NotificationType.ERROR
             SwingUtilities.invokeLater { displayNotification(NOTIFICATION_TITLE, SWITCH_SUCCESS_MSG, notificationType) }
@@ -66,7 +69,10 @@ class AddressDialog(var data: List<List<String>>) : DialogWrapper(true) {
     }
 
     private fun displayNotification(title: String, message: String, type: NotificationType) {
-        val notification = Notification(NOTIFACATION_GROUP, title, message, type)
-        Notifications.Bus.notify(notification)
+        MvNotifications.pluginNotifications().createNotification(
+            title,
+            message,
+            type
+        ).notify(project)
     }
 }

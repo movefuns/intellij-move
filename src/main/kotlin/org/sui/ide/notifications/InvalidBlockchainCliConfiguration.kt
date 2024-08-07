@@ -5,11 +5,16 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.EditorNotificationPanel
-import org.sui.cli.settings.*
+import org.sui.cli.settings.PerProjectSuiConfigurable
+import org.sui.cli.settings.isValidExecutable
+import org.sui.cli.settings.moveSettings
+import org.sui.cli.settings.sui.SuiExecType
+import org.sui.cli.settings.suiExecPath
 import org.sui.lang.isMoveFile
 import org.sui.lang.isMoveTomlManifestFile
 import org.sui.openapiext.common.isUnitTestMode
-import org.sui.openapiext.showSettings
+import org.sui.openapiext.showSettingsDialog
+import org.sui.stdext.getCliFromPATH
 
 class InvalidBlockchainCliConfiguration(project: Project) : MvEditorNotificationProvider(project),
     DumbAware {
@@ -23,21 +28,21 @@ class InvalidBlockchainCliConfiguration(project: Project) : MvEditorNotification
         if (!project.isTrusted()) return null
         if (isNotificationDisabled(file)) return null
 
-        val blockchain = project.blockchain
-        when (blockchain) {
-            Blockchain.APTOS -> {
-                if (project.aptosExec.isValid()) return null
-            }
+        if (project.suiExecPath.isValidExecutable()) return null
 
-            Blockchain.SUI -> {
-                if (project.suiPath.isValidExecutable()) return null
-            }
-        }
-
+        val suiCliFromPATH = getCliFromPATH("sui")?.toString()
         return EditorNotificationPanel().apply {
-            text = "$blockchain CLI path is not provided or invalid"
+            text = "Sui CLI path is not provided or invalid"
+            if (suiCliFromPATH != null) {
+                createActionLabel("Set to \"$suiCliFromPATH\"") {
+                    project.moveSettings.modify {
+                        it.suiExecType = SuiExecType.LOCAL
+                        it.localSuiPath = suiCliFromPATH
+                    }
+                }
+            }
             createActionLabel("Configure") {
-                project.showSettings<PerProjectMoveConfigurable>()
+                project.showSettingsDialog<PerProjectSuiConfigurable>()
             }
             createActionLabel("Do not show again") {
                 disableNotification(file)

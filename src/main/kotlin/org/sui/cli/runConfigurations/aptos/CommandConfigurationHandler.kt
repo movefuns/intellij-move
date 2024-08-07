@@ -2,9 +2,9 @@ package org.sui.cli.runConfigurations.aptos
 
 import com.intellij.psi.PsiElement
 import org.sui.cli.MoveProject
-import org.sui.cli.runConfigurations.CliCommandLineArgs
+import org.sui.cli.runConfigurations.SuiCommandLine
 import org.sui.cli.runConfigurations.producers.CommandConfigurationProducerBase
-import org.sui.cli.runConfigurations.producers.CommandLineArgsFromContext
+import org.sui.cli.runConfigurations.producers.SuiCommandLineFromContext
 import org.sui.lang.core.psi.MvFunction
 import org.sui.lang.core.psi.MvFunctionParameter
 import org.sui.lang.core.psi.ext.functionId
@@ -21,7 +21,7 @@ abstract class CommandConfigurationHandler {
 
     abstract fun configurationName(functionId: String): String
 
-    fun configurationFromLocation(location: PsiElement): CommandLineArgsFromContext? {
+    fun configurationFromLocation(location: PsiElement): SuiCommandLineFromContext? {
         val function =
             CommandConfigurationProducerBase.findElement<MvFunction>(location, true)
                 ?.takeIf(this::functionPredicate)
@@ -29,17 +29,17 @@ abstract class CommandConfigurationHandler {
         val moveProject = function.moveProject ?: return null
 
         val functionId = function.functionId(moveProject) ?: return null
-        val profileName = moveProject.profiles.firstOrNull()
+//        val profileName = moveProject.profiles.firstOrNull()
         val workingDirectory = moveProject.contentRootPath
 
         val arguments = mutableListOf<String>()
-        if (profileName != null) {
-            arguments.addAll(listOf("--profile", profileName))
-        }
+//        if (profileName != null) {
+//            arguments.addAll(listOf("--profile", profileName))
+//        }
         arguments.addAll(listOf("--function-id", functionId))
 
-        val commandLine = CliCommandLineArgs(subCommand, arguments, workingDirectory)
-        return CommandLineArgsFromContext(
+        val commandLine = SuiCommandLine(subCommand, arguments, workingDirectory)
+        return SuiCommandLineFromContext(
             function,
             configurationName(functionId),
             commandLine
@@ -77,7 +77,7 @@ abstract class CommandConfigurationHandler {
         return RsResult.Ok(command)
     }
 
-    fun parseCommand(
+    fun parseTransactionCommand(
         moveProject: MoveProject,
         command: String
     ): RsResult<Pair<String, FunctionCall>, String> {

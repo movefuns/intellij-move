@@ -1,17 +1,18 @@
 package org.sui.lang.core.psi.ext
 
-import org.sui.lang.core.psi.*
+import org.sui.lang.core.psi.MvElement
+import org.sui.lang.core.psi.MvExpr
+import org.sui.lang.core.psi.MvValueArgument
+import org.sui.lang.core.psi.MvValueArgumentList
 
-val MvCallExpr.typeArguments: List<MvTypeArgument> get() = this.path.typeArguments
+interface MvCallable : MvElement {
+    val valueArgumentList: MvValueArgumentList?
+}
 
-val MvCallExpr.valueArguments: List<MvValueArgument>
+
+val MvCallable.valueArguments: List<MvValueArgument>
     get() =
         this.valueArgumentList?.valueArgumentList.orEmpty()
 
-val MvAssertBangExpr.valueArguments: List<MvValueArgument>
-    get() =
-        this.valueArgumentList?.valueArgumentList.orEmpty()
+val MvCallable.argumentExprs: List<MvExpr?> get() = this.valueArguments.map { it.expr }
 
-val MvCallExpr.callArgumentExprs: List<MvExpr?> get() = this.valueArguments.map { it.expr }
-
-val MvAssertBangExpr.callArgumentExprs: List<MvExpr?> get() = this.valueArguments.map { it.expr }

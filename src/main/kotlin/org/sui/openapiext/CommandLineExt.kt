@@ -9,14 +9,18 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
 import com.intellij.execution.process.ProcessListener
 import com.intellij.execution.process.ProcessOutput
+import com.intellij.notification.NotificationType.INFORMATION
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.Disposer
+import com.intellij.util.SystemProperties
 import com.intellij.util.io.systemIndependentPath
 import org.sui.cli.runConfigurations.MvCapturingProcessHandler
+import org.sui.cli.settings.isDebugModeEnabled
+import org.sui.ide.notifications.showBalloonWithoutProject
 import org.sui.stdext.RsResult
 import org.sui.stdext.unwrapOrElse
 import java.nio.file.Path
@@ -53,37 +57,44 @@ fun GeneralCommandLine.execute(): ProcessOutput? {
         return null
     }
     val output = handler.runProcessWithGlobalProgress()
+    showCommandLineBalloon(commandLineString, output, this.workDirectory?.path)
+
     if (!output.isSuccess) {
-        LOG.warn(MvProcessExecutionException.errorMessage(commandLineString, output))
+        LOG.warn(RsProcessExecutionException.errorMessage(commandLineString, output))
     }
     return output
 }
 
+/// `owner` parameter represents the object whose lifetime it's using for the process lifetime
 fun GeneralCommandLine.execute(
     owner: Disposable,
     stdIn: ByteArray? = null,
     runner: CapturingProcessHandler.() -> ProcessOutput = { runProcessWithGlobalProgress(timeoutInMilliseconds = null) },
     listener: ProcessListener? = null
-): MvProcessResult<ProcessOutput> {
+): RsProcessResult<ProcessOutput> {
     LOG.info("Executing `$commandLineString`")
 
-    val handler = MvCapturingProcessHandler.startProcess(this) // The OS process is started here
+    val processHandler = MvCapturingProcessHandler
+        .startProcess(this) // The OS process is started here
         .unwrapOrElse {
             LOG.warn("Failed to run executable", it)
-            return RsResult.Err(MvProcessExecutionException.Start(commandLineString, it))
+            return RsResult.Err(RsProcessExecutionException.Start(commandLineString, it))
         }
 
+    // kill process on dispose()
     val processKiller = Disposable {
         // Don't attempt a graceful termination, Cargo can be SIGKILLed safely.
         // https://github.com/rust-lang/cargo/issues/3566
-        if (!handler.isProcessTerminated) {
-            handler.process.destroyForcibly() // Send SIGKILL
-            handler.destroyProcess()
+        if (!processHandler.isProcessTerminated) {
+            processHandler.process.destroyForcibly() // Send SIGKILL
+            processHandler.destroyProcess()
         }
     }
 
     @Suppress("DEPRECATION")
-    val alreadyDisposed = runReadAction {
+    val ownerIsAlreadyDisposed =
+        runReadAction {
+            // check that owner is disposed, kill process then
         if (Disposer.isDisposed(owner)) {
             true
         } else {
@@ -92,7 +103,7 @@ fun GeneralCommandLine.execute(
         }
     }
 
-    if (alreadyDisposed) {
+    if (ownerIsAlreadyDisposed) {
         Disposer.dispose(processKiller) // Kill the process
 
         // On the one hand, this seems fishy,
@@ -100,7 +111,7 @@ fun GeneralCommandLine.execute(
         // to the scenario where cargoKiller triggers.
         val output = ProcessOutput().apply { setCancelled() }
         return RsResult.Err(
-            MvProcessExecutionException.Canceled(
+            RsProcessExecutionException.Canceled(
                 commandLineString,
                 output,
                 "Command failed to start"
@@ -108,23 +119,24 @@ fun GeneralCommandLine.execute(
         )
     }
 
-    listener?.let { handler.addProcessListener(it) }
+    listener?.let { processHandler.addProcessListener(it) }
 
     val output = try {
         if (stdIn != null) {
-            handler.processInput.use { it.write(stdIn) }
+            processHandler.processInput.use { it.write(stdIn) }
         }
-
-        handler.runner()
+        // execution happens here
+        processHandler.runner()
     } finally {
         Disposer.dispose(processKiller)
     }
+    showCommandLineBalloon(commandLineString, output, this.workDirectory.path)
 
     return when {
-        output.isCancelled -> RsResult.Err(MvProcessExecutionException.Canceled(commandLineString, output))
-        output.isTimeout -> RsResult.Err(MvProcessExecutionException.Timeout(commandLineString, output))
+        output.isCancelled -> RsResult.Err(RsProcessExecutionException.Canceled(commandLineString, output))
+        output.isTimeout -> RsResult.Err(RsProcessExecutionException.Timeout(commandLineString, output))
         output.exitCode != 0 -> RsResult.Err(
-            MvProcessExecutionException.ProcessAborted(
+            RsProcessExecutionException.ProcessAborted(
                 commandLineString,
                 output
             )
@@ -133,6 +145,55 @@ fun GeneralCommandLine.execute(
     }
 }
 
+private fun showCommandLineBalloon(
+    commandText: String,
+    output: ProcessOutput,
+    workingDirectory: String? = null
+) {
+    if (isDebugModeEnabled()) {
+        val userHome = SystemProperties.getUserHome()
+        val command = commandText.replace(userHome, "~")
+        val workDir = workingDirectory?.replace(userHome, "~")
+        val atWorkDir = if (workDir != null) "&nbsp;<p>at $workDir</p>" else ""
+        when {
+            output.isTimeout -> {
+                showBalloonWithoutProject(
+                    "Execution failed",
+                    "<code>$command</code> (timeout) $atWorkDir",
+                    INFORMATION
+                )
+            }
+
+            output.isCancelled -> {
+                showBalloonWithoutProject(
+                    "Execution failed",
+                    "<code>$command</code> (cancelled) $atWorkDir",
+                    INFORMATION
+                )
+            }
+
+            output.exitCode != 0 -> {
+                showBalloonWithoutProject(
+                    "Execution failed",
+                    "<code>$command</code> (exit code ${output.exitCode}) $atWorkDir " +
+                            "<p>stdout=${output.stdout}</p>" +
+                            "<p>stderr=${output.stderr}</p>",
+                    INFORMATION
+                )
+            }
+
+            else -> {
+                if (!command.contains("--version")) {
+                    showBalloonWithoutProject(
+                        "Execution successful",
+                        "<code>$command</code> $atWorkDir",
+                        INFORMATION
+                    )
+                }
+            }
+        }
+    }
+}
 
 private fun errorMessage(commandLine: GeneralCommandLine, output: ProcessOutput): String = """
         |Execution failed (exit code ${output.exitCode}).
@@ -141,7 +202,7 @@ private fun errorMessage(commandLine: GeneralCommandLine, output: ProcessOutput)
         |stderr : ${output.stderr}
     """.trimMargin()
 
-private fun CapturingProcessHandler.runProcessWithGlobalProgress(timeoutInMilliseconds: Int? = null): ProcessOutput {
+fun CapturingProcessHandler.runProcessWithGlobalProgress(timeoutInMilliseconds: Int? = null): ProcessOutput {
     return runProcess(ProgressManager.getGlobalProgressIndicator(), timeoutInMilliseconds)
 }
 

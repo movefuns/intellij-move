@@ -18,7 +18,7 @@ import org.sui.ide.MoveIcons
 import org.sui.lang.moveProject
 import java.util.*
 
-class CreateMoveFileAction : CreateFileFromTemplateAction(CAPTION, "", MoveIcons.MOVE_LOGO),
+class CreateMoveFileAction : CreateFileFromTemplateAction(CAPTION, "", MoveIcons.SUI_LOGO),
                              DumbAware {
     override fun getActionName(directory: PsiDirectory, newName: String, templateName: String) = CAPTION
 
@@ -28,9 +28,9 @@ class CreateMoveFileAction : CreateFileFromTemplateAction(CAPTION, "", MoveIcons
         builder: CreateFileFromTemplateDialog.Builder
     ) {
         builder.setTitle(CAPTION)
-            .addKind("Empty", MoveIcons.MOVE_LOGO, "Sui Move File")
-            .addKind("Module", MoveIcons.MOVE_LOGO, "Sui Move Module")
-            .addKind("Test Module", MoveIcons.MOVE_LOGO, "Sui Move Test Module")
+            .addKind("Empty", MoveIcons.SUI_LOGO, "Sui Move File")
+            .addKind("Module", MoveIcons.SUI_LOGO, "Sui Move Module")
+            .addKind("Test Module", MoveIcons.SUI_LOGO, "Sui Move Test Module")
     }
 
     override fun createFileFromTemplate(name: String, template: FileTemplate, dir: PsiDirectory): PsiFile? {

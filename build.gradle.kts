@@ -1,9 +1,11 @@
-import org.jetbrains.intellij.tasks.PrepareSandboxTask
-import org.jetbrains.intellij.tasks.RunPluginVerifierTask
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.io.ByteArrayOutputStream
 import java.util.*
 
 val publishingToken = System.getenv("JB_PUB_TOKEN") ?: null
+val publishingChannel = System.getenv("JB_PUB_CHANNEL") ?: "default"
 // set by default in Github Actions
 val isCI = System.getenv("CI") != null
 
@@ -11,17 +13,51 @@ fun prop(name: String): String =
     extra.properties[name] as? String
         ?: error("Property `$name` is not defined in gradle.properties for environment `$shortPlatformVersion`")
 
+fun propOrNull(name: String): String? = extra.properties[name] as? String
+
+fun gitCommitHash(): String {
+    val byteOut = ByteArrayOutputStream()
+    project.exec {
+        commandLine = "git rev-parse --short HEAD".split(" ")
+//            commandLine = "git rev-parse --abbrev-ref HEAD".split(" ")
+        standardOutput = byteOut
+    }
+    return String(byteOut.toByteArray()).trim().also {
+        if (it == "HEAD")
+            logger.warn("Unable to determine current branch: Project is checked out with detached head!")
+    }
+}
+
+fun gitTimestamp(): String {
+    val byteOut = ByteArrayOutputStream()
+    project.exec {
+        commandLine = "git show --no-patch --format=%at HEAD".split(" ")
+//            commandLine = "git rev-parse --abbrev-ref HEAD".split(" ")
+        standardOutput = byteOut
+    }
+    return String(byteOut.toByteArray()).trim().also {
+        if (it == "HEAD")
+            logger.warn("Unable to determine current branch: Project is checked out with detached head!")
+    }
+}
+
 val shortPlatformVersion = prop("shortPlatformVersion")
-val codeVersion = "1.3.2"
-val pluginVersion = "$codeVersion.$shortPlatformVersion"
-val pluginGroup = "org.sui.move"
+val useInstaller = prop("useInstaller").toBooleanStrict()
+val codeVersion = "1.4.0"
+var pluginVersion = "$codeVersion.$shortPlatformVersion"
+if (publishingChannel != "default") {
+    // timestamp of the commit with this eaps addition
+    val start = 1714498465
+    val commitTimestamp = gitTimestamp().toInt() - start
+    pluginVersion = "$pluginVersion-$publishingChannel.$commitTimestamp"
+}
+
+val pluginGroup = "org.sui"
 val javaVersion = JavaVersion.VERSION_17
+val pluginName = "intellij-sui-move"
 val pluginJarName = "intellij-sui-move-$pluginVersion"
 
-val kotlinReflectVersion = "1.8.10"
-// not use
-val network = "testnet"
-val suiVersion = "v2.1.0"
+val kotlinReflectVersion = "1.9.10"
 
 group = pluginGroup
 version = pluginVersion
@@ -29,57 +65,51 @@ version = pluginVersion
 plugins {
     id("java")
     kotlin("jvm") version "1.9.22"
-    id("org.jetbrains.intellij") version "1.17.2"
+    id("org.jetbrains.intellij.platform") version "2.0.0"
     id("org.jetbrains.grammarkit") version "2022.3.2.2"
     id("net.saliman.properties") version "1.5.2"
     id("org.gradle.idea")
     id("de.undercouch.download") version "5.5.0"
 }
 
-dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinReflectVersion")
-
-    implementation("io.sentry:sentry:7.2.0") {
-        exclude("org.slf4j")
-    }
-    implementation("com.github.ajalt.clikt:clikt:3.5.2")
-}
-
 allprojects {
     apply {
         plugin("kotlin")
         plugin("org.jetbrains.grammarkit")
-        plugin("org.jetbrains.intellij")
+        plugin("org.jetbrains.intellij.platform")
         plugin("de.undercouch.download")
     }
 
     repositories {
         mavenCentral()
-        maven("https://cache-redirector.jetbrains.com/intellij-dependencies")
         gradlePluginPortal()
         maven("https://maven.aliyun.com/repository/central/")
         maven("https://maven.aliyun.com/repository/public/")
         maven("https://maven.aliyun.com/repository/google/")
         maven("https://maven.aliyun.com/repository/jcenter/")
         maven("https://maven.aliyun.com/repository/gradle-plugin")
+        intellijPlatform {
+            defaultRepositories()
+            jetbrainsRuntime()
+        }
     }
 
-    intellij {
-        pluginName.set(pluginJarName)
-        type.set(prop("platformType"))
-        version.set(prop("platformVersion"))
+    dependencies {
+        implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinReflectVersion")
 
-        downloadSources.set(!isCI)
-        instrumentCode.set(false)
-        ideaDependencyCachePath.set(dependencyCachePath)
-        updateSinceUntilBuild.set(false)
-        plugins.set(
-            prop("platformPlugins")
-                .split(',')
-                .map(String::trim)
-                .filter(String::isNotEmpty)
-        )
+        implementation("io.sentry:sentry:7.2.0") {
+            exclude("org.slf4j")
+        }
+        implementation("com.github.ajalt.clikt:clikt:3.5.2")
+        testImplementation("junit:junit:4.13.2")
 
+        intellijPlatform {
+            create(prop("platformType"), prop("platformVersion"), useInstaller = useInstaller)
+            testFramework(TestFrameworkType.Platform)
+            pluginVerifier()
+            bundledPlugin("org.toml.lang")
+            jetbrainsRuntime("17.0.11b1207.30")
+        }
     }
 
     configure<JavaPluginExtension> {
@@ -94,94 +124,81 @@ allprojects {
     }
 
     kotlin {
-        sourceSets {
-            main {
-                kotlin.srcDirs("src/$shortPlatformVersion/main/kotlin")
-            }
-        }
-    }
-
-    tasks {
-        patchPluginXml {
-            version.set(pluginVersion)
-            changeNotes.set(
-                """
-                <body>
-                    <p><a href="https://github.com/pontem-network/intellij-move/blob/master/changelog/$pluginVersion.md">
-                        Changelog for Intellij-Move $pluginVersion on Github
-                        </a></p>
-                </body>
-                """
-            )
-            sinceBuild.set(prop("pluginSinceBuild"))
-            untilBuild.set(prop("pluginUntilBuild"))
-        }
-
-        withType<KotlinCompile> {
-            kotlinOptions {
-                jvmTarget = "17"
-                languageVersion = "1.9"
-                apiVersion = "1.8"
-                freeCompilerArgs = listOf("-Xjvm-default=all")
-            }
-        }
-
-        // All these tasks don't make sense for non-root subprojects
-        // Root project (i.e. `:plugin`) enables them itself if needed
-        runIde { enabled = false }
-        prepareSandbox { enabled = false }
-        buildSearchableOptions { enabled = false }
-
-        withType<Jar> {
-            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        }
-
-        task("downloadSuiBinaries") {
-            val baseUrl = "https://github.com/MystenLabs/sui/releases/download/$network-$suiVersion"
-            doLast {
-                for (releasePlatform in listOf("macos-arm64", "macos-x86_64", "ubuntu-x86_64", "windows-x86_64")) {
-                    val zipFileName = "sui-$network-$suiVersion-$releasePlatform.tgz"
-                    val zipFileUrl = "$baseUrl/$zipFileName"
-                    val zipRoot = "${rootProject.buildDir}/zip"
-                    val zipFile = file("$zipRoot/$zipFileName")
-                    if (zipFile.exists()) {
-                        continue
-                    }
-//                    download.run {
-//                        src(zipFileUrl)
-//                        dest(zipFile)
-//                        overwrite(false)
-//                    }
-
-                    val platformName =
-                        when (releasePlatform) {
-                            "macos-arm64" -> "macos-arm"
-                            "macos-x86_64" -> "macos"
-                            "ubuntu-x86_64" -> "ubuntu"
-                            "windows-x86_64" -> "windows"
-                            else -> error("unreachable")
-                        }
-                    val platformRoot = file("${rootProject.rootDir}/bin/$platformName")
-                    copy {
-                        from(
-                            tarTree(zipFile)
-                        )
-                        into(platformRoot)
-                    }
+        if (file("src/$shortPlatformVersion/main/kotlin").exists()) {
+            sourceSets {
+                main {
+                    kotlin.srcDirs("src/$shortPlatformVersion/main/kotlin")
                 }
             }
         }
     }
 
-}
+    intellijPlatform {
+        pluginConfiguration {
+            version.set(pluginVersion)
+            ideaVersion {
+                sinceBuild.set(prop("pluginSinceBuild"))
+                untilBuild.set(prop("pluginUntilBuild"))
+            }
+//            plugins.set(listOf("com.intellij.marketplace"))
+            val codeVersionForUrl = codeVersion.replace('.', '-')
+            changeNotes.set(
+                """
+    <body>
+        <p><a href="https://intellij-move.github.io/$codeVersionForUrl.html">
+            Changelog for the Intellij-Move $codeVersion
+            </a></p>
+    </body>
+            """
+            )
 
-project(":") {
+        }
+
+        instrumentCode.set(false)
+
+        publishing {
+            token.set(publishingToken)
+            channels.set(listOf(publishingChannel))
+        }
+        verifyPlugin {
+            ides {
+                recommended()
+            }
+            //if("SNAPSHOT"!inshortPlatformVersion){
+            //ides{
+            //ide(prop("verifierIdeVersion").trim())
+            //}
+            //}
+            failureLevel.set(
+                EnumSet.complementOf(
+                    EnumSet.of(
+                        //these are the only issue swetolerate
+                        VerifyPluginTask.FailureLevel.DEPRECATED_API_USAGES,
+                        VerifyPluginTask.FailureLevel.EXPERIMENTAL_API_USAGES,
+                        VerifyPluginTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,
+                    )
+                )
+            )
+        }
+    }
     tasks {
+        withType<KotlinCompile> {
+            kotlinOptions {
+                jvmTarget = "17"
+                languageVersion = "1.9"
+                apiVersion = "1.9"
+                freeCompilerArgs = listOf("-Xjvm-default=all")
+            }
+        }
+
+        withType<Jar> {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        }
+
         generateLexer {
             sourceFile.set(file("src/main/grammars/MoveLexer.flex"))
             targetOutputDir.set(file("src/main/gen/org/sui/lang"))
             purgeOldFiles.set(true)
-            // targetClass.set("_MoveLexer")
         }
         generateParser {
             sourceFile.set(file("src/main/grammars/MoveParser.bnf"))
@@ -190,8 +207,26 @@ project(":") {
             pathToPsiRoot.set("/org/sui/lang/psi")
             purgeOldFiles.set(true)
         }
+
         withType<KotlinCompile> {
             dependsOn(generateLexer, generateParser)
+        }
+
+        runIde {
+            systemProperty("org.sui.debug.enabled", true)
+//            systemProperty("org.move.external.linter.max.duration", 30)  // 30 ms
+//            systemProperty("org.move.aptos.bundled.force.unsupported", true)
+//            systemProperty("idea.log.debug.categories", "org.move.cli")
+        }
+
+        prepareSandbox {
+//            enabled = true
+//        dependsOn("downloadAptosBinaries")
+            // copy bin/ directory inside the plugin zip file
+            from("$rootDir/bin") {
+                into("$pluginName/bin")
+                include("**")
+            }
         }
     }
 
@@ -203,68 +238,11 @@ project(":") {
                 .forEach { it.resolve() }
         }
     }
-}
 
-project(":plugin") {
-    dependencies {
-        implementation(project(":"))
-    }
-
-    tasks {
-        runPluginVerifier {
-            if ("SNAPSHOT" !in shortPlatformVersion) {
-                ideVersions.set(
-                    prop("verifierIdeVersions")
-                        .split(',').map(String::trim).filter(String::isNotEmpty)
-                )
-            }
-            failureLevel.set(
-                EnumSet.complementOf(
-                    EnumSet.of(
-                        // these are the only issues we tolerate
-                        RunPluginVerifierTask.FailureLevel.DEPRECATED_API_USAGES,
-                        RunPluginVerifierTask.FailureLevel.EXPERIMENTAL_API_USAGES,
-                        RunPluginVerifierTask.FailureLevel.INTERNAL_API_USAGES,
-                        RunPluginVerifierTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,
-                    )
-                )
-            )
-        }
-
-        publishPlugin {
-            token.set(publishingToken)
-        }
-
-//        verifyPlugin {
-//            pluginDir.set(
-//                file("$rootDir/plugin/build/idea-sandbox/plugins/$pluginJarName")
-//            )
-//        }
-        runIde { enabled = true }
-        prepareSandbox { enabled = true }
-        buildSearchableOptions {
-            enabled = true
-            jbrVersion.set(prop("jbrVersion"))
-        }
-
-
-        withType<PrepareSandboxTask> {
-            // copy bin/ directory inside the plugin zip file
-            from("$rootDir/bin") {
-                into("${pluginName.get()}/bin")
-                include("**")
-            }
-        }
-
-        withType<org.jetbrains.intellij.tasks.RunIdeTask> {
-            jbrVersion.set(prop("jbrVersion"))
-
-            if (environment.getOrDefault("CLION_LOCAL", "false") == "true") {
-                val clionDir = File("/snap/clion/current")
-                if (clionDir.exists()) {
-                    ideDir.set(clionDir)
-                }
-            }
+    idea {
+        pathVariables(mapOf("USER_HOME" to file("/Users/yu")))
+        module {
+            name = "intellij-sui-move.main"
         }
     }
 }
