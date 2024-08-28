@@ -301,6 +301,21 @@ class ResolveSpecsTest : ResolveTestCase() {
     """
     )
 
+    fun `test another module consts are not accessible from non-msl`() = checkByCode(
+        """
+    module 0x1::M {
+        const MY_CONST: u8 = 1;
+    }    
+    module 0x1::M2 {
+        use 0x1::M;
+        fun main() {
+            M::MY_CONST;
+                 //^ unresolved            
+        }
+    }
+    """
+    )
+
     fun `test another module consts are accessible from msl`() = checkByCode(
         """
     module 0x1::M {
@@ -1082,6 +1097,26 @@ module 0x1::main {
             }
 
         }
+    """
+    )
+
+    fun `test resolve invariant index variable in loop condition spec`() = checkByCode(
+        """
+        module 0x1::m {
+            fun main() {
+                while ({
+                    spec {
+                        invariant forall ind in 0..10:
+                                        //X
+                            ind < 10;
+                           //^
+                    };
+                    true
+                }) {
+                    
+                }
+            }
+        }        
     """
     )
 }

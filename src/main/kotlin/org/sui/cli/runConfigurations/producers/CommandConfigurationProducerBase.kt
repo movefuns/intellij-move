@@ -7,6 +7,7 @@ import com.intellij.openapi.util.Ref
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.parentOfType
 import org.sui.cli.runConfigurations.CommandConfigurationBase
+import org.sui.cli.settings.moveSettings
 
 abstract class CommandConfigurationProducerBase :
     LazyRunConfigurationProducer<CommandConfigurationBase>() {

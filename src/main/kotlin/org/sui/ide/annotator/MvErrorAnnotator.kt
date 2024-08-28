@@ -32,102 +32,11 @@ class MvErrorAnnotator : MvAnnotatorBase() {
 
             override fun visitModule(o: MvModule) = checkModuleDef(moveHolder, o)
 
-            override fun visitStructField(o: MvStructField) = checkDuplicates(moveHolder, o)
+            override fun visitNamedFieldDecl(o: MvNamedFieldDecl) = checkDuplicates(moveHolder, o)
 
             override fun visitPath(o: MvPath) = checkMethodOrPath(o, moveHolder)
             override fun visitMethodCall(o: MvMethodCall) = checkMethodOrPath(o, moveHolder)
 
-//            override fun visitPath(path: MvPath) {
-//                val item = path.reference?.resolveWithAliases()
-//                val msl = path.isMslScope
-//                val realCount = path.typeArguments.size
-//                val parent = path.parent
-//                if (item == null && path.nullModuleRef && path.identifierName == "vector") {
-//                    val expectedCount = 1
-//                    if (realCount != expectedCount) {
-//                        Diagnostic
-//                            .TypeArgumentsNumberMismatch(path, "vector", expectedCount, realCount)
-//                            .addToHolder(moveHolder)
-//                    }
-//                    return
-//                }
-//                val qualItem = item as? MvQualNamedElement ?: return
-//                val qualName = qualItem.qualName ?: return
-//                when {
-//                    qualItem is MvStruct && parent is MvPathType -> {
-//                        if (parent.ancestorStrict<MvAcquiresType>() != null) return
-//
-//                        if (realCount != 0) {
-//                            val typeArgumentList =
-//                                path.typeArgumentList ?: error("cannot be null if realCount != 0")
-//                            checkTypeArgumentList(typeArgumentList, qualItem, moveHolder)
-//                        } else {
-//                            val expectedCount = qualItem.typeParameters.size
-//                            if (expectedCount != 0) {
-//                                Diagnostic
-//                                    .TypeArgumentsNumberMismatch(
-//                                        path,
-//                                        qualName.editorText(),
-//                                        expectedCount,
-//                                        realCount
-//                                    )
-//                                    .addToHolder(moveHolder)
-//                            }
-//                        }
-//                    }
-//                    qualItem is MvStruct && parent is MvStructLitExpr -> {
-//                        // if any type param is passed, inference is disabled, so check fully
-//                        if (realCount != 0) {
-//                            val typeArgumentList =
-//                                path.typeArgumentList ?: error("cannot be null if realCount != 0")
-//                            checkTypeArgumentList(typeArgumentList, qualItem, moveHolder)
-//                        }
-//                    }
-//                    qualItem is MvFunction && parent is MvCallExpr -> {
-////                            val expectedCount = qualItem.typeParameters.size
-//                        if (realCount != 0) {
-//                            // if any type param is passed, inference is disabled, so check fully
-//                            val typeArgumentList =
-//                                path.typeArgumentList ?: error("cannot be null if realCount != 0")
-//                            checkTypeArgumentList(typeArgumentList, qualItem, moveHolder)
-//                        } else {
-//                            val inference = parent.inference(msl) ?: return
-//                            if (parent.descendantHasTypeError(inference.typeErrors)) {
-//                                return
-//                            }
-//                            val callTy = inference.getCallExprType(parent) as? TyFunction ?: return
-//                            // if no type args are passed, check whether all type params are inferrable
-//                            if (callTy.needsTypeAnnotation()) {
-//                                Diagnostic
-//                                    .NeedsTypeAnnotation(path)
-//                                    .addToHolder(moveHolder)
-//                            }
-//                        }
-//                    }
-//                    qualItem is MvSchema && parent is MvSchemaLit -> {
-//                        val expectedCount = qualItem.typeParameters.size
-//                        if (realCount != 0) {
-//                            val typeArgumentList =
-//                                path.typeArgumentList ?: error("cannot be null if realCount != 0")
-//                            checkTypeArgumentList(typeArgumentList, qualItem, moveHolder)
-//                        } else {
-//                            // if no type args are passed, check whether all type params are inferrable
-//                            if (qualItem.requiredTypeParams.isNotEmpty() && expectedCount != 0) {
-//                                Diagnostic
-//                                    .TypeArgumentsNumberMismatch(
-//                                        path,
-//                                        qualName.editorText(),
-//                                        expectedCount,
-//                                        realCount
-//                                    )
-//                                    .addToHolder(moveHolder)
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-
-            // TODO support move 2024
             override fun visitCallExpr(callExpr: MvCallExpr) {
                 val msl = callExpr.path.isMslScope
                 if (msl) return
@@ -188,11 +97,12 @@ class MvErrorAnnotator : MvAnnotatorBase() {
                             callTy.paramTypes.size - 1
                         }
                         is MvAssertBangExpr -> {
-                            if (parentCallable.identifier.text == "assert") {
-                                2
-                            } else {
-                                return
-                            }
+//                            if (parentCallable.identifier.text == "assert") {
+//                                2
+//                            } else {
+//                                return
+//                            }
+                            return
                         }
                         else -> return
                     }
@@ -227,9 +137,8 @@ class MvErrorAnnotator : MvAnnotatorBase() {
             override fun visitStructPat(o: MvStructPat) {
                 val nameElement = o.path.referenceNameElement ?: return
                 val refStruct = o.path.maybeStruct ?: return
-                val fieldNames = o.patFields.map { it.referenceName }
                 checkMissingFields(
-                    moveHolder, nameElement, fieldNames.toSet(), refStruct
+                    moveHolder, nameElement, o.providedFieldNames, refStruct
                 )
             }
 
@@ -237,7 +146,7 @@ class MvErrorAnnotator : MvAnnotatorBase() {
                 val nameElement = o.path.referenceNameElement ?: return
                 val struct = o.path.maybeStruct ?: return
                 checkMissingFields(
-                    moveHolder, nameElement, o.fieldNames.toSet(), struct
+                    moveHolder, nameElement, o.providedFieldNames.toSet(), struct
                 )
             }
 
@@ -277,23 +186,23 @@ class MvErrorAnnotator : MvAnnotatorBase() {
     }
 
     private fun checkConstDef(holder: MvAnnotationHolder, const: MvConst) {
-        val owner = const.parent?.parent ?: return
+        val owner = const.parent ?: return
         val allConsts = when (owner) {
-            is MvModule -> owner.consts()
-            is MvScript -> owner.consts()
+            is MvModule -> owner.constList
+            is MvScript -> owner.constList
             else -> return
         }
         checkDuplicates(holder, const, allConsts.asSequence())
     }
 
     private fun checkMethodOrPath(methodOrPath: MvMethodOrPath, holder: MvAnnotationHolder) {
-        val item = methodOrPath.reference?.resolveWithAliases()
+        val item = methodOrPath.reference?.resolveFollowingAliases()
         val msl = methodOrPath.isMslScope
         val realCount = methodOrPath.typeArguments.size
 
         val parent = methodOrPath.parent
         if (item == null && methodOrPath is MvPath
-            && methodOrPath.nullModuleRef && methodOrPath.identifierName == "vector"
+            && methodOrPath.qualifier == null && methodOrPath.identifierName == "vector"
         ) {
             val expectedCount = 1
             if (realCount != expectedCount) {
@@ -399,7 +308,7 @@ class MvErrorAnnotator : MvAnnotatorBase() {
 
         val itemLabel = qualName.editorText()
         val realCount = typeArgumentList.typeArgumentList.size
-        assert(realCount != 0) { "Should be non-zero if typeArgumentList exists" }
+        check(realCount != 0) { "Should be non-zero if typeArgumentList exists" }
 
         // if any type param is passed, inference is disabled, so check fully
         when {
@@ -478,9 +387,7 @@ private fun checkFunctionDuplicates(
 ) {
     val fnName = fn.name ?: return
     val functions =
-        fn.module?.allFunctions()
-            ?: fn.script?.allFunctions()
-            ?: emptyList()
+        fn.module?.allFunctions() ?: fn.script?.functionList ?: emptyList()
     val duplicateFunctions = getDuplicates(functions.asSequence())
 
     if (fnName !in duplicateFunctions.map { it.name }) {

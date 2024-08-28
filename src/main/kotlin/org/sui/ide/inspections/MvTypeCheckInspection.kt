@@ -4,6 +4,7 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.util.descendantsOfType
 import org.sui.lang.core.psi.*
+import org.sui.lang.core.psi.ext.hasAncestor
 import org.sui.lang.core.psi.ext.isMsl
 import org.sui.lang.core.psi.ext.structItem
 import org.sui.lang.core.types.infer.TypeError
@@ -31,8 +32,9 @@ class MvTypeCheckInspection : MvLocalInspectionTool() {
             override fun visitFunction(o: MvFunction) {
                 val inference = o.inference(o.isMsl())
                 inference.typeErrors
-                    .forEach {
-                        holder.registerTypeError(it)
+                    .forEach { typeError ->
+                        if (typeError.element.hasAncestor<MvAssertBangExpr>()) return@forEach
+                        holder.registerTypeError(typeError)
                     }
             }
 
@@ -60,7 +62,7 @@ class MvTypeCheckInspection : MvLocalInspectionTool() {
                     }
             }
 
-            override fun visitStructField(field: MvStructField) {
+            override fun visitNamedFieldDecl(field: MvNamedFieldDecl) {
                 val structItem = field.structItem
                 for (innerType in field.type?.descendantsOfType<MvPathType>().orEmpty()) {
                     val typeItem = innerType.path.reference?.resolve() as? MvStruct ?: continue

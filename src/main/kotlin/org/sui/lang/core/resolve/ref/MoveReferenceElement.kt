@@ -15,10 +15,7 @@ interface PsiReferenceElement : PsiElement {
 
     override fun getReference(): PsiReference?
 
-    val unresolved: Boolean
-        get() = reference?.resolve() == null
-
-    val resolvable: Boolean get() = !this.unresolved
+    val unresolved: Boolean get() = reference?.resolve() == null
 }
 
 interface PsiMandatoryReferenceElement : PsiElement {
@@ -57,11 +54,15 @@ interface MvPathReferenceElement : MvReferenceElement {
     override fun getReference(): MvPathReference?
 }
 
-interface MvFQModuleReferenceElement : MvReferenceElement {
-    override fun getReference(): MvFQModuleReference?
+interface MvNameAccessChainReferenceElement : MvReferenceElement {
+    override fun getReference(): MvPath2Reference?
 }
 
-interface MvStructPatFieldReferenceElement : MvMandatoryReferenceElement
+//interface MvFQModuleReferenceElement : MvReferenceElement {
+//    override fun getReference(): MvFQModuleReference?
+//}
+
+//interface MvStructPatFieldReferenceElement : MvMandatoryReferenceElement
 
 interface MvStructFieldLitReferenceElement : MvMandatoryReferenceElement
 

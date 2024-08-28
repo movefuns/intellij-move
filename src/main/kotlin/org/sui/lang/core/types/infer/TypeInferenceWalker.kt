@@ -9,6 +9,10 @@ import org.sui.cli.settings.moveSettings
 import org.sui.ide.formatter.impl.location
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
+import org.sui.lang.core.resolve.collectMethodOrPathResolveVariants
+import org.sui.lang.core.resolve.resolveSingleResolveVariant
+import org.sui.lang.core.resolve2.processMethodResolveVariants
+import org.sui.lang.core.resolve2.ref.ResolutionContext
 import org.sui.lang.core.types.ty.*
 import org.sui.lang.core.types.ty.TyReference.Companion.autoborrow
 import org.sui.stdext.RsResult
@@ -35,19 +39,20 @@ class TypeInferenceWalker(
 
     fun extractParameterBindings(owner: MvInferenceContextOwner) {
         val bindings = when (owner) {
-            is MvFunctionLike -> owner.allParamsAsBindings
+            is MvFunctionLike -> owner.parametersAsBindings
             is MvItemSpec -> {
-                val item = owner.item
-                when (item) {
+                val specItem = owner.item
+                when (specItem) {
                     is MvFunction -> {
-                        item.allParamsAsBindings
-                            .chain(item.specResultParameters.map { it.bindingPat })
+                        specItem.parametersAsBindings
+                            .chain(specItem.specFunctionResultParameters.map { it.bindingPat })
                             .toList()
                     }
                     else -> emptyList()
                 }
             }
-            is MvSchema -> owner.fieldStmts.map { it.bindingPat }
+
+            is MvSchema -> owner.fieldsAsBindings
             else -> emptyList()
         }
         for (binding in bindings) {
@@ -126,7 +131,7 @@ class TypeInferenceWalker(
                 val pat = stmt.pat
                 val inferredTy =
                     if (expr != null) {
-                        val inferredTy = inferExprTy(expr, Expectation.maybeHasType(explicitTy))
+                        val inferredTy = expr.inferType(Expectation.maybeHasType(explicitTy))
                         val coercedTy = if (explicitTy != null && coerce(expr, inferredTy, explicitTy)) {
                             explicitTy
                         } else {
@@ -156,12 +161,22 @@ class TypeInferenceWalker(
         }
     }
 
-    private fun MvExpr.inferType(expected: Ty?): Ty {
-        return inferExprTy(this, Expectation.maybeHasType(expected))
-    }
+    private fun MvExpr.inferType(expected: Ty?): Ty = this.inferType(Expectation.maybeHasType(expected))
 
     private fun MvExpr.inferType(expected: Expectation = Expectation.NoExpectation): Ty {
+        try {
         return inferExprTy(this, expected)
+        } catch (e: UnificationError) {
+            if (e.context == null) {
+                e.context = PsiErrorContext.fromElement(this)
+            }
+            throw e
+        } catch (e: InferenceError) {
+            if (e.context == null) {
+                e.context = PsiErrorContext.fromElement(this)
+            }
+            throw e
+        }
     }
 
     // returns inferred
@@ -284,18 +299,18 @@ class TypeInferenceWalker(
 
     private fun inferRefExprTy(refExpr: MvRefExpr): Ty {
         // special-case `result` inside item spec
-        if (msl && refExpr.path.text == "result") {
-            val funcItem = refExpr.ancestorStrict<MvItemSpec>()?.funcItem
-            if (funcItem != null) {
-                return funcItem.rawReturnType(true)
-            }
-        }
-        val item = refExpr.path.reference?.resolveWithAliases() ?: return TyUnknown
+//        if (msl && refExpr.path.text == "result") {
+//            val funcItem = refExpr.ancestorStrict<MvItemSpec>()?.funcItem
+//            if (funcItem != null) {
+//                return funcItem.rawReturnType(true)
+//            }
+//        }
+        val item = refExpr.path.reference?.resolveFollowingAliases() ?: return TyUnknown
         val ty = when (item) {
             is MvBindingPat -> ctx.getPatType(item)
             is MvConst -> item.type?.loweredType(msl) ?: TyUnknown
             is MvGlobalVariableStmt -> item.type?.loweredType(true) ?: TyUnknown
-            is MvStructField -> item.type?.loweredType(msl) ?: TyUnknown
+            is MvNamedFieldDecl -> item.type?.loweredType(msl) ?: TyUnknown
             is MvStruct -> {
                 if (project.moveSettings.enableIndexExpr && refExpr.parent is MvIndexExpr) {
                     TyLowering.lowerPath(refExpr.path, item, ctx.msl)
@@ -325,7 +340,8 @@ class TypeInferenceWalker(
         val expectedInnerTy = (expected.onlyHasTy(ctx) as? TyReference)?.referenced
         val hint = Expectation.maybeHasType(expectedInnerTy)
 
-        val innerExprTy = inferExprTy(innerExpr, hint)
+        val innerExprTy = innerExpr.inferType(expected = hint)
+//        val innerExprTy = inferExprTy(innerExpr, hint)
         val innerRefTy = when (innerExprTy) {
             is TyReference, is TyTuple -> {
                 ctx.reportTypeError(TypeError.ExpectedNonReferenceType(innerExpr, innerExprTy))
@@ -353,7 +369,7 @@ class TypeInferenceWalker(
 
     private fun inferCallExprTy(callExpr: MvCallExpr, expected: Expectation): Ty {
         val path = callExpr.path
-        val item = path.reference?.resolveWithAliases()
+        val item = path.reference?.resolveFollowingAliases()
         val baseTy =
             when (item) {
                 is MvFunctionLike -> {
@@ -385,7 +401,7 @@ class TypeInferenceWalker(
         // callableType TyVar are meaningful mostly for "needs type annotation" error.
         // if value parameter is missing, we don't want to show that error, so we cover
         // unknown parameters with TyUnknown here
-        ctx.freezeUnificationTable {
+        ctx.freezeUnification {
             val valueArguments = callable.valueArguments
             val paramTypes = funcTy.paramTypes.drop(if (method) 1 else 0)
             for ((i, paramType) in paramTypes.withIndex()) {
@@ -404,8 +420,9 @@ class TypeInferenceWalker(
         val structTy =
             receiverTy.derefIfNeeded() as? TyStruct ?: return TyUnknown
 
-        val field =
-            getFieldVariants(dotField, structTy, msl).filterByName(dotField.referenceName).singleOrNull()
+        val field = resolveSingleResolveVariant(dotField.referenceName) {
+            processNamedFieldVariants(dotField, structTy, msl, it)
+        } as? MvNamedFieldDecl
         ctx.resolvedFields[dotField] = field
 
         val fieldTy = field?.type?.loweredType(msl)?.substitute(structTy.typeParameterValues)
@@ -413,10 +430,14 @@ class TypeInferenceWalker(
     }
 
     fun inferMethodCallTy(receiverTy: Ty, methodCall: MvMethodCall, expected: Expectation): Ty {
-        val refName = methodCall.referenceName
-        val methodVariants = getMethodVariants(methodCall, receiverTy, ctx.msl)
-        val genericItem = methodVariants.filterByName(refName).firstOrNull()
 
+        val resolutionCtx = ResolutionContext(methodCall, isCompletion = false)
+        val resolvedMethods =
+            collectMethodOrPathResolveVariants(methodCall, resolutionCtx) {
+                processMethodResolveVariants(methodCall, receiverTy, msl, it)
+            }
+        val genericItem =
+            resolvedMethods.filter { it.isVisible }.mapNotNull { it.element as? MvNamedElement }.firstOrNull()
         ctx.resolvedMethodCalls[methodCall] = genericItem
 
         val baseTy =
@@ -469,7 +490,8 @@ class TypeInferenceWalker(
             when (inferArg) {
                 is InferArg.ArgExpr -> {
                     val argExpr = inferArg.expr ?: continue
-                    val argExprTy = inferExprTy(argExpr, expectation)
+                    val argExprTy = argExpr.inferType(expected = expectation)
+//                    val argExprTy = inferExprTy(argExpr, expectation)
 //                        val coercedTy =
 //                            resolveTypeVarsWithObligations(expectation.onlyHasTy(ctx) ?: formalInputTy)
                     coerce(argExpr, argExprTy, expectedTy)
@@ -537,7 +559,7 @@ class TypeInferenceWalker(
         // Rustc does `fudge` instead of `probe` here. But `fudge` seems useless in our simplified type inference
         // because we don't produce new type variables during unification
         // https://github.com/rust-lang/rust/blob/50cf76c24bf6f266ca6d253a/compiler/rustc_infer/src/infer/fudge.rs#L98
-        return ctx.freezeUnificationTable {
+        return ctx.freezeUnification {
             if (ctx.combineTypes(retTy, resolvedFormalRet).isOk) {
                 formalArgs.map { ctx.resolveTypeVarsIfPossible(it) }
             } else {
@@ -585,7 +607,7 @@ class TypeInferenceWalker(
         val structItem = path.maybeStruct
         if (structItem == null) {
             for (field in litExpr.fields) {
-                field.expr?.let { inferExprTy(it) }
+                field.expr?.inferType()
             }
             return TyUnknown
         }
@@ -615,7 +637,7 @@ class TypeInferenceWalker(
         val schemaItem = path.maybeSchema
         if (schemaItem == null) {
             for (field in schemaLit.fields) {
-                field.expr?.let { inferExprTy(it) }
+                field.expr?.inferType()
             }
             return TyUnknown
         }
@@ -755,6 +777,7 @@ class TypeInferenceWalker(
 
         var typeErrorEncountered = false
         val leftTy = leftExpr.inferType()
+//        val leftTy = leftExpr.inferType()
         if (!leftTy.supportsArithmeticOp()) {
             ctx.reportTypeError(TypeError.UnsupportedBinaryOp(leftExpr, leftTy, op))
             typeErrorEncountered = true
@@ -786,9 +809,9 @@ class TypeInferenceWalker(
         val rightExpr = binaryExpr.right
         val op = binaryExpr.binaryOp.op
 
-        val leftTy = leftExpr.inferType()
+        val leftTy = ctx.resolveTypeVarsIfPossible(leftExpr.inferType())
         if (rightExpr != null) {
-            val rightTy = rightExpr.inferType()
+            val rightTy = ctx.resolveTypeVarsIfPossible(rightExpr.inferType())
 
             // if any of the types has TyUnknown and TyInfer, combineTyVar will fail
             // it only happens in buggy situation, but it's annoying for the users, so return if not in devMode
@@ -815,13 +838,13 @@ class TypeInferenceWalker(
         val op = binaryExpr.binaryOp.op
 
         var typeErrorEncountered = false
-        val leftTy = inferExprTy(leftExpr)
+        val leftTy = leftExpr.inferType()
         if (!leftTy.supportsOrdering()) {
             ctx.reportTypeError(TypeError.UnsupportedBinaryOp(leftExpr, leftTy, op))
             typeErrorEncountered = true
         }
         if (rightExpr != null) {
-            val rightTy = inferExprTy(rightExpr)
+            val rightTy = rightExpr.inferType()
             if (!rightTy.supportsOrdering()) {
                 ctx.reportTypeError(TypeError.UnsupportedBinaryOp(rightExpr, rightTy, op))
                 typeErrorEncountered = true
@@ -867,7 +890,8 @@ class TypeInferenceWalker(
     }
 
     private fun Ty.supportsArithmeticOp(): Boolean {
-        val ty = resolveTypeVarsWithObligations(this)
+        val ty = this
+//        val ty = resolveTypeVarsWithObligations(this)
         return ty is TyInteger
                 || ty is TyNum
                 || ty is TyInfer.TyVar

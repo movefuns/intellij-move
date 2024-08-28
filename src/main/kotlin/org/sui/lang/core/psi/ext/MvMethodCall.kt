@@ -4,24 +4,22 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import org.sui.cli.MoveProject
 import org.sui.lang.core.psi.*
-import org.sui.lang.core.resolve.ScopeItem
 import org.sui.lang.core.resolve.ref.MvPolyVariantReference
 import org.sui.lang.core.resolve.ref.MvPolyVariantReferenceBase
-import org.sui.lang.core.resolve.ref.Visibility
 import org.sui.lang.core.types.address
-import org.sui.lang.core.types.infer.foldTyTypeParameterWith
 import org.sui.lang.core.types.infer.inference
-import org.sui.lang.core.types.ty.*
-import org.sui.lang.moveProject
+import org.sui.lang.core.types.ty.Ty
+import org.sui.lang.core.types.ty.TyStruct
+import org.sui.lang.core.types.ty.TyVector
 import org.sui.stdext.wrapWithList
 
-typealias MatchSequence<T> = Sequence<ScopeItem<T>>
+//typealias MatchSequence<T> = Sequence<ScopeItem<T>>
 
-fun <T : MvNamedElement> MatchSequence<T>.filterByName(refName: String): Sequence<T> {
-    return this
-        .filter { it.name == refName }
-        .map { it.element }
-}
+//fun <T: MvNamedElement> MatchSequence<T>.filterByName(refName: String): Sequence<T> {
+//    return this
+//        .filter { it.name == refName }
+//        .map { it.element }
+//}
 
 fun Ty.itemModule(moveProject: MoveProject): MvModule? {
     val norefTy = this.derefIfNeeded()
@@ -40,29 +38,6 @@ fun Ty.itemModule(moveProject: MoveProject): MvModule? {
 fun MvModule.is0x1Address(moveProject: MoveProject): Boolean {
     val moduleAddress = this.address(moveProject)?.canonicalValue(moveProject)
     return moduleAddress == "0x00000000000000000000000000000001"
-}
-
-fun getMethodVariants(element: MvMethodOrField, receiverTy: Ty, msl: Boolean): MatchSequence<MvFunction> {
-    val moveProject = element.moveProject ?: return emptySequence()
-    val receiverTyItemModule = receiverTy.itemModule(moveProject) ?: return emptySequence()
-
-    val elementScopes = Visibility.visibilityScopesForElement(element).toMutableSet()
-    if (element.containingModule == receiverTyItemModule) {
-        elementScopes.add(Visibility.Internal)
-    }
-    val functions =
-        elementScopes
-            .flatMap { elementScope -> receiverTyItemModule.functionsVisibleInScope(elementScope) }
-            .filter {
-                val selfTy = it.selfParamTy(msl) ?: return@filter false
-                // need to use TyVar here, loweredType() erases them
-                val selfTyWithTyVars =
-                    selfTy.foldTyTypeParameterWith { tp -> TyInfer.TyVar(tp) }
-                TyReference.isCompatibleWithAutoborrow(receiverTy, selfTyWithTyVars, msl)
-            }
-    return functions
-        .filter { it.name != null }
-        .map { ScopeItem(it.name!!, it) }.asSequence()
 }
 
 class MvMethodCallReferenceImpl(

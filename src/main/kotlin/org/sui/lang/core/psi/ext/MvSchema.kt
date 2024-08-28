@@ -14,19 +14,13 @@ import org.sui.lang.core.types.ty.TyUnknown
 
 val MvSchema.specBlock: MvSpecCodeBlock? get() = this.childOfType()
 
-val MvSchema.module: MvModule?
-    get() {
-        val moduleBlock = this.parent
-        return moduleBlock.parent as? MvModule
-    }
+val MvSchema.module: MvModule? get() = this.parent as? MvModule
 
 val MvSchema.requiredTypeParams: List<MvTypeParameter>
     get() {
         val usedTypeParams = mutableSetOf<MvTypeParameter>()
-//        val inferenceCtx = InferenceContext.default(true, this)
         this.fieldStmts
             .map { it.type?.loweredType(true) ?: TyUnknown }
-//            .map { it.annotationTy(inferenceCtx) }
             .forEach {
                 it.foldTyTypeParameterWith { paramTy -> usedTypeParams.add(paramTy.origin); paramTy }
             }
@@ -35,7 +29,7 @@ val MvSchema.requiredTypeParams: List<MvTypeParameter>
 
 val MvSchema.fieldStmts: List<MvSchemaFieldStmt> get() = this.specBlock?.schemaFields().orEmpty()
 
-val MvSchema.fieldBindings get() = this.fieldStmts.map { it.bindingPat }
+val MvSchema.fieldsAsBindings get() = this.fieldStmts.map { it.bindingPat }
 
 val MvIncludeStmt.expr: MvExpr? get() = this.childOfType()
 

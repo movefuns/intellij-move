@@ -18,14 +18,13 @@ import org.sui.lang.core.MOVE_COMMENTS
 import org.sui.lang.core.MOVE_KEYWORDS
 import org.sui.lang.core.psi.MvAddressBlock
 import org.sui.lang.core.psi.MvModule
-import org.sui.lang.core.psi.MvModuleBlock
 import org.sui.lang.core.psi.ext.getNextNonCommentSibling
 import org.sui.lang.core.psi.ext.getPrevNonCommentSibling
 import org.sui.lang.core.tokenSetOf
 
 fun createSpacingBuilder(commonSettings: CommonCodeStyleSettings): SpacingBuilder {
     return SpacingBuilder(commonSettings)
-        .afterInside(COMMA, STRUCT_BLOCK).parentDependentLFSpacing(1, 1, true, 1)
+        .afterInside(COMMA, BLOCK_FIELDS).parentDependentLFSpacing(1, 1, true, 1)
         .after(COMMA).spacing(1, 1, 0, true, 0)
         .before(COMMA).spaceIf(false)
         .after(COLON).spaceIf(true)
@@ -33,7 +32,8 @@ fun createSpacingBuilder(commonSettings: CommonCodeStyleSettings): SpacingBuilde
 
         .before(TYPE_ANNOTATION).spacing(0, 0, 0, true, 0)
         .before(INITIALIZER).spacing(1, 1, 0, true, 0)
-
+        .before(ENUM).spacing(1, 1, 1, true, 0) // Default spacing before enum
+        .before(ENUM_VARIANT).spacing(1, 1, 1, true, 0)
         .between(AND, MUT).spacing(0, 0, 0, false, 0)
 
         .afterInside(AND, PATH_TYPE).spacing(0, 0, 0, false, 0)
@@ -54,6 +54,15 @@ fun createSpacingBuilder(commonSettings: CommonCodeStyleSettings): SpacingBuilde
         .beforeInside(R_BRACE, BLOCK_LIKE).parentDependentLFSpacing(1, 1, true, 0)
 //        .withinPairInside(L_BRACE, R_BRACE, STRUCT_PAT).spacing(1, 1, 0, true, 0)
 //        .withinPairInside(L_BRACE, R_BRACE, STRUCT_LIT_EXPR).spacing(1, 1, 0, true, 0)
+
+        // handling `module 0x1::M {}` and `let S { f1, f2: f }` blocks
+        .beforeInside(L_BRACE, FLAT_BRACE_BLOCKS).spaces(1)
+        .afterInside(L_BRACE, FLAT_BRACE_BLOCKS)
+        .parentDependentLFSpacing(1, 1, true, 0)
+        .beforeInside(R_BRACE, FLAT_BRACE_BLOCKS)
+        .parentDependentLFSpacing(1, 1, true, 0)
+        .withinPairInside(L_BRACE, R_BRACE, STRUCT_PAT)
+        .spacing(1, 1, 0, true, 0)
 
 //        .afterInside(L_BRACE, tokenSetOf(STRUCT_PAT_FIELDS_BLOCK, STRUCT_LIT_FIELDS_BLOCK)).spaces(1)
 //        .beforeInside(R_BRACE, tokenSetOf(STRUCT_PAT_FIELDS_BLOCK, STRUCT_LIT_FIELDS_BLOCK)).spaces(1)
@@ -120,7 +129,7 @@ fun Block.computeSpacing(child1: Block?, child2: Block, ctx: MvFmtContext): Spac
             )
 
             (ncPsi1.text == "{" && ncPsi1.parent is MvAddressBlock && ncPsi2 is MvModule)
-                    || (ncPsi1.text == "{" && ncPsi1.parent is MvModuleBlock && ncPsi2.isModuleItem)
+                    || (ncPsi1.text == "{" && ncPsi1.parent is MvModule && ncPsi2.isModuleItem)
             -> return lineBreak(
                 minLineFeeds = if (!needsBlankLineBetweenItems()) 0 else 1,
                 keepLineBreaks = ctx.commonSettings.KEEP_LINE_BREAKS,

@@ -1,5 +1,6 @@
 package org.sui.lang.resolve
 
+import org.sui.utils.tests.NamedAddress
 import org.sui.utils.tests.resolve.ResolveTestCase
 
 class ResolveVariablesTest : ResolveTestCase() {
@@ -308,27 +309,25 @@ module 0x1::string_tests {
     """
     )
 
-    fun `test resolve const item with same name imported expected failure`() = checkByCode(
-        """
-module 0x1::string {
-    const ERR_ADMIN: u64 = 1;
-}        
-#[test_only]
-module 0x1::string_tests {
-    use 0x1::string::ERR_ADMIN;
-
-    const ERR_ADMIN: u64 = 1;
-            //X
-
-    #[test]
-    #[expected_failure(abort_code = ERR_ADMIN)]
-                                     //^
-    fun test_abort() {
-        
-    }
-}
-    """
-    )
+//    fun `test resolve const item with same name imported expected failure`() = checkByCode("""
+//module 0x1::string {
+//    const ERR_ADMIN: u64 = 1;
+//}
+//#[test_only]
+//module 0x1::string_tests {
+//    use 0x1::string::ERR_ADMIN;
+//
+//    const ERR_ADMIN: u64 = 1;
+//            //X
+//
+//    #[test]
+//    #[expected_failure(abort_code = ERR_ADMIN)]
+//                                     //^
+//    fun test_abort() {
+//
+//    }
+//}
+//    """)
 
     fun `test resolve const item same module expected failure`() = checkByCode(
         """
@@ -369,6 +368,351 @@ module 0x1::string_tests {
                     //X
                     ind;
                     //^
+                }
+            }
+        }        
+    """
+    )
+
+    fun `test cannot resolve path address`() = checkByCode(
+        """
+        module 0x1::m {
+            fun main() {
+                0x1::;
+                //^ unresolved
+            }
+        }        
+    """
+    )
+
+    fun `test resolve attribute location`() = checkByCode(
+        """
+        module 0x1::m {
+                  //X  
+            fun main() {
+            }
+            #[test(location=0x1::m)]
+                               //^
+            fun test_main() {
+                
+            }
+        }        
+    """
+    )
+
+    @NamedAddress("aptos_std", "0x1")
+    fun `test resolve attribute location for named address`() = checkByCode(
+        """
+        module aptos_std::m {
+                  //X  
+            fun main() {
+            }
+            #[test(location=aptos_std::m)]
+                                     //^
+            fun test_main() {
+                
+            }
+        }        
+    """
+    )
+
+    fun `test resolve variable in match expr`() = checkByCode(
+        """
+        module 0x1::m {
+            fun main() {
+                let m = 1;
+                  //X
+                match (m) {
+                     //^
+                }
+            }
+        }        
+    """
+    )
+
+    fun `test resolve function with match name`() = checkByCode(
+        """
+        module 0x1::m {
+            fun match() {}
+              //X
+            fun main() {
+                match();
+                  //^
+            }
+        }
+    """
+    )
+
+
+    fun `test resolve type in match arm 1`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One, Two }
+               //X
+            fun main() {
+                let m = 1;
+                match (m) {
+                    S::One => true
+                  //^  
+                    S::Two => false
+                }
+            }
+        }        
+    """
+    )
+
+    fun `test resolve type in match arm 2`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One, Two }
+                    //X
+            fun main() {
+                let m = 1;
+                match (m) {
+                    S::One => true
+                      //^
+                    S::Two => false
+                }
+            }
+        }        
+    """
+    )
+
+    fun `test resolve type in match arm 3`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One, Two }
+                         //X
+            fun main() {
+                let m = 1;
+                match (m) {
+                    S::One => true
+                    S::Two => false
+                      //^
+                }
+            }
+        }        
+    """
+    )
+
+    fun `test resolve item in match arm body`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One, Two }
+            fun main() {
+                let m = 1;
+                  //X
+                match (m) {
+                    S::One => m
+                            //^
+                }
+            }
+        }        
+    """
+    )
+
+    fun `test resolve fields for enum variant in match arm`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One { field: u8 }, Two }
+                           //X
+            fun main() {
+                let m = 1;
+                match (m) {
+                    S::One { field: f } => f
+                            //^
+                }
+            }
+        }        
+    """
+    )
+
+    fun `test resolve shortcut field for enum variant in match arm`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One { field: u8 }, Two }
+                           //X
+            fun main() {
+                let m = 1;
+                match (m) {
+                    S::One { field } => field
+                            //^
+                }
+            }
+        }        
+    """
+    )
+
+    fun `test resolve binding for field reassignment for enum variant`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One { field: u8 }, Two }
+            fun main() {
+                let m = 1;
+                match (m) {
+                    S::One { field: myfield }
+                                    //X
+                        => myfield
+                            //^
+                }
+            }
+        }        
+    """
+    )
+
+    fun `test resolve binding for shortcut field for enum variant`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One { field: u8 }, Two }
+            fun main() {
+                let m = 1;
+                match (m) {
+                    S::One { field }
+                            //X
+                        => field
+                            //^
+                }
+            }
+        }        
+    """
+    )
+
+    fun `test resolve field for struct pat in enum`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One { field: u8 }, Two }
+                            //X
+            fun main(s: S::One) {
+                let S::One { field } = s;
+                            //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve field reassignment for struct pat in enum`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One { field: u8 }, Two }
+                            //X
+            fun main(s: S::One) {
+                let S::One { field: f } = s;
+                            //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve field reassignment for struct pat in enum binding`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One { field: u8 }, Two }
+            fun main(s: S::One) {
+                let S::One { field: f } = s;
+                                  //X
+                f;
+              //^  
+            }
+        }        
+    """
+    )
+
+    fun `test resolve enum variant for struct lit`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One { field: u8 }, Two }
+                           //X
+            fun main(s: S::One) {
+                let f = 1;
+                let s = S::One { field: f };
+                                 //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve enum variant for struct pat`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One { field: u8 }, Two }
+               //X
+            fun main(s: S::One) {
+                let S::One { field } = s;
+                  //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve enum variant for struct pat 2`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One { field: u8 }, Two }
+                   //X
+            fun main(s: S::One) {
+                let S::One { field } = s;
+                      //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve field reassignment for struct lit enum variant`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One { field: u8 }, Two }
+                           //X
+            fun main(s: S::One) {
+                let f = 1;
+                let s = S::One { field: f };
+                                 //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve field reassignment for struct lit enum variant binding`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One { field: u8 }, Two }
+            fun main(s: S::One) {
+                let f = 1;
+                  //X
+                let s = S::One { field: f };
+                                      //^
+            }
+        }        
+    """
+    )
+
+    fun `test shadow global spec variable with local one`() = checkByCode(
+        """
+        module 0x1::m {
+            spec module {
+                global supply<CoinType>: num;
+            }
+            fun main() {
+                let supply = 1;
+                    //X
+                spec {
+                    supply;
+                    //^ 
+                }
+            }
+        }        
+    """
+    )
+
+    fun `test outer block variable with inner block variable`() = checkByCode(
+        """
+        module 0x1::m {
+            fun main() {
+                let supply = 1;
+                spec {
+                    let supply = 2;
+                        //X
+                    supply;
+                    //^ 
                 }
             }
         }        

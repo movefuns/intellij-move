@@ -6,7 +6,6 @@ import org.sui.lang.core.completion.CompletionContext
 import org.sui.lang.core.completion.createLookupElement
 import org.sui.lang.core.psi.MvModule
 import org.sui.lang.core.psi.ext.builtinFunctions
-import org.sui.lang.core.resolve.ContextScopeInfo
 import org.sui.utils.tests.MvTestBase
 import org.sui.utils.tests.base.findElementInEditor
 
@@ -44,7 +43,8 @@ class BuiltInFunctionLookupTest : MvTestBase() {
         val moduleElement = myFixture.findElementInEditor<MvModule>()
         val lookup =
             moduleElement.builtinFunctions().single { it.name == name }.let {
-                it.createLookupElement(CompletionContext(it, ContextScopeInfo.default()))
+                it.createLookupElement(CompletionContext(it, false))
+//                it.createLookupElement(CompletionContext(it, ContextScopeInfo.default()))
             }
         checkLookupPresentation(
             lookup,

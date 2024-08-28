@@ -3,9 +3,9 @@ package org.sui.cli.runConfigurations.sui
 import com.intellij.psi.SmartPsiElementPointer
 import org.sui.cli.MoveProject
 import org.sui.lang.core.psi.MvFunction
-import org.sui.lang.core.psi.allParamsAsBindings
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.psi.parameters
+import org.sui.lang.core.psi.parametersAsBindings
 import org.sui.lang.core.psi.typeParameters
 import org.sui.lang.core.types.ty.*
 
@@ -57,7 +57,7 @@ data class FunctionCall(
                 nullTypeParams[typeParameterName] = null
             }
 
-            val parameterBindings = function.allParamsAsBindings.drop(1)
+            val parameterBindings = function.parametersAsBindings.drop(1)
             val parameterNames = parameterBindings.map { it.name }
 
             val nullParams = mutableMapOf<String, FunctionCallParam?>()

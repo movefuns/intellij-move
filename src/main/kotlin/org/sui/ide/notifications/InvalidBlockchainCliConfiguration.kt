@@ -6,10 +6,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.EditorNotificationPanel
 import org.sui.cli.settings.PerProjectSuiConfigurable
-import org.sui.cli.settings.isValidExecutable
-import org.sui.cli.settings.moveSettings
 import org.sui.cli.settings.sui.SuiExecType
 import org.sui.cli.settings.suiExecPath
+import org.sui.cli.settings.isValidExecutable
+import org.sui.cli.settings.moveSettings
 import org.sui.lang.isMoveFile
 import org.sui.lang.isMoveTomlManifestFile
 import org.sui.openapiext.common.isUnitTestMode

@@ -16,10 +16,10 @@ import org.sui.lang.core.types.ty.TyStruct
 import org.sui.stdext.withAdded
 import javax.swing.Icon
 
-val MvStruct.fields: List<MvStructField>
-    get() = structBlock?.structFieldList.orEmpty()
+val MvStruct.fields: List<MvNamedFieldDecl>
+    get() = blockFields?.namedFieldDeclList.orEmpty()
 
-val MvStruct.fieldsMap: Map<String, MvStructField>
+val MvStruct.fieldsMap: Map<String, MvNamedFieldDecl>
     get() {
         return fields.associateBy { it.name }
     }
@@ -45,8 +45,7 @@ val MvStruct.module: MvModule
         if (moduleStub != null) {
             return moduleStub.psi
         }
-        val moduleBlock = this.parent
-        return moduleBlock.parent as MvModule
+        return this.parent as MvModule
     }
 
 val MvStruct.psiAbilities: List<MvAbility>
@@ -76,7 +75,7 @@ fun MvStruct.addAbility(ability: String) {
         this.abilitiesList?.replace(newAbilitiesList)
     } else {
         val anchor = when {
-            this.structBlock != null -> this.structBlock
+            this.blockFields != null -> this.blockFields
             this.hasChild(MvElementTypes.SEMICOLON) -> this.getChild(MvElementTypes.SEMICOLON)
             else -> return
         }

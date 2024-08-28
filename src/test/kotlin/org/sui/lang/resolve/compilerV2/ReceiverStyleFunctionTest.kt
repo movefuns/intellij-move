@@ -1,5 +1,6 @@
 package org.sui.lang.resolve.compilerV2
 
+import org.sui.ide.inspections.fixes.CompilerV2Feat.PUBLIC_PACKAGE
 import org.sui.ide.inspections.fixes.CompilerV2Feat.RECEIVER_STYLE_FUNCTIONS
 import org.sui.utils.tests.CompilerV2Features
 import org.sui.utils.tests.resolve.ResolveTestCase
@@ -18,6 +19,19 @@ class ReceiverStyleFunctionTest : ResolveTestCase() {
             fun test_call_styles(s: S): u64 {
                 s.receiver(1)
                   //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve self parameter`() = checkByCode(
+        """
+        module 0x1::main {
+            struct S { x: u64 }
+            fun receiver(self: S, y: u64): u64 {
+                         //X
+                self.x + y
+                //^
             }
         }        
     """
@@ -200,6 +214,58 @@ class ReceiverStyleFunctionTest : ResolveTestCase() {
                   //^ unresolved
             }
         }                
+    """
+    )
+
+    fun `test friend function method`() = checkByCode(
+        """
+        module 0x1::m {
+            friend 0x1::main;
+            struct S { x: u64 }
+            public(friend) fun receiver(self: &S): u64 { self.x }
+                               //X
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            fun main(s: S) {
+                s.receiver();
+                  //^
+            }
+        }        
+    """
+    )
+
+    @CompilerV2Features(RECEIVER_STYLE_FUNCTIONS, PUBLIC_PACKAGE)
+    fun `test public package method`() = checkByCode(
+        """
+        module 0x1::m {
+            struct S { x: u64 }
+            public(package) fun receiver(self: &S): u64 { self.x }
+                                  //X
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            fun main(s: S) {
+                s.receiver();
+                  //^
+            }
+        }        
+    """
+    )
+
+    fun `test friend function method unresolved`() = checkByCode(
+        """
+        module 0x1::m {
+            struct S { x: u64 }
+            public(friend) fun receiver(self: &S): u64 { self.x }
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            fun main(s: S) {
+                s.receiver();
+                  //^ unresolved
+            }
+        }        
     """
     )
 }

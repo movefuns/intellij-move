@@ -29,15 +29,15 @@ import org.sui.lang.core.psi.MvPsiManager.Companion.isIgnorePsiEvents
 import org.sui.lang.core.psi.MvPsiTreeChangeEvent.*
 
 /** Don't subscribe directly or via plugin.xml lazy listeners. Use [MvPsiManager.subscribeMoveStructureChange] */
-private val MOVE_STRUCTURE_CHANGE_TOPIC: Topic<MoveStructureChangeListener> = Topic.create(
-    "MOVE_STRUCTURE_CHANGE_TOPIC",
+private val SUI_MOVE_STRUCTURE_CHANGE_TOPIC: Topic<MoveStructureChangeListener> = Topic.create(
+    "SUI_MOVE_STRUCTURE_CHANGE_TOPIC",
     MoveStructureChangeListener::class.java,
     Topic.BroadcastDirection.TO_PARENT
 )
 
 /** Don't subscribe directly or via plugin.xml lazy listeners. Use [MvPsiManager.subscribeRustPsiChange] */
-private val MOVE_PSI_CHANGE_TOPIC: Topic<MovePsiChangeListener> = Topic.create(
-    "MOVE_PSI_CHANGE_TOPIC",
+private val SUI_MOVE_PSI_CHANGE_TOPIC: Topic<MovePsiChangeListener> = Topic.create(
+    "SUI_MOVE_PSI_CHANGE_TOPIC",
     MovePsiChangeListener::class.java,
     Topic.BroadcastDirection.TO_PARENT
 )
@@ -54,12 +54,12 @@ interface MvPsiManager {
 
     /** This is an instance method because [MvPsiManager] should be created prior to event subscription */
     fun subscribeMoveStructureChange(connection: MessageBusConnection, listener: MoveStructureChangeListener) {
-        connection.subscribe(MOVE_STRUCTURE_CHANGE_TOPIC, listener)
+        connection.subscribe(SUI_MOVE_STRUCTURE_CHANGE_TOPIC, listener)
     }
 
     /** This is an instance method because [MvPsiManager] should be created prior to event subscription */
     fun subscribeRustPsiChange(connection: MessageBusConnection, listener: MovePsiChangeListener) {
-        connection.subscribe(MOVE_PSI_CHANGE_TOPIC, listener)
+        connection.subscribe(SUI_MOVE_PSI_CHANGE_TOPIC, listener)
     }
 
     companion object {
@@ -206,7 +206,7 @@ class MvPsiManagerImpl(val project: Project) : MvPsiManager, Disposable {
         if (isStructureModification) {
             incRustStructureModificationCount(file, psi)
         }
-        project.messageBus.syncPublisher(MOVE_PSI_CHANGE_TOPIC)
+        project.messageBus.syncPublisher(SUI_MOVE_PSI_CHANGE_TOPIC)
             .movePsiChanged(file, psi, isStructureModification)
     }
 
@@ -218,7 +218,7 @@ class MvPsiManagerImpl(val project: Project) : MvPsiManager, Disposable {
 
     private fun incRustStructureModificationCount(file: PsiFile? = null, psi: PsiElement? = null) {
         moveStructureModificationTracker.incModificationCount()
-        project.messageBus.syncPublisher(MOVE_STRUCTURE_CHANGE_TOPIC).moveStructureChanged(file, psi)
+        project.messageBus.syncPublisher(SUI_MOVE_STRUCTURE_CHANGE_TOPIC).moveStructureChanged(file, psi)
     }
 }
 

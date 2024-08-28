@@ -69,6 +69,7 @@ class InlayTypeHintsTest : MvTestBase() {
         }
     """
     )
+    )
 
     private fun checkByText(@Language("Sui Move") code: String) {
         InlineFile(

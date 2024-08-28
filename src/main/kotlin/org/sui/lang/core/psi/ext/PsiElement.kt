@@ -142,6 +142,11 @@ inline fun <reified T : PsiElement> PsiElement.ancestorsOfType(): Sequence<T> {
     return this.ancestors.filterIsInstance<T>()
 }
 
+inline fun <reified T : PsiElement> PsiElement.ancestorsOfTypeWithSelf(): Sequence<T> {
+    return (sequenceOf(this) + this.ancestors).filterIsInstance<T>()
+//    return this.ancestors.filterIsInstance<T>()
+}
+
 fun PsiElement.findFirstParent(strict: Boolean = true, cond: Condition<in PsiElement>) =
     PsiTreeUtil.findFirstParent(this, strict, cond)
 
@@ -269,6 +274,9 @@ fun PsiElement?.getPrevNonWhitespaceSibling(): PsiElement? =
 /** Finds first sibling that is not whitespace after given element */
 fun PsiElement?.getNextNonWhitespaceSibling(): PsiElement? =
     PsiTreeUtil.skipWhitespacesForward(this)
+
+val PsiElement.prevNonWsSibling get() = getPrevNonWhitespaceSibling()
+val PsiElement.nextNonWsSibling get() = getNextNonWhitespaceSibling()
 
 fun PsiElement.isWhitespace(): Boolean =
     this is PsiWhiteSpace || this is PsiComment

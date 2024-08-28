@@ -44,9 +44,13 @@ class CompleteParsingTest : MvParsingTestCase("complete") {
     fun `test macros`() = doTest()
     fun `test loops`() = doTest()
 
+    fun `test paths`() = doTest()
+
     // compiler v2
     fun `test index expr`() = doTest()
     fun `test public package`() = doTest()
+    fun `test enums`() = doTest()
+    fun `test match`() = doTest()
 
     // feature declaration is required here, as it's a parser-level feature
     @CompilerV2Features(RESOURCE_CONTROL)

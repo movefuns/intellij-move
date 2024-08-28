@@ -1,4 +1,4 @@
-package org.move.ui.utils
+package org.sui.ui.utils
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ContainerFixture

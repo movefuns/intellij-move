@@ -294,6 +294,7 @@ class ReplaceWithMethodCallInspectionTest : InspectionTestBase(ReplaceWithMethod
         }        
     """
     )
+    )
 
     private fun doTest(@Language("Sui Move") text: String) =
         checkByText(text, checkWarn = false, checkWeakWarn = true)

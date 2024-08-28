@@ -184,6 +184,7 @@ module 0x1::m {
 value parameter <b>result</b>: &mut T      
     """
     )
+    )
 
     private fun doTest(@Language("Sui Move") code: String, @Language("Html") expected: String?) =
         doTest(code, expected, block = MvDocumentationProvider::generateDoc)

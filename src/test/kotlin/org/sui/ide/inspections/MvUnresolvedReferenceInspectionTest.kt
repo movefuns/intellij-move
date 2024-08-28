@@ -1,6 +1,7 @@
 package org.sui.ide.inspections
 
 import org.sui.utils.tests.DebugMode
+import org.sui.utils.tests.NamedAddress
 import org.sui.utils.tests.annotation.InspectionTestBase
 
 class MvUnresolvedReferenceInspectionTest : InspectionTestBase(MvUnresolvedReferenceInspection::class) {
@@ -145,11 +146,11 @@ class MvUnresolvedReferenceInspectionTest : InspectionTestBase(MvUnresolvedRefer
     """
     )
 
-    fun `test no unresolved reference for fully qualified module`() = checkByText(
+    fun `test unresolved reference for fully qualified module`() = checkByText(
         """
         module 0x1::M {
             fun main() {
-                0x1::Debug::print(1);
+                0x1::<error descr="Unresolved reference: `Debug`">Debug</error>::print(1);
             }
         }
     """
@@ -513,4 +514,26 @@ module 0x1::m {
 //            }
 //        }
 //    """)
+
+    @NamedAddress("std", "0x1")
+    fun `test no unresolved reference for named address in use`() = checkByText(
+        """
+        module std::m {
+        }
+        module std::main {
+            use std::m;
+        }
+    """
+    )
+
+    fun `test no error for invariant index variable`() = checkByText(
+        """
+        module 0x1::m {
+            spec module {
+                let vec = vector[1, 2, 3];
+                invariant forall ind in 0..10: vec[ind] < 10;
+            }
+        }        
+    """
+    )
 }

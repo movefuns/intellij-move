@@ -13,6 +13,8 @@ import org.sui.lang.core.psi.MvModule
 import org.sui.lang.core.psi.MvNameIdentifierOwner
 import org.sui.lang.core.psi.ext.elementType
 import org.sui.lang.core.psi.ext.hasTestAttr
+import org.sui.lang.core.psi.ext.isEntry
+import org.sui.lang.core.psi.ext.isView
 
 class CommandLineMarkerContributor : RunLineMarkerContributor() {
     override fun getInfo(element: PsiElement): Info? {

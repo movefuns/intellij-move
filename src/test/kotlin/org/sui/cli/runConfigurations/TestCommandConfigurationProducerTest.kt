@@ -136,7 +136,7 @@ class TestCommandConfigurationProducerTest : RunConfigurationProducerTestBase("t
                 )
             }
         }
-        val sourcesDir = this._testProject?.rootDirectory?.toPsiDirectory(this.project) ?: error("no root")
+        val sourcesDir = this.rootDirectory?.toPsiDirectory(this.project) ?: error("no root")
         checkOnFsItem(sourcesDir)
     }
 

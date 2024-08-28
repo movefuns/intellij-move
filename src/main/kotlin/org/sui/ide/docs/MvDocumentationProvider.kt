@@ -129,12 +129,12 @@ fun MvElement.signature(builder: StringBuilder) {
                 ?.joinToWithBuffer(buffer, ", ", " has ") { generateDocumentation(it) }
         }
 
-        is MvStructField -> {
-            val module = this.structItem.module
+        is MvNamedFieldDecl -> {
+            val module = this.structItem?.module
 //            val itemContext = this.structItem.outerItemContext(msl)
-            buffer += module.qualName?.editorText() ?: "unknown"
+            buffer += module?.qualName?.editorText() ?: "unknown"
             buffer += "::"
-            buffer += this.structItem.name ?: angleWrapped("anonymous")
+            buffer += this.structItem?.name ?: angleWrapped("anonymous")
             buffer += "\n"
             buffer.b { it += this.name }
             buffer += ": ${(this.type?.loweredType(msl) ?: TyUnknown).renderForDocs(true)}"

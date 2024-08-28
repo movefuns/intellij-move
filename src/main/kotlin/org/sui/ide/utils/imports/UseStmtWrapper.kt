@@ -5,13 +5,23 @@
 
 package org.sui.ide.utils.imports
 
-import org.sui.lang.core.psi.MvAddressRef
-import org.sui.lang.core.psi.MvUseItem
+import org.sui.cli.MoveProject
+import org.sui.lang.core.psi.MvUseSpeck
 import org.sui.lang.core.psi.MvUseStmt
-import org.sui.lang.core.psi.ext.*
+import org.sui.lang.core.psi.ext.basePath
+import org.sui.lang.core.psi.ext.hasTestOnlyAttr
+import org.sui.lang.core.psi.ext.hasVerifyOnlyAttr
+import org.sui.lang.core.psi.ext.isSelf
+import org.sui.lang.moveProject
 
 class UseStmtWrapper(val useStmt: MvUseStmt) : Comparable<UseStmtWrapper> {
-    private val addr: MvAddressRef? get() = this.useStmt.addressRef
+    private val namedAddress: String?
+        get() {
+            val useSpeck = useStmt.useSpeck ?: return null
+            val base = useSpeck.path.basePath()
+            if (base.pathAddress != null) return null
+            return base.identifier?.text
+        }
 
     // `use` order:
     // 1. Standard library (stdlib)
@@ -24,38 +34,41 @@ class UseStmtWrapper(val useStmt: MvUseStmt) : Comparable<UseStmtWrapper> {
     val packageGroupLevel: Int = when {
         this.useStmt.hasTestOnlyAttr -> 5
         this.useStmt.hasVerifyOnlyAttr -> 6
-        else -> this.addr?.useGroupLevel ?: -1
+        else -> getBetweenGroupsLevel(this.namedAddress, useStmt.moveProject)
     }
-
-    val addressLevel: Int = when (this.addr?.namedAddress?.referenceName?.lowercase()) {
-        "std" -> 0
-        "sui" -> 1
-        "coin" -> 2
-        else -> 3
-        //"aptos_std" -> 1
-        //"aptos_framework" -> 2
-        //"aptos_token" -> 3
-        //else -> 4
-    }
-//    val packageGroupLevel: Int = when {
-//
-//        basePath?.self != null -> 6
-//        basePath?.`super` != null -> 5
-//        basePath?.crate != null -> 4
-//        else -> when (basePath?.reference?.resolve()?.containingCrate?.origin) {
-//            PackageOrigin.WORKSPACE -> 3
-//            PackageOrigin.DEPENDENCY -> 2
-//            PackageOrigin.STDLIB, PackageOrigin.STDLIB_DEPENDENCY -> 1
-//            null -> 3
-//        }
-//    }
 
     override fun compareTo(other: UseStmtWrapper): Int =
         compareValuesBy(
-            this, other,
-            { it.packageGroupLevel }, { it.addressLevel }, { it.useStmt.useSpeckText }
+            this,
+            other,
+            { it.packageGroupLevel },
+            { getWithinGroupLevel(it.namedAddress) },
+            { it.useStmt.useSpeck?.text ?: "" }
         )
 }
 
-val COMPARATOR_FOR_ITEMS_IN_USE_GROUP: Comparator<MvUseItem> =
-    compareBy<MvUseItem> { !it.isSelf }.thenBy { it.referenceName.lowercase() }
+val COMPARATOR_FOR_ITEMS_IN_USE_GROUP: Comparator<MvUseSpeck> =
+    compareBy<MvUseSpeck> { !it.isSelf }.thenBy { it.path.referenceName?.lowercase() }
+
+private fun getWithinGroupLevel(namedAddress: String?): Int =
+    when (namedAddress?.lowercase()) {
+        "std" -> 0
+        "aptos_std" -> 1
+        "aptos_framework" -> 2
+        "aptos_token" -> 3
+        else -> 4
+    }
+
+private fun getBetweenGroupsLevel(namedAddress: String?, moveProject: MoveProject?): Int {
+    // sort to the end if not a named address
+    if (namedAddress == null) return 4
+
+    val name = namedAddress.lowercase()
+    val currentPackageAddresses =
+        moveProject?.currentPackageAddresses()?.keys.orEmpty().map { it.lowercase() }
+    return when (name) {
+        "std", "aptos_std", "aptos_framework", "aptos_token" -> 1
+        !in currentPackageAddresses -> 2
+        else -> 3
+    }
+}

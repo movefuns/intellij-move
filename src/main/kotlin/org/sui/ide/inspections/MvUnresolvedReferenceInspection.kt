@@ -2,72 +2,27 @@ package org.sui.ide.inspections
 
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
-import com.intellij.psi.util.descendantsOfType
 import org.sui.cli.settings.isDebugModeEnabled
-import org.sui.ide.annotator.BUILTIN_TYPE_IDENTIFIERS
+import org.sui.cli.settings.moveSettings
 import org.sui.ide.inspections.imports.AutoImportFix
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.resolve.ref.MvReferenceElement
-import org.sui.lang.core.types.infer.inference
+import org.sui.lang.core.resolve2.PathKind.*
+import org.sui.lang.core.resolve2.pathKind
 import org.sui.lang.core.types.ty.TyUnknown
 
 class MvUnresolvedReferenceInspection : MvLocalInspectionTool() {
 
-    var ignoreWithoutQuickFix: Boolean = false
+//    var ignoreWithoutQuickFix: Boolean = false
 
     override val isSyntaxOnly get() = false
 
-    private fun ProblemsHolder.registerUnresolvedReferenceError(element: MvReferenceElement) {
-        // no errors in pragmas
-        if (element.hasAncestor<MvPragmaSpecStmt>()) return
-
-        val candidates = AutoImportFix.findApplicableContext(element)?.candidates.orEmpty()
-        if (candidates.isEmpty() && ignoreWithoutQuickFix) return
-
-        val referenceName = element.referenceName ?: return
-        if (BUILTIN_TYPE_IDENTIFIERS.contains(referenceName)) return
-
-        val parent = element.parent
-        val description = when (parent) {
-            is MvPathType -> "Unresolved type: `$referenceName`"
-            is MvCallExpr -> "Unresolved function: `$referenceName`"
-            else -> "Unresolved reference: `$referenceName`"
-        }
-
-        val highlightedElement = element.referenceNameElement ?: element
-        val fix = if (candidates.isNotEmpty()) AutoImportFix(element) else null
-        registerProblem(
-            highlightedElement,
-            description,
-            ProblemHighlightType.LIKE_UNKNOWN_SYMBOL,
-            *listOfNotNull(fix).toTypedArray()
-        )
-    }
-
     override fun buildMvVisitor(holder: ProblemsHolder, isOnTheFly: Boolean) = object : MvVisitor() {
-        override fun visitModuleRef(moduleRef: MvModuleRef) {
-            if (moduleRef.isMslScope && !isDebugModeEnabled()) {
-                return
-            }
-            // skip this check, as it will be checked in MvPath visitor
-            if (moduleRef.ancestorStrict<MvPath>() != null) return
-
-            // skip those two, checked in UseSpeck checks later
-            if (moduleRef.ancestorStrict<MvUseStmt>() != null) return
-            if (moduleRef is MvFQModuleRef) return
-
-            if (moduleRef.unresolved) {
-                holder.registerUnresolvedReferenceError(moduleRef)
-            }
-        }
 
         override fun visitPath(path: MvPath) {
             // skip specs in non-dev mode, too many false-positives
-            if (path.isMslScope && !isDebugModeEnabled()) {
-                return
-            }
-//            if (path.isMslLegacy() && path.isResult) return
+            if (path.isMslScope && !isDebugModeEnabled()) return
             if (path.isMslScope && path.isSpecPrimitiveType()) return
             if (path.isUpdateFieldArg2) return
 
@@ -79,64 +34,72 @@ class MvUnresolvedReferenceInspection : MvLocalInspectionTool() {
             // attribute values are special case
             if (path.hasAncestor<MvAttrItem>()) return
 
-            val moduleRef = path.moduleRef
-            if (moduleRef != null) {
-                if (moduleRef is MvFQModuleRef) return
-                if (moduleRef.unresolved) {
-                    holder.registerUnresolvedReferenceError(moduleRef)
-                    return
-                }
-            }
-            if (path.unresolved) {
-                holder.registerUnresolvedReferenceError(path)
+//            val pathReference = path.reference ?: return
+            val pathKind = path.pathKind()
+            when (pathKind) {
+                is NamedAddress, is ValueAddress -> return
+                is UnqualifiedPath -> tryMultiResolveOrRegisterError(path, holder)
+                is QualifiedPath -> {
+                    if (pathKind !is QualifiedPath.Module) {
+                        val qualifier = pathKind.qualifier
+                        // qualifier is unresolved, no need to resolve current path
+                        if (qualifier.reference?.resolve() == null) return
+                    }
+                    tryMultiResolveOrRegisterError(path, holder)
+        }
             }
         }
 
-        override fun visitStructPatField(patField: MvStructPatField) {
-            if (patField.isMsl() && !isDebugModeEnabled()) {
+        override fun visitFieldPat(patField: MvFieldPat) {
+            if (patField.isMsl() && !isDebugModeEnabled()) return
+
+            // checked in another method
+            if (patField.fieldPatFull != null) return
+
+            patField.bindingPat
+                ?.let { tryMultiResolveOrRegisterError(it, holder) }
+        }
+
+
+        override fun visitFieldPatFull(o: MvFieldPatFull) {
+            if (o.isMsl() && !isDebugModeEnabled())
                 return
-            }
-            val resolvedStructDef = patField.structPat.path.maybeStruct ?: return
-            if (!resolvedStructDef.fieldNames.any { it == patField.referenceName }) {
-                holder.registerProblem(
-                    patField.referenceNameElement,
-                    "Unresolved field: `${patField.referenceName}`",
-                    ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
-                )
-            }
+            tryMultiResolveOrRegisterError(o, holder)
         }
 
         override fun visitStructLitField(litField: MvStructLitField) {
             if (litField.isMsl() && !isDebugModeEnabled()) {
                 return
             }
-            if (litField.isShorthand) {
-                val resolvedItems = litField.reference.multiResolve()
-                val resolvedStructField = resolvedItems.find { it is MvStructField }
-                if (resolvedStructField == null) {
-                    holder.registerProblem(
-                        litField.referenceNameElement,
-                        "Unresolved field: `${litField.referenceName}`",
-                        ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
-                    )
-                }
-                val resolvedBinding = resolvedItems.find { it is MvBindingPat }
-                if (resolvedBinding == null) {
-                    holder.registerProblem(
-                        litField.referenceNameElement,
-                        "Unresolved reference: `${litField.referenceName}`",
-                        ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
-                    )
-                }
-            } else {
-                if (litField.reference.resolve() == null) {
-                    holder.registerProblem(
-                        litField.referenceNameElement,
-                        "Unresolved field: `${litField.referenceName}`",
-                        ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
-                    )
-                }
-            }
+            tryMultiResolveOrRegisterError(litField, holder)
+//
+//            if (litField.isShorthand) {
+//                val resolvedItems = litField.reference.multiResolve()
+//                val resolvedStructField = resolvedItems.find { it is MvNamedFieldDecl }
+//                if (resolvedStructField == null) {
+//                    holder.registerProblem(
+//                        litField.referenceNameElement,
+//                        "Unresolved field: `${litField.referenceName}`",
+//                        ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
+//                    )
+//                }
+//                val resolvedBinding = resolvedItems.find { it is MvBindingPat }
+//                if (resolvedBinding == null) {
+//                    holder.registerProblem(
+//                        litField.referenceNameElement,
+//                        "Unresolved reference: `${litField.referenceName}`",
+//                        ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
+//                    )
+//                }
+//            } else {
+//                if (litField.reference.resolve() == null) {
+//                    holder.registerProblem(
+//                        litField.referenceNameElement,
+//                        "Unresolved field: `${litField.referenceName}`",
+//                        ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
+//                    )
+//                }
+//            }
         }
 
         override fun visitSchemaLitField(field: MvSchemaLitField) {
@@ -169,58 +132,74 @@ class MvUnresolvedReferenceInspection : MvLocalInspectionTool() {
             }
         }
 
-        override fun visitDotExpr(dotExpr: MvDotExpr) {
-            if (dotExpr.isMsl() && !isDebugModeEnabled()) {
-                return
-            }
-            val receiverTy = dotExpr.inference(false)?.getExprType(dotExpr.expr)
-            // disable inspection is object is unresolved
-            if (receiverTy is TyUnknown) return
-
-            val dotField = dotExpr.structDotField ?: return
-            if (!dotField.resolvable) {
-                holder.registerProblem(
-                    dotField.referenceNameElement,
-                    "Unresolved field: `${dotField.referenceName}`",
-                    ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
-                )
-            }
+        override fun visitStructDotField(dotField: MvStructDotField) {
+            checkMethodOrField(dotField)
         }
 
-        override fun visitModuleUseSpeck(o: MvModuleUseSpeck) {
-            val moduleRef = o.fqModuleRef ?: return
-            if (!moduleRef.resolvable) {
-                val refNameElement = moduleRef.referenceNameElement ?: return
-                holder.registerProblem(
-                    refNameElement,
-                    "Unresolved reference: `${refNameElement.text}`",
-                    ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
-                )
-            }
+        override fun visitMethodCall(methodCall: MvMethodCall) {
+            if (!methodCall.project.moveSettings.enableReceiverStyleFunctions) return
+
+            checkMethodOrField(methodCall)
         }
 
-        override fun visitItemUseSpeck(o: MvItemUseSpeck) {
-            val moduleRef = o.fqModuleRef
-            if (!moduleRef.resolvable) {
-                val refNameElement = moduleRef.referenceNameElement ?: return
-                holder.registerProblem(
-                    refNameElement,
-                    "Unresolved reference: `${refNameElement.text}`",
-                    ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
-                )
-                return
+        private fun checkMethodOrField(methodOrField: MvMethodOrField) {
+            val msl = methodOrField.isMsl()
+            if (msl && !isDebugModeEnabled()) return
+
+            // no error if receiver item is unknown (won't proc if unknown is nested)
+            if (methodOrField.inferReceiverTy(msl) is TyUnknown) return
+
+            tryMultiResolveOrRegisterError(methodOrField, holder)
+        }
+    }
+
+    private fun tryMultiResolveOrRegisterError(referenceElement: MvReferenceElement, holder: ProblemsHolder) {
+        // no errors in pragmas
+        if (referenceElement.hasAncestor<MvPragmaSpecStmt>()) return
+
+        // match Color::Red {x,y,z}
+        if (referenceElement.hasAncestor<MvMatchArm>() && referenceElement.parent is MvFieldPat) return
+
+        if (referenceElement.hasAncestor<MvDotExpr>() && referenceElement is MvMethodCall) return
+
+        val reference = referenceElement.reference ?: return
+
+        val resolveVariants = reference.multiResolve()
+        if (resolveVariants.size == 1) return
+
+        val referenceName = referenceElement.referenceName ?: return
+        val parent = referenceElement.parent
+        val itemType = when {
+            parent is MvPathType -> "type"
+            parent is MvCallExpr -> "function"
+            parent is MvFieldPat -> "field"
+            referenceElement is MvStructDotField -> "field"
+            referenceElement is MvStructLitField -> "field"
+            else -> "reference"
+        }
+        val highlightedElement = referenceElement.referenceNameElement ?: referenceElement
+
+        val description = "Unresolved $itemType: `$referenceName`"
+        if (resolveVariants.isEmpty()) {
+            val fix = (referenceElement as? MvPath)?.let {
+                val candidates = AutoImportFix.findApplicableContext(referenceElement)?.candidates.orEmpty()
+                if (candidates.isNotEmpty()) AutoImportFix(referenceElement) else null
             }
-            val useItems = o.descendantsOfType<MvUseItem>()
-            for (useItem in useItems) {
-                if (!useItem.resolvable) {
-                    val refNameElement = useItem.referenceNameElement
-                    holder.registerProblem(
-                        refNameElement,
-                        "Unresolved reference: `${refNameElement.text}`",
-                        ProblemHighlightType.LIKE_UNKNOWN_SYMBOL
-                    )
-                }
-            }
+            holder.registerProblem(
+                highlightedElement,
+                description,
+                ProblemHighlightType.LIKE_UNKNOWN_SYMBOL,
+                *listOfNotNull(fix).toTypedArray()
+            )
+        } else {
+            check(resolveVariants.size > 1)
+            // multiple resolution is expected for shorthands
+            if (referenceElement is MvStructLitField && referenceElement.isShorthand) return
+            holder.registerProblem(
+                highlightedElement,
+                "$description. Multiple items are found, resolution is ambiguous",
+                ProblemHighlightType.LIKE_UNKNOWN_SYMBOL,
+            )
         }
     }
 }

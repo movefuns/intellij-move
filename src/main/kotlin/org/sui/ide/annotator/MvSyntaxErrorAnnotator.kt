@@ -6,9 +6,11 @@ import com.intellij.psi.PsiElement
 import org.sui.cli.settings.moveSettings
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
+import org.sui.lang.core.resolve.ref.Visibility2
 import org.sui.lang.core.types.ty.Ability
 import org.sui.lang.utils.Diagnostic
 import org.sui.lang.utils.addToHolder
+import org.sui.stdext.chain
 
 /*
     Augments parser to make the error messages better.
@@ -73,6 +75,8 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
     }
 
     private fun checkIndexExpr(holder: MvAnnotationHolder, indexExpr: MvIndexExpr) {
+        // always supported in specs
+        if (indexExpr.isMsl()) return
         if (!indexExpr.project.moveSettings.enableIndexExpr) {
             Diagnostic
                 .IndexExprIsNotSupportedInCompilerV1(indexExpr)
@@ -102,17 +106,16 @@ class MvSyntaxErrorAnnotator: MvAnnotatorBase() {
             return
         }
 
-        val allModifiers = module.allFunctions().map { it.visibilityFromPsi() }.toSet()
-        val friendAndPackageTogether =
-            FunctionVisibility.PUBLIC_PACKAGE in allModifiers
-                    && FunctionVisibility.PUBLIC_FRIEND in allModifiers
-        if (friendAndPackageTogether) {
-            for (function in module.allFunctions()) {
-                val modifier = function.visibilityModifier ?: continue
-                if (modifier.isPublicPackage || modifier.isPublicFriend) {
-                    Diagnostic.PackageAndFriendModifiersCannotBeUsedTogether(modifier)
+        val allFunctions = module.allFunctions()
+        val friendFunctions = allFunctions.filter { it.visibility2 is Visibility2.Restricted.Friend }
+        val packageFunctions = allFunctions.filter { it.visibility2 is Visibility2.Restricted.Package }
+
+        if (friendFunctions.isNotEmpty() && packageFunctions.isNotEmpty()) {
+            for (function in friendFunctions.chain(packageFunctions)) {
+                val visibilityModifier = function.visibilityModifier ?: continue
+                Diagnostic
+                    .PackageAndFriendModifiersCannotBeUsedTogether(visibilityModifier)
                         .addToHolder(holder)
-                }
             }
         }
     }

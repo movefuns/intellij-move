@@ -6,6 +6,9 @@ import org.sui.lang.index.*
 import org.sui.lang.moveProject
 
 fun IndexSink.indexModuleStub(stub: MvModuleStub) {
+    stub.name?.let {
+        occurrence(MvModuleIndex.KEY, it)
+    }
     indexNamedStub(stub)
 }
 
@@ -42,6 +45,10 @@ fun IndexSink.indexStructStub(stub: MvStructStub) {
 }
 
 fun IndexSink.indexEnumStub(stub: MvEnumStub) {
+    indexNamedStub(stub)
+}
+
+fun IndexSink.indexEnumVariantStub(stub: MvEnumVariantStub) {
     indexNamedStub(stub)
 }
 

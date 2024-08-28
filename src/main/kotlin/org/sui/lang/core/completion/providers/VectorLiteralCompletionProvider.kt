@@ -10,15 +10,15 @@ import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiElement
 import com.intellij.util.ProcessingContext
 import org.sui.lang.MvElementTypes
-import org.sui.lang.core.MvPsiPatterns
+import org.sui.lang.core.MvPsiPattern
 import org.sui.lang.core.completion.VECTOR_LITERAL_PRIORITY
 import org.sui.lang.core.psi.MvPath
 
 object VectorLiteralCompletionProvider : MvCompletionProvider() {
     override val elementPattern: ElementPattern<out PsiElement>
-        get() = MvPsiPatterns.path()
-            .andNot(MvPsiPatterns.pathType())
-            .andNot(MvPsiPatterns.schemaLit())
+        get() = MvPsiPattern.path()
+            .andNot(MvPsiPattern.pathType())
+            .andNot(MvPsiPattern.schemaLit())
             .andNot(
                 PlatformPatterns.psiElement()
                     .afterLeaf(PlatformPatterns.psiElement(MvElementTypes.COLON_COLON))

@@ -39,13 +39,14 @@ val PsiElement.moveProject: MoveProject? get() {
 
 fun VirtualFile.hasChild(name: String) = this.findChild(name) != null
 
-fun VirtualFile.toNioPathOrNull(): Path? {
-    try {
-        return this.toNioPath()
-    } catch (e: UnsupportedOperationException) {
-        return null
-    }
-}
+fun VirtualFile.toNioPathOrNull() = fileSystem.getNioPath(this)
+//fun VirtualFile.toNioPathOrNull(): Path? {
+//    try {
+//        return this.toNioPath()
+//    } catch (e: UnsupportedOperationException) {
+//        return null
+//    }
+//}
 
 fun PsiFile.toNioPathOrNull(): Path? {
     return this.originalFile.virtualFile?.toNioPathOrNull()
@@ -62,10 +63,7 @@ class MoveFile(fileViewProvider: FileViewProvider) : MoveFileBase(fileViewProvid
         return defs.mapNotNull { it.addressBlock }.toList()
     }
 
-    fun scriptBlocks(): List<MvScriptBlock> {
-        val defs = PsiTreeUtil.getChildrenOfTypeAsList(this, MvScript::class.java)
-        return defs.mapNotNull { it.scriptBlock }.toList()
-    }
+    fun scripts(): List<MvScript> = this.childrenOfType<MvScript>()
 
     fun modules(): Sequence<MvModule> {
         return getProjectPsiDependentCache(this) {

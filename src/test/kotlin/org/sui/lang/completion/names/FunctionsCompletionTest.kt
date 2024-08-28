@@ -125,14 +125,11 @@ class FunctionsCompletionTest : CompletionTestCase() {
 
     fun `test public and public(friend) completions for module`() = completionFixture.checkContainsCompletion(
         """
-        address 0x1 {
-        module Transaction {
+        module 0x1::Transaction {
             friend 0x1::M;
             public(friend) fun create_friend() {}
             public fun create() {}
         }
-        }
-        
         module 0x1::M {
             fun main() {
                 0x1::Transaction::cr/*caret*/
@@ -423,5 +420,51 @@ class FunctionsCompletionTest : CompletionTestCase() {
             }
         }        
     """
+    )
+
+    fun `test function completion at the left of equality expr`() = doSingleCompletion(
+        """
+        module 0x1::m {
+            spec fun spec_some(a: u8): u8 { a }
+            spec module {
+                let a = 1;
+                let b = 1;
+                spec_/*caret*/ == spec_some(b);
+            }
+        }        
+    """,
+        """
+        module 0x1::m {
+            spec fun spec_some(a: u8): u8 { a }
+            spec module {
+                let a = 1;
+                let b = 1;
+                spec_some(/*caret*/) == spec_some(b);
+            }
+        }        
+    """,
+    )
+
+    fun `test function completion at the right of equality expr`() = doSingleCompletion(
+        """
+        module 0x1::m {
+            spec fun spec_some(a: u8): u8 { a }
+            spec module {
+                let a = 1;
+                let b = 1;
+                spec_some(a) == spec_/*caret*/;
+            }
+        }        
+    """,
+        """
+        module 0x1::m {
+            spec fun spec_some(a: u8): u8 { a }
+            spec module {
+                let a = 1;
+                let b = 1;
+                spec_some(a) == spec_some(/*caret*/);
+            }
+        }        
+    """,
     )
 }

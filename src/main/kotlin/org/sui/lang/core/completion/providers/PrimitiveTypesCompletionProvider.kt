@@ -9,7 +9,7 @@ import com.intellij.util.ProcessingContext
 import org.sui.ide.annotator.BUILTIN_TYPE_IDENTIFIERS
 import org.sui.ide.annotator.PRIMITIVE_TYPE_IDENTIFIERS
 import org.sui.ide.annotator.SPEC_ONLY_PRIMITIVE_TYPES
-import org.sui.lang.core.MvPsiPatterns
+import org.sui.lang.core.MvPsiPattern
 import org.sui.lang.core.completion.AngleBracketsInsertHandler
 import org.sui.lang.core.completion.PRIMITIVE_TYPE_PRIORITY
 import org.sui.lang.core.completion.withPriority
@@ -23,7 +23,7 @@ object PrimitiveTypesCompletionProvider : MvCompletionProvider() {
 
     override val elementPattern: ElementPattern<out PsiElement>
         get() =
-            MvPsiPatterns.nameTypeIdentifier()
+            MvPsiPattern.nameTypeIdentifier()
 
     override fun addCompletions(
         parameters: CompletionParameters,

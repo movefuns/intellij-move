@@ -1,4 +1,4 @@
-package org.move.ui
+package org.sui.ui
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
@@ -7,7 +7,7 @@ import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.JTreeFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import org.junit.jupiter.api.Test
-import org.move.ui.fixtures.*
+import org.sui.ui.fixtures.*
 
 class ProjectsTreeFixture(
     remoteRobot: RemoteRobot,

@@ -1,6 +1,5 @@
 package org.sui.lang.core.stubs
 
-import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.*
 import com.intellij.util.BitUtil
 import org.sui.cli.MoveProject
@@ -118,7 +117,7 @@ class MvFunctionStub(
     elementType: IStubElementType<*, *>,
     override val name: String?,
     override val flags: Int,
-    val visibility: FunctionVisibility,
+    val visibility: VisKind?,
     val address: StubAddress,
     val moduleName: String?,
 ) : MvAttributeOwnerStubBase<MvFunction>(parent, elementType), MvNamedStub {
@@ -155,9 +154,10 @@ class MvFunctionStub(
             val name = dataStream.readNameAsString()
             val flags = dataStream.readInt()
 
-            val vis = dataStream.readInt()
-            val visibility = FunctionVisibility.values()
-                .find { it.ordinal == vis } ?: error("Invalid vis value $vis")
+            val visSyntax = dataStream.readUTFFastAsNullable()
+            val visibility = visSyntax?.let { kw ->
+                VisKind.entries.find { it.keyword == kw } ?: error("Invalid vis keyword $kw")
+            }
 
             val stubAddress = dataStream.deserializeStubAddress()
             val moduleName = dataStream.readUTFFastAsNullable()
@@ -177,7 +177,7 @@ class MvFunctionStub(
             with(dataStream) {
                 writeName(stub.name)
                 writeInt(stub.flags)
-                writeInt(stub.visibility.ordinal)
+                writeUTFFastAsNullable(stub.visibility?.keyword)
                 serializeStubAddress(stub.address)
                 writeUTFFastAsNullable(stub.moduleName)
             }
@@ -202,7 +202,7 @@ class MvFunctionStub(
                 this,
                 psi.name,
                 flags,
-                visibility = psi.visibilityFromPsi(),
+                visibility = psi.visibilityModifier?.stubVisKind,
                 address = moduleAddress,
                 moduleName = moduleName,
             )
@@ -295,20 +295,55 @@ class MvEnumStub(
             return MvEnumStub(parentStub, this, name, flags)
         }
 
-        override fun createStub(psi: MvEnum, parentStub: StubElement<out PsiElement>?): MvEnumStub {
-            TODO("Not yet implemented")
-        }
-
-        override fun createPsi(stub: MvEnumStub): MvEnum {
-            TODO("Not yet implemented")
-        }
-
         override fun serialize(stub: MvEnumStub, dataStream: StubOutputStream) =
             with(dataStream) {
                 writeName(stub.name)
+                writeInt(stub.flags)
+            }
+
+        override fun createPsi(stub: MvEnumStub): MvEnum =
+            MvEnumImpl(stub, this)
+
+        override fun createStub(psi: MvEnum, parentStub: StubElement<*>?): MvEnumStub {
+            val attrs = QueryAttributes(psi.attrList.asSequence())
+            val flags = MvAttributeOwnerStub.extractFlags(attrs)
+            return MvEnumStub(parentStub, this, psi.name, flags)
             }
 
         override fun indexStub(stub: MvEnumStub, sink: IndexSink) = sink.indexEnumStub(stub)
+    }
+}
+
+class MvEnumVariantStub(
+    parent: StubElement<*>?,
+    elementType: IStubElementType<*, *>,
+    override val name: String?,
+    override val flags: Int,
+) : MvAttributeOwnerStubBase<MvEnumVariant>(parent, elementType), MvNamedStub {
+
+    object Type : MvStubElementType<MvEnumVariantStub, MvEnumVariant>("ENUM_VARIANT") {
+        override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): MvEnumVariantStub {
+            val name = dataStream.readNameAsString()
+            val flags = dataStream.readInt()
+            return MvEnumVariantStub(parentStub, this, name, flags)
+        }
+
+        override fun serialize(stub: MvEnumVariantStub, dataStream: StubOutputStream) =
+            with(dataStream) {
+                writeName(stub.name)
+                writeInt(stub.flags)
+            }
+
+        override fun createPsi(stub: MvEnumVariantStub): MvEnumVariant =
+            MvEnumVariantImpl(stub, this)
+
+        override fun createStub(psi: MvEnumVariant, parentStub: StubElement<*>?): MvEnumVariantStub {
+            val attrs = QueryAttributes(psi.attrList.asSequence())
+            val flags = MvAttributeOwnerStub.extractFlags(attrs)
+            return MvEnumVariantStub(parentStub, this, psi.name, flags)
+        }
+
+        override fun indexStub(stub: MvEnumVariantStub, sink: IndexSink) = sink.indexEnumVariantStub(stub)
     }
 }
 
@@ -395,7 +430,7 @@ class MvModuleSpecStub(
             MvModuleSpecImpl(stub, this)
 
         override fun createStub(psi: MvModuleSpec, parentStub: StubElement<*>?): MvModuleSpecStub {
-            return MvModuleSpecStub(parentStub, this, psi.fqModuleRef?.referenceName)
+            return MvModuleSpecStub(parentStub, this, psi.path?.referenceName)
         }
 
         override fun indexStub(stub: MvModuleSpecStub, sink: IndexSink) = sink.indexModuleSpecStub(stub)
@@ -408,10 +443,12 @@ fun factory(name: String): MvStubElementType<*, *> = when (name) {
     "FUNCTION" -> MvFunctionStub.Type
     "SPEC_FUNCTION" -> MvSpecFunctionStub.Type
     "STRUCT" -> MvStructStub.Type
+    "ENUM" -> MvEnumStub.Type
+    "ENUM_VARIANT" -> MvEnumVariantStub.Type
     "SCHEMA" -> MvSchemaStub.Type
     "CONST" -> MvConstStub.Type
     "MODULE_SPEC" -> MvModuleSpecStub.Type
-    "ENUM" -> MvEnumStub.Type
+
     else -> error("Unknown element $name")
 }
 

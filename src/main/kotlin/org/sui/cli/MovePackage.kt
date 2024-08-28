@@ -8,17 +8,27 @@ import org.sui.cli.manifest.SuiConfigYaml
 import org.sui.lang.core.psi.MvElement
 import org.sui.lang.moveProject
 import org.sui.lang.toNioPathOrNull
+import org.sui.openapiext.common.isLightTestFile
+import org.sui.openapiext.common.isUnitTestMode
 import org.sui.openapiext.pathAsPath
 import org.sui.openapiext.resolveExisting
+import org.sui.openapiext.toPsiFile
+import org.toml.lang.psi.TomlFile
 import java.nio.file.Path
 import kotlin.io.path.relativeToOrNull
 
 data class MovePackage(
     val project: Project,
     val contentRoot: VirtualFile,
-    val moveToml: MoveToml,
+    val packageName: String,
+    val tomlMainAddresses: PackageAddresses,
 ) {
-    val packageName = this.moveToml.packageName ?: ""
+    val manifestFile: VirtualFile get() = contentRoot.findChild(Consts.MANIFEST_FILE)!!
+
+    val manifestTomlFile: TomlFile get() = manifestFile.toPsiFile(project) as TomlFile
+    val moveToml: MoveToml get() = MoveToml.fromTomlFile(this.manifestTomlFile)
+
+//    val packageName = this.moveToml.packageName ?: ""
 
     val sourcesFolder: VirtualFile? get() = contentRoot.takeIf { it.isValid }?.findChild("sources")
     val testsFolder: VirtualFile? get() = contentRoot.takeIf { it.isValid }?.findChild("tests")
@@ -71,40 +81,46 @@ data class MovePackage(
     }
 
     fun addresses(): PackageAddresses {
-        val tomlMainAddresses = moveToml.declaredAddresses()
-        val tomlDevAddresses = moveToml.declaredAddresses()
+//        val tomlMainAddresses = tomlMainAddresses
+//        val tomlDevAddresses = moveToml.declaredAddresses()
 
         val addresses = mutableAddressMap()
         addresses.putAll(tomlMainAddresses.values)
         // add placeholders defined in this package as address values
         addresses.putAll(tomlMainAddresses.placeholdersAsValues())
         // devs on top
-        addresses.putAll(tomlDevAddresses.values)
+//        addresses.putAll(tomlDevAddresses.values)
 
         return PackageAddresses(addresses, tomlMainAddresses.placeholders)
     }
 
-    override fun hashCode(): Int {
-        return this.moveToml.tomlFile.toNioPathOrNull()?.hashCode() ?: this.hashCode()
-    }
+    override fun hashCode(): Int = this.contentRoot.hashCode()
 
     override fun equals(other: Any?): Boolean {
         if (other !is MovePackage) return false
-        val leftPath = this.moveToml.tomlFile.toNioPathOrNull() ?: return false
-        val rightPath = other.moveToml.tomlFile.toNioPathOrNull() ?: return false
-        return leftPath == rightPath
+        if (this === other) return true
+        return this.contentRoot == other.contentRoot
     }
 
     companion object {
         fun fromMoveToml(moveToml: MoveToml): MovePackage {
             val contentRoot = moveToml.tomlFile.virtualFile.parent
-            return MovePackage(moveToml.project, contentRoot, moveToml)
+            return MovePackage(
+                moveToml.project, contentRoot,
+                packageName = moveToml.packageName ?: "",
+                tomlMainAddresses = moveToml.declaredAddresses()
+            )
         }
     }
 }
 
 val MvElement.containingMovePackage: MovePackage?
     get() {
+        val elementFile = this.containingFile.virtualFile
+        if (isUnitTestMode && elementFile.isLightTestFile) {
+            // temp file for light unit tests
+            return project.testMoveProject.currentPackage
+        }
         val elementPath = this.containingFile?.toNioPathOrNull() ?: return null
         val allPackages = this.moveProject?.movePackages().orEmpty()
         return allPackages.find {

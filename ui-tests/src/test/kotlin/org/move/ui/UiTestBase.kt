@@ -1,13 +1,13 @@
-package org.move.ui
+package org.sui.ui
 
 import com.intellij.remoterobot.RemoteRobot
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
-import org.move.ui.fixtures.closeProject
-import org.move.ui.fixtures.removeLastRecentProject
-import org.move.ui.utils.RemoteRobotExtension
-import org.move.ui.utils.StepsLogger
+import org.sui.ui.fixtures.closeProject
+import org.sui.ui.fixtures.removeLastRecentProject
+import org.sui.ui.utils.RemoteRobotExtension
+import org.sui.ui.utils.StepsLogger
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths

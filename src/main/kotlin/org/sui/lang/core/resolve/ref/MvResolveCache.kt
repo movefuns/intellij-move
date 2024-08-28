@@ -10,7 +10,7 @@ package org.sui.lang.core.resolve.ref
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
@@ -124,32 +124,33 @@ class MvResolveCache(project: Project) : Disposable {
 
     private fun getCacheFor(element: PsiElement, dep: ResolveCacheDependency): ConcurrentMap<PsiElement, Any> {
         return when (dep) {
-            ResolveCacheDependency.LOCAL, ResolveCacheDependency.LOCAL_AND_RUST_STRUCTURE -> {
-                val owner = element.findModificationTrackerOwner(strict = false)
-                return if (owner != null) {
-                    if (dep == ResolveCacheDependency.LOCAL) {
-                        CachedValuesManager.getCachedValue(owner, LOCAL_CACHE_KEY) {
+            ResolveCacheDependency.LOCAL_AND_RUST_STRUCTURE -> {
+                val trackerOwner = element.findModificationTrackerOwner(strict = false)
+                return if (trackerOwner != null) {
+                    CachedValuesManager.getCachedValue(trackerOwner, LOCAL_AND_RUST_STRUCTURE_CACHE_KEY) {
                             CachedValueProvider.Result.create(
                                 createWeakMap(),
-                                owner.modificationTracker
+                                trackerOwner.project.moveStructureModificationTracker,
+                                trackerOwner.modificationTracker
                             )
                         }
 
-                    } else {
-                        CachedValuesManager.getCachedValue(owner, LOCAL_CACHE_KEY2) {
-                            CachedValueProvider.Result.create(
-                                createWeakMap(),
-                                owner.project.moveStructureModificationTracker,
-                                owner.modificationTracker
-                            )
-                        }
-                    }
+//                    if (dep == ResolveCacheDependency.LOCAL) {
+//                        CachedValuesManager.getCachedValue(owner, LOCAL_CACHE_KEY) {
+//                            CachedValueProvider.Result.create(
+//                                createWeakMap(),
+//                                owner.modificationTracker
+//                            )
+//                        }
+//
+//                    } else {
+//                    }
                 } else {
                     moveStructureDependentCache
                 }
 
             }
-            ResolveCacheDependency.RUST_STRUCTURE -> moveStructureDependentCache
+//            ResolveCacheDependency.RUST_STRUCTURE -> moveStructureDependentCache
             ResolveCacheDependency.ANY_PSI_CHANGE -> anyPsiChangeDependentCache
         }
     }
@@ -190,24 +191,23 @@ class MvResolveCache(project: Project) : Disposable {
     }
 
     companion object {
-        fun getInstance(project: Project): MvResolveCache =
-            ServiceManager.getService(project, MvResolveCache::class.java)
+        fun getInstance(project: Project): MvResolveCache = project.service<MvResolveCache>()
     }
 }
 
 enum class ResolveCacheDependency {
-    /**
-     * Depends on the nearest [MvModificationTrackerOwner] and falls back to
-     * [MvPsiManager.moveStructureModificationTracker] if the tracker owner is not found.
-     *
-     * See [findModificationTrackerOwner]
-     */
-    LOCAL,
+//    /**
+//     * Depends on the nearest [MvModificationTrackerOwner] and falls back to
+//     * [MvPsiManager.moveStructureModificationTracker] if the tracker owner is not found.
+//     *
+//     * See [findModificationTrackerOwner]
+//     */
+//    LOCAL,
 
-    /**
-     * Depends on [MvPsiManager.moveStructureModificationTracker]
-     */
-    RUST_STRUCTURE,
+//    /**
+//     * Depends on [MvPsiManager.moveStructureModificationTracker]
+//     */
+//    RUST_STRUCTURE,
 
     /**
      * Depends on both [LOCAL] and [RUST_STRUCTURE]. It is not the same as "any PSI change", because,
@@ -288,7 +288,8 @@ private val EMPTY_RESOLVE_RESULT = StrongValueReference<Any, Array<ResolveResult
 private val EMPTY_LIST = StrongValueReference<Any, List<Any>>(emptyList())
 
 private val LOCAL_CACHE_KEY: Key<CachedValue<ConcurrentMap<PsiElement, Any>>> = Key.create("LOCAL_CACHE_KEY")
-private val LOCAL_CACHE_KEY2: Key<CachedValue<ConcurrentMap<PsiElement, Any>>> = Key.create("LOCAL_CACHE_KEY2")
+private val LOCAL_AND_RUST_STRUCTURE_CACHE_KEY: Key<CachedValue<ConcurrentMap<PsiElement, Any>>> =
+    Key.create("LOCAL_AND_RUST_STRUCTURE_CACHE_KEY")
 
 private fun ensureValidResult(result: Any?): Unit = when (result) {
     is ResolveResult -> ensureValidPsi(result)

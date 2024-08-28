@@ -11,7 +11,6 @@ import com.intellij.usages.impl.rules.UsageType
 import com.intellij.usages.impl.rules.UsageTypeProviderEx
 import org.sui.lang.core.psi.MvAddressRef
 import org.sui.lang.core.psi.MvExpr
-import org.sui.lang.core.psi.MvFQModuleRef
 
 object MvUsageTypeProvider : UsageTypeProviderEx {
     // Instantiate each UsageType only once, so that the equality check in UsageTypeGroup.equals() works correctly
@@ -46,9 +45,8 @@ object MvUsageTypeProvider : UsageTypeProviderEx {
     }
 
     override fun getUsageType(element: PsiElement, targets: Array<out UsageTarget>): UsageType? {
-//        val refinedElement = element?.findExpansionElements()?.firstOrNull()?.parent ?: element
         val parent = element.parent ?: return null
-        if (element is MvFQModuleRef) return MODULE
+//        if (element is MvFQModuleRef) return MODULE
         return when (parent) {
             is MvExpr -> EXPR
             is MvAddressRef -> ADDRESS_REF

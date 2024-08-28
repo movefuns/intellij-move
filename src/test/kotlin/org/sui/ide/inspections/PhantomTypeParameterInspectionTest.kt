@@ -80,7 +80,6 @@ class PhantomTypeParameterInspectionTest : InspectionTestBase(PhantomTypeParamet
     }    
     """
     )
-
     fun `test no error if phantom and not used`() = checkByText(
         """
     module 0x1::M {

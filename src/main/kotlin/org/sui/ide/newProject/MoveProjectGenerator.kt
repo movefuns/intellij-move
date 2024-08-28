@@ -14,8 +14,8 @@ import com.intellij.platform.ProjectGeneratorPeer
 import org.sui.cli.PluginApplicationDisposable
 import org.sui.cli.moveProjectsService
 import org.sui.cli.runConfigurations.sui.Sui
-import org.sui.cli.settings.moveSettings
 import org.sui.cli.settings.sui.SuiExecType
+import org.sui.cli.settings.moveSettings
 import org.sui.ide.MoveIcons
 import org.sui.openapiext.computeWithCancelableProgress
 import org.sui.stdext.unwrapOrThrow

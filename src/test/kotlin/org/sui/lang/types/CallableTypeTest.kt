@@ -60,6 +60,7 @@ class CallableTypeTest : TypificationTestCase() {
         }        
     """
     )
+    )
 
     private fun testMethodType(@Language("Sui Move") code: String) = testCallableType<MvMethodCall>(code)
 

@@ -39,13 +39,6 @@ fun splitOnDoubleDash(arguments: List<String>): Pair<List<String>, List<String>>
 }
 
 val Module.moveProjectRoot: VirtualFile?
-    get() {
-        val roots = ModuleRootManager.getInstance(this).contentRoots
-        println("Content roots: ${roots.joinToString { it.path }}")
-
-        return roots.firstOrNull { root ->
-            val manifestFile = root.findChild(Consts.MANIFEST_FILE)
-            println("Checking root: ${root.path}, manifest file found: ${manifestFile != null}")
-            manifestFile != null
+    get() = ModuleRootManager.getInstance(this).contentRoots.firstOrNull {
+        it.findChild(Consts.MANIFEST_FILE) != null
         }
-    }

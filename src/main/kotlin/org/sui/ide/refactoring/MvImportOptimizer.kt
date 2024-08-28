@@ -5,11 +5,10 @@ import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.lang.ImportOptimizer
 import com.intellij.psi.*
 import org.sui.ide.inspections.MvUnusedImportInspection
-import org.sui.ide.inspections.imports.ImportAnalyzer
+import org.sui.ide.inspections.imports.ImportAnalyzer2
 import org.sui.ide.utils.imports.COMPARATOR_FOR_ITEMS_IN_USE_GROUP
 import org.sui.ide.utils.imports.UseStmtWrapper
 import org.sui.lang.MoveFile
-import org.sui.lang.MvElementTypes.L_BRACE
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.stdext.withNext
@@ -27,10 +26,10 @@ class MvImportOptimizer : ImportOptimizer {
         }
 
         val holder = ProblemsHolder(InspectionManager.getInstance(file.project), file, false)
-        val importVisitor = ImportAnalyzer(holder)
+        val importVisitor = ImportAnalyzer2(holder)
         object : PsiRecursiveElementVisitor() {
             override fun visitElement(element: PsiElement) {
-                if (element is MvImportsOwner) {
+                if (element is MvItemsOwner) {
                     importVisitor.analyzeImportsOwner(element)
                 } else {
                     super.visitElement(element)
@@ -45,11 +44,11 @@ class MvImportOptimizer : ImportOptimizer {
                     (useElement.nextSibling as? PsiWhiteSpace)?.delete()
                     useElement.delete()
                 }
-                is MvUseItem -> {
+                is MvUseSpeck -> {
                     // remove whitespace following comma, if first position in a group
-                    val useItemGroup = useElement.parent as? MvUseItemGroup
-                    if (useItemGroup != null
-                        && useItemGroup.useItemList.firstOrNull() == useElement
+                    val useGroup = useElement.parent as? MvUseGroup
+                    if (useGroup != null
+                        && useGroup.useSpeckList.firstOrNull() == useElement
                     ) {
                         val followingComma = useElement.getNextNonCommentSibling()
                         followingComma?.rightSiblings
@@ -66,87 +65,48 @@ class MvImportOptimizer : ImportOptimizer {
         val useStmtsWithOwner = file.descendantsOfType<MvUseStmt>().groupBy { it.parent }
         for ((stmtOwner, useStmts) in useStmtsWithOwner.entries) {
             useStmts.forEach { useStmt ->
-                useStmt.itemUseSpeck?.let {
+                useStmt.useSpeck?.let {
                     removeCurlyBracesIfPossible(it, psiFactory)
-                    it.useItemGroup?.sortUseItems()
+                    it.useGroup?.sortUseSpecks()
                 }
             }
-            if (stmtOwner is MvModuleBlock) {
+            if (stmtOwner is MvModule) {
                 reorderUseStmtsIntoGroups(stmtOwner)
             }
         }
     }
 
-    private fun mergeItemGroups(useStmtOwner: MvImportsOwner) {
-        val psiFactory = useStmtOwner.project.psiFactory
-        val leftBrace = useStmtOwner.findFirstChildByType(L_BRACE) ?: return
-
-        val useStmts = useStmtOwner.useStmtList
-        useStmts
-            .groupBy { Pair(it.fqModuleText, it.hasTestOnlyAttr) }
-            .forEach { (key, stmts) ->
-                val (fqModuleText, isTestOnly) = key
-                if (fqModuleText == null) return@forEach
-
-                // special case: if single stmt and import like `use 0x1::Main::Self;`, change to `0x1::Main`
-//                if (stmts.size == 1) {
-//                    val stmt = stmts.single()
-//                    val useItem = stmt.childUseItems.singleOrNull()?.takeIf { it.text == "Self" }
-//                    if (useItem != null) {
-//                        val newStmt = psiFactory.useStmt(fqModuleText, isTestOnly)
-//                        stmt.replace(newStmt)
-//                    }
-//                    return@forEach
-//                }
-
-                val useItemNames = mutableListOf<String>()
-                if (stmts.any { it.moduleUseSpeck != null }) {
-                    useItemNames.add("Self")
-                }
-                useItemNames.addAll(stmts.flatMap { it.childUseItems }.map { it.text })
-                val newStmt =
-                    psiFactory.useStmt(
-                        "$fqModuleText::{${useItemNames.joinToString(", ")}}",
-                        isTestOnly
-                    )
-                useStmtOwner.addAfter(newStmt, leftBrace)
-                stmts.forEach { it.delete() }
-            }
-    }
-
-    companion object {
-        fun MvUseItemGroup.sortUseItems() {
-            val sortedList = useItemList
-                .sortedWith(COMPARATOR_FOR_ITEMS_IN_USE_GROUP)
-                .map { it.copy() }
-            useItemList.zip(sortedList).forEach { it.first.replace(it.second) }
-        }
-
         /** Returns true if successfully removed, e.g. `use aaa::{bbb};` -> `use aaa::bbb;` */
-        private fun removeCurlyBracesIfPossible(useSpeck: MvItemUseSpeck, psiFactory: MvPsiFactory) {
-            val useItemText = useSpeck.useItemGroup?.asTrivial?.text ?: return
-            val fqModuleText = useSpeck.fqModuleRef.text
-            val newUseSpeck = psiFactory.itemUseSpeck(fqModuleText, useItemText)
-            useSpeck.replace(newUseSpeck)
+        private fun removeCurlyBracesIfPossible(rootUseSpeck: MvUseSpeck, psiFactory: MvPsiFactory) {
+            val itemUseSpeck = rootUseSpeck.useGroup?.asTrivial ?: return
+            val newUseSpeck = psiFactory.useSpeck("0x1::dummy::call")
+            val newUseSpeckPath = newUseSpeck.path
+            newUseSpeckPath.path?.replace(rootUseSpeck.path)
+            itemUseSpeck.path.identifier?.let { newUseSpeckPath.identifier?.replace(it) }
+
+            val useAlias = itemUseSpeck.useAlias
+            if (useAlias != null) {
+                newUseSpeck.add(useAlias)
         }
 
-        private fun reorderUseStmtsIntoGroups(useScope: MvImportsOwner) {
-            val useStmts = useScope.useStmtList
-            val first = useScope.childrenOfType<MvElement>()
-                .firstOrNull { it !is MvAttr && it !is PsiComment } ?: return
-            val psiFactory = useScope.project.psiFactory
+            rootUseSpeck.replace(newUseSpeck)
+        }
+
+    private fun reorderUseStmtsIntoGroups(itemsOwner: MvItemsOwner) {
+        val useStmts = itemsOwner.useStmtList
+        val firstItem = itemsOwner.firstItem ?: return
+        val psiFactory = itemsOwner.project.psiFactory
             val sortedUses = useStmts
                 .asSequence()
                 .map { UseStmtWrapper(it) }
                 .sorted()
             for ((useWrapper, nextUseWrapper) in sortedUses.withNext()) {
-                val addedUseItem = useScope.addBefore(useWrapper.useStmt, first)
-                useScope.addAfter(psiFactory.createNewline(), addedUseItem)
+                val addedUseItem = itemsOwner.addBefore(useWrapper.useStmt, firstItem)
+                itemsOwner.addAfter(psiFactory.createNewline(), addedUseItem)
                 val addNewLine =
                     useWrapper.packageGroupLevel != nextUseWrapper?.packageGroupLevel
-//                            && (nextUseWrapper != null || useScope is MvModuleBlock)
                 if (addNewLine) {
-                    useScope.addAfter(psiFactory.createNewline(), addedUseItem)
+                    itemsOwner.addAfter(psiFactory.createNewline(), addedUseItem)
                 }
             }
             useStmts.forEach {
@@ -154,5 +114,11 @@ class MvImportOptimizer : ImportOptimizer {
                 it.delete()
             }
         }
+
+    private fun MvUseGroup.sortUseSpecks() {
+        val sortedList = useSpeckList
+            .sortedWith(COMPARATOR_FOR_ITEMS_IN_USE_GROUP)
+            .map { it.copy() }
+        useSpeckList.zip(sortedList).forEach { it.first.replace(it.second) }
     }
 }

@@ -1,8 +1,33 @@
 package org.sui.lang.resolve
 
+import org.sui.utils.tests.NamedAddress
 import org.sui.utils.tests.resolve.ResolveTestCase
 
 class ResolveModulesTest : ResolveTestCase() {
+    fun `test use module Self`() = checkByCode(
+        """
+    module 0x1::transaction {
+                  //X
+    }
+    module 0x1::main {
+        use 0x1::transaction::Self;
+                             //^
+    }
+    """
+    )
+
+    fun `test use module Self in use group`() = checkByCode(
+        """
+    module 0x1::transaction {
+                  //X
+    }
+    module 0x1::main {
+        use 0x1::transaction::{Self};
+                              //^
+    }
+    """
+    )
+
     fun `test import module itself with Self import`() = checkByCode(
         """
     address 0x1 {
@@ -22,9 +47,28 @@ class ResolveModulesTest : ResolveTestCase() {
     """
     )
 
+    fun `test import module itself with Self group import`() = checkByCode(
+        """
+    address 0x1 {
+        module Transaction {
+             //X
+            fun create() {}
+        }
+        
+        module M {
+            use 0x1::Transaction::{Self};
+            fun main() {
+                let a = Transaction::create();
+                      //^
+            }
+        }
+    }        
+    """
+    )
+
     fun `test resolve Self to current module`() = checkByCode(
         """
-        module Transaction {
+        module 0x1::transaction {
              //X
             fun create() {}
             fun main() {
@@ -37,7 +81,7 @@ class ResolveModulesTest : ResolveTestCase() {
 
     fun `test resolve module to imported module with alias`() = checkByCode(
         """
-        module M {
+        module 0x1::m {
             use 0x1::Transaction as MyTransaction;
                                   //X
             fun main() {
@@ -50,18 +94,13 @@ class ResolveModulesTest : ResolveTestCase() {
 
     fun `test cannot resolve module if imported one has different address`() = checkByCode(
         """
-    address 0x1 {
-        module Transaction {}
-    }
-    
-    address 0x2 {
-        module M {
+    module 0x1::transaction {}
+    module 0x1::m {
             fun main() {
-                let a = 0x3::Transaction::create();
+            let a = 0x3::transaction::create();
                            //^ unresolved
             }
         }
-    }
     """
     )
 
@@ -298,6 +337,43 @@ class ResolveModulesTest : ResolveTestCase() {
     """
     )
 
+    fun `test resolve friend module`() = checkByCode(
+        """
+    module 0x1::myfriend {}
+                 //X
+    module 0x1::main {
+        friend 0x1::myfriend;
+                   //^ 
+    }    
+    """
+    )
+
+    @NamedAddress("aptos_std", "0x1")
+    fun `test resolve friend module with named address`() = checkByCode(
+        """
+    module aptos_std::myfriend {}
+                      //X
+    module 0x1::main {
+        friend aptos_std::myfriend;
+                           //^ 
+    }    
+    """
+    )
+
+    fun `test cannot resolve path inside friend to a function`() = checkByCode(
+        """
+    module 0x1::myfriend {
+        public fun call() {}
+    }
+    module 0x1::main {
+        use 0x1::myfriend;
+        
+        friend myfriend::call;
+                         //^ unresolved 
+    }    
+    """
+    )
+
     fun `test friend no module resolution for test_only modules in non test_only case`() = checkByCode(
         """
     module 0x1::M {
@@ -339,6 +415,67 @@ module 0x1::string_tests {
         
     }
 }        
+    """
+    )
+
+    fun `test unresolved named address`() = checkByCode(
+        """
+        module 0x1::m {
+            use aptos_framework::account;
+                //^ unresolved
+        }        
+    """
+    )
+
+    fun `test unresolved value address`() = checkByCode(
+        """
+        module 0x1::m {
+            use 0x1::account;
+                //^ unresolved
+        }        
+    """
+    )
+
+    @NamedAddress("aptos_framework", "0x1")
+    fun `test resolve module from import with named address`() = checkByCode(
+        """
+        module aptos_framework::m1 {}
+                              //X
+        module 0x1::m {
+            use aptos_framework::m1;
+                               //^
+        }        
+    """
+    )
+
+    @NamedAddress("aptos_framework", "0x1")
+    fun `test resolve module from import with value address`() = checkByCode(
+        """
+        module aptos_framework::m1 {}
+                              //X
+        module 0x1::m {
+            use 0x1::m1;
+                   //^
+        }        
+    """
+    )
+
+    fun `test cannot resolve module with unknown named address`() = checkByCode(
+        """
+        module aptos_framework::m1 {}
+        module 0x1::m {
+            use aptos_framework::m1;
+                               //^ unresolved
+        }        
+    """
+    )
+
+    fun `test cannot resolve named address in incomplete path use stmt`() = checkByCode(
+        """
+        module 0x1::m {
+            use aptos_framework
+               //^ unresolved
+        }        
     """
     )
 }

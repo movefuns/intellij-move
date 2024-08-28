@@ -392,7 +392,7 @@ module 0x1::main {
     """
     )
 
-    fun `test cannot auto import test function from same file`() = checkAutoImportFixIsUnavailable(
+    fun `test cannot auto import test function from the same file`() = checkAutoImportFixIsUnavailable(
         """
 module 0x1::m1 {
     #[test]
@@ -516,6 +516,31 @@ module 0x1::Main {
     """
     )
 
+    fun `testnoimportavailableifmultiplereferences`() = checkFixIsUnavailable(
+        "Import",
+        """
+module0x1::m{
+structS{}
+}
+module0x1::main{
+use0x1::m::S;
+structS{}
+funmain(s:<errordescr="Unresolvedtype:`S`">/*caret*/S</error>){}
+}
+"""
+    )
+
+    fun `testnoimportavailableifnameisimportedbutunresolved`() = checkFixIsUnavailable(
+        "Import",
+        """
+module0x1::m{
+}
+module0x1::main{
+use0x1::m::<errordescr="Unresolvedreference:`S`">S</error>;
+funmain(s:<errordescr="Unresolvedtype:`S`">/*caret*/S</error>){}
+}
+"""
+    )
     private fun checkAutoImportFixByText(
         @Language("Sui Move") before: String,
         @Language("Sui Move") after: String,

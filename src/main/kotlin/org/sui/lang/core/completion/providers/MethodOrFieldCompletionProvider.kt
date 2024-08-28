@@ -9,11 +9,12 @@ import com.intellij.util.ProcessingContext
 import org.jetbrains.annotations.VisibleForTesting
 import org.sui.lang.core.completion.CompletionContext
 import org.sui.lang.core.completion.createLookupElement
+import org.sui.lang.core.psi.MvFunction
 import org.sui.lang.core.psi.ext.*
-import org.sui.lang.core.psi.refItemScopes
 import org.sui.lang.core.psi.tyInfers
-import org.sui.lang.core.resolve.ContextScopeInfo
-import org.sui.lang.core.resolve.letStmtScope
+import org.sui.lang.core.resolve.collectCompletionVariants
+import org.sui.lang.core.resolve.createProcessor
+import org.sui.lang.core.resolve2.processMethodResolveVariants
 import org.sui.lang.core.types.infer.InferenceContext
 import org.sui.lang.core.types.infer.substitute
 import org.sui.lang.core.types.ty.TyFunction
@@ -44,27 +45,19 @@ object MethodOrFieldCompletionProvider : MvCompletionProvider() {
     fun addMethodOrFieldVariants(element: MvMethodOrField, result: CompletionResultSet) {
         val msl = element.isMsl()
         val receiverTy = element.inferReceiverTy(msl).knownOrNull() ?: return
-        val scopeInfo = ContextScopeInfo(
-            letStmtScope = element.letStmtScope,
-            refItemScopes = element.refItemScopes,
-        )
         val expectedTy = getExpectedTypeForEnclosingPathOrDotExpr(element, msl)
 
-        val ctx = CompletionContext(element, scopeInfo, expectedTy)
+        val ctx = CompletionContext(element, msl, expectedTy)
 
         val structTy = receiverTy.derefIfNeeded() as? TyStruct
         if (structTy != null) {
-            getFieldVariants(element, structTy, msl)
-                .forEach { (_, field) ->
-                    val lookupElement = field.createLookupElement(
-                        ctx,
-                        subst = structTy.substitution
-                    )
-                    result.addElement(lookupElement)
+            collectCompletionVariants(result, ctx, subst = structTy.substitution) {
+                processNamedFieldVariants(element, structTy, msl, it)
                 }
         }
-        getMethodVariants(element, receiverTy, msl)
-            .forEach { (_, function) ->
+
+        processMethodResolveVariants(element, receiverTy, ctx.msl, createProcessor { e ->
+            val function = e.element as? MvFunction ?: return@createProcessor
                 val subst = function.tyInfers
                 val declaredFuncTy = function.declaredType(msl).substitute(subst) as TyFunction
                 val declaredSelfTy = declaredFuncTy.paramTypes.first()
@@ -75,11 +68,13 @@ object MethodOrFieldCompletionProvider : MvCompletionProvider() {
                 val inferenceCtx = InferenceContext(msl)
                 inferenceCtx.combineTypes(declaredSelfTy, autoborrowedReceiverTy)
 
-                val lookupElement = function.createLookupElement(
+            result.addElement(
+                createLookupElement(
+                    e,
                     ctx,
                     subst = inferenceCtx.resolveTypeVarsIfPossible(subst)
                 )
-                result.addElement(lookupElement)
-            }
+            )
+        })
     }
 }

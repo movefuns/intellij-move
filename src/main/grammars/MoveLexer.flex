@@ -119,6 +119,7 @@ IDENTIFIER=[_a-zA-Z][_a-zA-Z0-9]* | `type`
       "|"        { return OR; }
       "@"        { return AT; }
       "#"        { return HASH; }
+      "=>"       { return FAT_ARROW; }
       "`"        { return BACKTICK;}
 
       // keywords
@@ -146,11 +147,9 @@ IDENTIFIER=[_a-zA-Z][_a-zA-Z0-9]* | `type`
       "let"            { return LET; }
       "phantom"        { return PHANTOM; }
       "spec"           { return SPEC; }
-      "enum"           { return ENUM_KW; }
       "type"           { return TYPE_KW; }
       "`type`"         { return IDENTIFIER; }
       "`for`"          { return IDENTIFIER; }
-      "match"          { return MATCH_KW; }
 
   {DIEM_ADDRESS}          { return DIEM_ADDRESS; }
   {PLACEHOLDER_ADDRESS}          { return PLACEHOLDER_ADDRESS; }

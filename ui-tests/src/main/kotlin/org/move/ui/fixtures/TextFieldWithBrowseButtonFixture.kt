@@ -1,4 +1,4 @@
-package org.move.ui.fixtures
+package org.sui.ui.fixtures
 
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.remoterobot.RemoteRobot

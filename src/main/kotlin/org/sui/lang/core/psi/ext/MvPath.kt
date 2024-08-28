@@ -5,20 +5,43 @@ import org.sui.cli.settings.debugErrorOrFallback
 import org.sui.ide.annotator.BUILTIN_TYPE_IDENTIFIERS
 import org.sui.ide.annotator.PRIMITIVE_TYPE_IDENTIFIERS
 import org.sui.ide.annotator.SPEC_ONLY_PRIMITIVE_TYPES
+import org.sui.ide.inspections.imports.BasePathType
+import org.sui.ide.inspections.imports.basePathType
 import org.sui.lang.core.psi.*
-import org.sui.lang.core.resolve.ref.MvPathReference
-import org.sui.lang.core.resolve.ref.MvPathReferenceImpl
-import org.sui.lang.core.resolve.ref.MvReferenceElement
-import org.sui.lang.core.resolve.ref.Namespace
+import org.sui.lang.core.resolve.ref.*
+import org.sui.lang.core.resolve.ref.Namespace.*
+import org.sui.lang.core.resolve2.ref.Path2ReferenceImpl
+import java.util.*
+
+/** For `Foo::bar::baz::quux` path returns `Foo` */
+tailrec fun <T : MvPath> T.basePath(): T {
+    @Suppress("UNCHECKED_CAST")
+    val qualifier = path as T?
+    return if (qualifier === null) this else qualifier.basePath()
+}
+
+/** For `Foo::bar` in `Foo::bar::baz::quux` returns `Foo::bar::baz::quux` */
+tailrec fun MvPath.rootPath(): MvPath {
+    // Use `parent` instead of `context` because of better performance.
+    // Assume nobody set a context for a part of a path
+    val parent = parent
+    return if (parent is MvPath) parent.rootPath() else this
+}
+
+val MvPath.length: Int
+    get() {
+        var length = 1
+        var currentPath = this
+        while (currentPath.path != null) {
+            currentPath = currentPath.path!!
+            length += 1
+        }
+        return length
+    }
 
 fun MvPath.isPrimitiveType(): Boolean =
     this.parent is MvPathType
             && this.referenceName in PRIMITIVE_TYPE_IDENTIFIERS.union(BUILTIN_TYPE_IDENTIFIERS)
-
-//fun MvPath.isAttrItem(): Boolean {
-//    val attrItem = this.ancestorStrict<MvAttrItem>() ?: return false
-//    return attrItem.name == "expected_failure"
-//}
 
 fun MvPath.isSpecPrimitiveType(): Boolean =
     this.parent is MvPathType
@@ -41,57 +64,123 @@ val MvPath.isUpdateFieldArg2: Boolean
 
 val MvPath.identifierName: String? get() = identifier?.text
 
-val MvPath.nullModuleRef: Boolean
-    get() =
-        identifier != null && this.moduleRef == null
+val MvPath.maybeStruct get() = reference?.resolveFollowingAliases() as? MvStruct
 
-val MvPath.isQualPath: Boolean get() = !this.nullModuleRef
+val MvPath.maybeSchema get() = reference?.resolveFollowingAliases() as? MvSchema
 
-val MvPath.typeArguments: List<MvTypeArgument>
-    get() = typeArgumentList?.typeArgumentList.orEmpty()
+//fun MvPath.allowedNamespaces(isCompletion: Boolean = false): Set<Namespace> {
+////    val qualifierPath = this.path
+////    val parentElement = this.parent
+//
+////    val qualNamespaces = when {
+////        // m::S, S::One
+////        // ^     ^
+////        parentElement is MvPath && qualifierPath == null -> setOf(MODULE, TYPE)
+////        // m::S::One
+////        // ^
+////        parentElement is MvPath && parentElement.parent is MvPath -> setOf(MODULE)
+////        // m::S::One
+////        //    ^
+////        parentElement is MvPath/* && qualifierPath != null*/ -> setOf(TYPE)
+////        else -> NONE
+////    }
+////    // m::S, S::One
+////    // ^     ^
+////    if (parentElement is MvPath && qualifierPath == null) return EnumSet.of(MODULE, TYPE)
+////
+////    // m::S::One
+////    // ^
+////    if (parentElement is MvPath && parentElement.parent is MvPath) return EnumSet.of(MODULE)
+////
+////    // m::S::One
+////    //    ^
+////    if (parentElement is MvPath/* && qualifierPath != null*/) return EnumSet.of(TYPE)
+//
+////    val rootPath = this.rootPath()
+////    return qualNamespaces + rootPathNamespaces(rootPath, isCompletion)
+//    return this.itemPathNamespaces(isCompletion)
+//}
 
-val MvPath.maybeStruct get() = reference?.resolveWithAliases() as? MvStruct
-
-val MvPath.maybeSchema get() = reference?.resolveWithAliases() as? MvSchema
-
-fun MvPath.namespaces(): Set<Namespace> {
+fun MvPath.allowedNamespaces(isCompletion: Boolean = false): Set<Namespace> {
+    val qualifier = this.path
     val parent = this.parent
     return when {
-        parent is MvSchemaLit || parent is MvSchemaRef -> setOf(Namespace.SCHEMA)
-        parent is MvPathType -> setOf(Namespace.TYPE)
-        parent is MvCallExpr -> setOf(Namespace.FUNCTION)
-        parent is MvRefExpr && parent.isAbortCodeConst() -> setOf(Namespace.CONST)
-        parent is MvRefExpr -> setOf(Namespace.NAME)
-//            parent is MvRefExpr && this.nullModuleRef -> setOf(Namespace.NAME)
-//            parent is MvRefExpr && !this.nullModuleRef -> setOf(Namespace.NAME, Namespace.MODULE)
-        // TODO: it's own namespace?
-        parent is MvStructLitExpr || parent is MvStructPat -> setOf(Namespace.NAME)
-        parent is MvAccessSpecifier -> setOf(Namespace.TYPE)
-        parent is MvAddressSpecifierArg -> setOf(Namespace.FUNCTION)
-        parent is MvAddressSpecifierCallParam -> setOf(Namespace.NAME)
-        parent is MvPublicUseFun -> setOf(Namespace.FUNCTION)
+        // mod::foo::bar
+        //      ^
+        parent is MvPath && qualifier != null -> TYPES
+        // foo::bar
+        //  ^
+        parent is MvPath -> TYPES_N_MODULES
+        // use 0x1::foo::bar; | use 0x1::foo::{bar, baz}
+    // ^     ^
+        parent is MvUseSpeck -> ITEM_NAMESPACES
+        // a: bar
+        //     ^
+        parent is MvPathType && qualifier == null -> if (isCompletion) TYPES_N_MODULES else TYPES
+
+        // a: foo::bar
+        // ^
+        parent is MvPathType && qualifier != null -> TYPES
+        parent is MvCallExpr -> FUNCTIONS
+        parent is MvRefExpr
+                && this.hasAncestor<MvAttrItemInitializer>() -> ALL_NAMESPACES
+
+        // can be anything in completion
+        parent is MvRefExpr -> if (isCompletion) ALL_NAMESPACES else NAMES
+//        }
+        parent is MvSchemaLit
+                || parent is MvSchemaRef -> SCHEMAS
+
+        parent is MvStructLitExpr
+                || parent is MvStructPat
+                || parent is MvEnumVariantPat -> TYPES
+
+        parent is MvAccessSpecifier -> TYPES
+        parent is MvAddressSpecifierArg -> FUNCTIONS
+        parent is MvAddressSpecifierCallParam -> NAMES
+        parent is MvFriendDecl -> MODULES
+        parent is MvModuleSpec -> MODULES
+
         else -> debugErrorOrFallback(
-            "Cannot build path namespaces: unhandled parent type ${parent.elementType}",
-            setOf(Namespace.NAME)
+            "Cannot build path namespaces: unhandled parent type ${parent?.elementType}",
+            NAMES
         )
     }
 }
 
+val MvPath.qualifier: MvPath?
+    get() {
+        path?.let { return it }
+        var ctx = context
+        while (ctx is MvPath) {
+            ctx = ctx.context
+        }
+        // returns the base qualifier, if it's inside the MvUseGroup
+        return (ctx as? MvUseSpeck)?.qualifier
+    }
+
 abstract class MvPathMixin(node: ASTNode) : MvElementImpl(node), MvPath {
 
-    override fun getReference(): MvPathReference? = MvPathReferenceImpl(this)
+    override fun getReference(): MvPath2Reference? = Path2ReferenceImpl(this)
 }
 
-fun MvReferenceElement.importCandidateNamespaces(): Set<Namespace> {
+fun MvPath.importCandidateNamespaces(): Set<Namespace> {
     val parent = this.parent
     return when (parent) {
-        is MvPathType -> setOf(Namespace.TYPE)
-        is MvSchemaLit, is MvSchemaRef -> setOf(Namespace.SCHEMA)
-        else ->
-            when (this) {
-                is MvModuleRef -> setOf(Namespace.MODULE)
-                is MvPath -> setOf(Namespace.NAME, Namespace.FUNCTION)
-                else -> Namespace.all()
+        is MvPathType -> setOf(TYPE)
+        is MvSchemaLit, is MvSchemaRef -> setOf(SCHEMA)
+        else -> {
+            val baseBaseType = this.basePathType()
+            when (baseBaseType) {
+                is BasePathType.Module -> EnumSet.of(MODULE)
+                else -> EnumSet.of(NAME, FUNCTION)
             }
+        }
     }
 }
+
+val MvPath.hasColonColon: Boolean get() = colonColon != null
+
+val MvPath.useSpeck: MvUseSpeck? get() = this.rootPath().parent as? MvUseSpeck
+
+val MvPath.isUseSpeck get() = useSpeck != null

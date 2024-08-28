@@ -4,6 +4,7 @@ import com.intellij.execution.configurations.CommandLineState
 import com.intellij.execution.filters.Filter
 import com.intellij.execution.process.KillableColoredProcessHandler
 import com.intellij.execution.process.ProcessHandler
+import com.intellij.execution.process.ProcessTerminatedListener
 import com.intellij.execution.runners.ExecutionEnvironment
 import org.sui.cli.MoveFileHyperlinkFilter
 

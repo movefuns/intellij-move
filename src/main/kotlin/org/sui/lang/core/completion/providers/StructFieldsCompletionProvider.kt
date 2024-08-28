@@ -7,12 +7,11 @@ import com.intellij.patterns.PlatformPatterns
 import com.intellij.patterns.StandardPatterns
 import com.intellij.psi.PsiElement
 import com.intellij.util.ProcessingContext
-import org.sui.lang.core.MvPsiPatterns.bindingPat
+import org.sui.lang.core.MvPsiPattern.bindingPat
 import org.sui.lang.core.completion.CompletionContext
 import org.sui.lang.core.completion.createLookupElement
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
-import org.sui.lang.core.resolve.ContextScopeInfo
 import org.sui.lang.core.withParent
 import org.sui.lang.core.withSuperParent
 
@@ -24,9 +23,9 @@ object StructFieldsCompletionProvider : MvCompletionProvider() {
                 .withParent<MvStructLitField>(),
             PlatformPatterns
                 .psiElement()
-                .withParent<MvStructPatField>(),
+                .withParent<MvFieldPat>(),
             bindingPat()
-                .withSuperParent<MvStructPatField>(2),
+                .withSuperParent<MvFieldPat>(2),
         )
 
     override fun addCompletions(
@@ -39,13 +38,13 @@ object StructFieldsCompletionProvider : MvCompletionProvider() {
 
         if (element is MvBindingPat) element = element.parent as MvElement
 
-        val completionCtx = CompletionContext(element, ContextScopeInfo.default())
+        val completionCtx = CompletionContext(element, element.isMsl())
         when (element) {
-            is MvStructPatField -> {
+            is MvFieldPat -> {
                 val structPat = element.structPat
                 addFieldsToCompletion(
                     structPat.path.maybeStruct ?: return,
-                    structPat.patFieldNames,
+                    structPat.providedFieldNames,
                     result,
                     completionCtx
                 )
@@ -54,7 +53,7 @@ object StructFieldsCompletionProvider : MvCompletionProvider() {
                 val structLit = element.structLitExpr
                 addFieldsToCompletion(
                     structLit.path.maybeStruct ?: return,
-                    structLit.fieldNames,
+                    structLit.providedFieldNames,
                     result,
                     completionCtx
                 )
@@ -64,7 +63,7 @@ object StructFieldsCompletionProvider : MvCompletionProvider() {
 
     private fun addFieldsToCompletion(
         referredStruct: MvStruct,
-        providedFieldNames: List<String>,
+        providedFieldNames: Set<String>,
         result: CompletionResultSet,
         completionContext: CompletionContext,
     ) {

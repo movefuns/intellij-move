@@ -30,9 +30,7 @@ sealed class TypeError(open val element: PsiElement) : TypeFoldable<TypeError> {
         override fun message(): String {
             return when (element) {
                 is MvReturnExpr -> "Invalid return type '${actualTy.name()}', expected '${expectedTy.name()}'"
-                else -> {
-                    "Incompatible type '${actualTy.name()}', expected '${expectedTy.name()}'"
-                }
+                else -> "Incompatible type '${actualTy.name()}', expected '${expectedTy.name()}'"
             }
         }
 

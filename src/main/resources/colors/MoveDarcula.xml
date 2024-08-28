@@ -2,46 +2,96 @@
 <list>
     <option name="org.sui.TYPE_PARAMETER">
         <value>
-            <option name="FOREGROUND" value="20999d"/>
+            <option name="FOREGROUND" value="6699cc"/>
         </value>
     </option>
     <option name="org.sui.BUILTIN_FUNCTION_CALL">
         <value>
-            <option name="FOREGROUND" value="8888C6"/>
+            <option name="FOREGROUND" value="8888c6"/>
         </value>
     </option>
     <option name="org.sui.VECTOR_LITERAL">
         <value>
-            <option name="FOREGROUND" value="8888C6"/>
+            <option name="FOREGROUND" value="99cc99"/>
         </value>
     </option>
     <option name="org.sui.BUILTIN_TYPE">
         <value>
-            <option name="FOREGROUND" value="8888C6"/>
+            <option name="FOREGROUND" value="ffcc66"/>
         </value>
     </option>
     <option name="org.sui.KEY_OBJECT">
         <value>
-            <option name="EFFECT_COLOR" value="bca5c4" />
+            <option name="EFFECT_COLOR" value="c678dd"/>
             <option name="EFFECT_TYPE" value="1" />
         </value>
     </option>
     <option name="org.sui.STORE_NO_DROP_OBJECT">
         <value>
-            <option name="EFFECT_COLOR" value="bca5c4" />
+            <option name="EFFECT_COLOR" value="c678dd"/>
             <option name="EFFECT_TYPE" value="1" />
         </value>
     </option>
     <option name="org.sui.MUT_REF_TO_KEY_OBJECT">
         <value>
-            <option name="EFFECT_COLOR" value="bca5c4" />
+            <option name="EFFECT_COLOR" value="c678dd"/>
             <option name="EFFECT_TYPE" value="1" />
         </value>
     </option>
     <option name="org.sui.MUT_REF_TO_STORE_NO_DROP_OBJECT">
         <value>
-            <option name="EFFECT_COLOR" value="bca5c4" />
+            <option name="EFFECT_COLOR" value="c678dd"/>
             <option name="EFFECT_TYPE" value="1" />
+        </value>
+    </option>
+    <option name="org.sui.NUMBER">
+        <value>
+            <option name="FOREGROUND" value="d78700"/>
+        </value>
+    </option>
+    <option name="org.sui.STRING">
+        <value>
+            <option name="FOREGROUND" value="99cc99"/>
+        </value>
+    </option>
+    <option name="org.sui.COMMENT">
+        <value>
+            <option name="FOREGROUND" value="808080"/>
+        </value>
+    </option>
+    <option name="org.sui.KEYWORD">
+        <value>
+            <option name="FOREGROUND" value="cc99cc"/>
+        </value>
+    </option>
+    <option name="org.sui.PARENTHESES">
+        <value>
+            <option name="FOREGROUND" value="808080"/>
+        </value>
+    </option>
+    <option name="org.sui.BRACES">
+        <value>
+            <option name="FOREGROUND" value="808080"/>
+        </value>
+    </option>
+    <option name="org.sui.BRACKETS">
+        <value>
+            <option name="FOREGROUND" value="808080"/>
+        </value>
+    </option>
+    <option name="org.sui.SEMICOLON">
+        <value>
+            <option name="FOREGROUND" value="808080"/>
+        </value>
+    </option>
+    <option name="org.sui.COMMA">
+        <value>
+            <option name="FOREGROUND" value="808080"/>
+        </value>
+    </option>
+    <option name="org.sui.DOT">
+        <value>
+            <option name="FOREGROUND" value="808080"/>
         </value>
     </option>
 </list>

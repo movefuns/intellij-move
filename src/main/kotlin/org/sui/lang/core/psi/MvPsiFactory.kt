@@ -28,12 +28,16 @@ class MvPsiFactory(val project: Project) {
     }
 
     fun structLitField(fieldName: String, expr: String): MvStructLitField =
-        createFromText("module _M { fun m() { S { $fieldName: $expr }; }}")
+        createFromText("module 0x1::_M { fun m() { S { $fieldName: $expr }; }}")
             ?: error("Failed to create MvStructLitField")
 
-    fun structPatField(fieldName: String, alias: String): MvStructPatField =
-        createFromText("module _M { fun m() { let S { $fieldName: $alias } = 1; }}")
-            ?: error("Failed to create MvStructPatField")
+//    fun fieldPat(fieldName: String, binding: String): MvFieldPat =
+//        createFromText("module 0x1::_M { fun m() { let S { $fieldName: $binding } = 1; }}")
+//            ?: error("Failed to create MvFieldPat")
+
+    fun fieldPatFull(fieldName: String, binding: String): MvFieldPatFull =
+        createFromText("module 0x1::_M { fun m() { let S { $fieldName: $binding } = 1; }}")
+            ?: error("Failed to create MvFieldPat")
 
     fun schemaLitField(fieldName: String, expr: String): MvSchemaLitField =
         createFromText("module _M { spec module { include Schema { $fieldName: $expr } }}")
@@ -52,11 +56,6 @@ class MvPsiFactory(val project: Project) {
     fun identifier(text: String): PsiElement =
         createFromText<MvModule>("module $text {}")?.nameIdentifier
             ?: error("Failed to create identifier: `$text`")
-
-//    fun createColon(): PsiElement =
-//        const("const C: u8 = 1;")
-//            .descendantOfTypeStrict<MvTypeAnnotation>()!!
-//            .getChild(MvElementTypes.COLON)!!
 
     fun createComma(): PsiElement =
         createFromText<MvValueArgument>(
@@ -81,9 +80,8 @@ class MvPsiFactory(val project: Project) {
         createFromText("module 0x1::_DummyModule { $text }")
             ?: error("Failed to create const")
 
-    @Suppress("InvalidModuleDeclaration")
-    fun builtinConst(text: String): MvConst =
-        createFromText("module spec_builtins { $text }") ?: error("Failed to create const")
+    fun specBuiltinConst(text: String): MvConst =
+        createFromText("module 0x0::spec_builtins { $text }") ?: error("Failed to create const")
 
     inline fun <reified T : MvExpr> expr(text: String): T =
         createFromText("module 0x1::_DummyModule { fun call() { let _ = $text; } }")
@@ -104,40 +102,26 @@ class MvPsiFactory(val project: Project) {
             ?: error("Failed to create an item import from text: `$speckText`")
     }
 
-    fun itemUseSpeck(fqModuleText: String, useItem: String): MvItemUseSpeck {
-        return createFromText("module 0x1::_DummyModule { use $fqModuleText::$useItem; }")
-            ?: error("Cannot create item use speck")
-//        return if (names.size == 1) {
-//            createFromText("module 0x1::_DummyModule { use $fqModuleText::$useItem; }")
-//                ?: error("")
-//        } else {
-//            val namesText = names.joinToString(", ", "{", "}")
-//            createFromText("module 0x1::_DummyModule { use $fqModuleText::$namesText; }")
-//                ?: error("")
-//        }
+    fun useSpeckWithEmptyUseGroup(): MvUseSpeck {
+        return createFromText("module 0x1::_DummyModule { use 0x1::dummy::{}; }")
+            ?: error("Failed to create a use speck")
     }
 
-    fun itemUseSpeck(fqModuleText: String, names: List<String>): MvItemUseSpeck {
-        assert(names.isNotEmpty())
-        return if (names.size == 1) {
-            createFromText("module 0x1::_DummyModule { use $fqModuleText::${names.first()}; }")
-                ?: error("")
-        } else {
-            val namesText = names.joinToString(", ", "{", "}")
-            createFromText("module 0x1::_DummyModule { use $fqModuleText::$namesText; }")
-                ?: error("")
-        }
-    }
-
-    fun useItemGroup(items: List<String>): MvUseItemGroup {
-        val allItemsText = items.joinToString(", ")
-        return createFromText("module 0x1::_DummyModule { use 0x1::Module::{$allItemsText}; }")
-            ?: error("Failed to create an item import from text: `$allItemsText`")
-    }
-
-    fun useItem(text: String): MvUseItem {
-        return createFromText("module 0x1::_DummyModule { use 0x1::Module::$text; }")
+    fun useSpeck(text: String): MvUseSpeck {
+        return createFromText("module 0x1::_DummyModule { use $text; }")
             ?: error("Failed to create an item import from text: `$text`")
+    }
+
+    fun useSpeckForGroup(text: String): MvUseSpeck {
+        val useGroup = createFromText<MvUseGroup>("module 0x1::_DummyModule { use 0x1::Module::{$text}; }")
+            ?: error("Failed to create an item import from text: `$text`")
+        return useGroup.useSpeckList.first()
+    }
+
+    fun useSpeckForGroupWithDummyAlias(text: String): MvUseSpeck {
+        val useGroup = createFromText<MvUseGroup>("module 0x1::_DummyModule { use 0x1::Module::{$text as dummy}; }")
+            ?: error("Failed to create an item import from text: `$text`")
+        return useGroup.useSpeckList.first()
     }
 
     fun acquires(text: String): MvAcquiresType {
@@ -193,7 +177,7 @@ class MvPsiFactory(val project: Project) {
                 MoveFileType,
                 "module 0x0::$moduleName { $text }"
             ) as MoveFile
-        val functions = dummyFile.childOfType<MvModule>()?.moduleBlock?.functionList.orEmpty()
+        val functions = dummyFile.childOfType<MvModule>()?.functionList.orEmpty()
         return functions
     }
 

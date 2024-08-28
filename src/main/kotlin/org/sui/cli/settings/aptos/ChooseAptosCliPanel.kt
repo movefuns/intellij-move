@@ -9,6 +9,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.JBPopupFactory.ActionSelectionAid.SPEEDSEARCH
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfo
+import com.intellij.openapi.util.io.toNioPathOrNull
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.ui.components.DropDownLink
 import com.intellij.ui.components.JBRadioButton
@@ -24,7 +25,8 @@ import org.sui.cli.settings.aptos.AptosExecType.LOCAL
 import org.sui.cli.settings.isValidExecutable
 import org.sui.ide.actions.DownloadSuiSDKAction
 import org.sui.ide.notifications.logOrShowBalloon
-import org.sui.openapiext.PluginPathManager
+import org.sui.openapiext.BundledAptosManager
+import org.sui.openapiext.SUPPORTED_PLATFORMS
 import org.sui.openapiext.pathField
 import org.sui.stdext.blankToNull
 import org.sui.stdext.toPathOrNull
@@ -37,21 +39,21 @@ enum class AptosExecType {
     companion object {
         val isPreCompiledSupportedForThePlatform: Boolean
             get() {
-                if (Registry.`is`("org.move.aptos.bundled.force.supported", false)) {
-                    return true
-                }
-                if (Registry.`is`("org.move.aptos.bundled.force.unsupported", false)) {
-                    return false
-                }
+//                if (Registry.`is`("org.move.aptos.bundled.force.supported", false)) {
+//                    return true
+//                }
+//                if (Registry.`is`("org.move.aptos.bundled.force.unsupported", false)) {
+//                    return false
+//                }
                 return !SystemInfo.isMac
             }
 
-        fun bundledPath(): String? = PluginPathManager.bundledAptosCli
+        val bundledAptosCLIPath: Path? get() = BundledAptosManager.getBundledAptosPath()
 
         fun aptosExecPath(execType: AptosExecType, localAptosPath: String?): Path? {
             val pathCandidate =
                 when (execType) {
-                    BUNDLED -> bundledPath()?.toPathOrNull()
+                    BUNDLED -> bundledAptosCLIPath
                     LOCAL -> localAptosPath?.blankToNull()?.toPathOrNull()
                 }
             return pathCandidate?.takeIf { it.isValidExecutable() }
@@ -68,7 +70,7 @@ class ChooseAptosCliPanel(versionUpdateListener: (() -> Unit)?) : Disposable {
 
     var data: Data
         get() {
-            val execType = if (bundledRadioButton.isSelected) BUNDLED else LOCAL
+            val execType = if (isBundledSelected) BUNDLED else LOCAL
             val path = localPathField.text.blankToNull()
             return Data(
                 aptosExecType = execType,
@@ -103,6 +105,8 @@ class ChooseAptosCliPanel(versionUpdateListener: (() -> Unit)?) : Disposable {
 
     private val bundledRadioButton = JBRadioButton("Bundled")
     private val localRadioButton = JBRadioButton("Local")
+
+    private val isBundledSelected get() = bundledRadioButton.isSelected
 
     private val downloadPrecompiledBinaryAction = DownloadSuiSDKAction().also {
         it.onFinish = { sdk ->
@@ -184,10 +188,7 @@ class ChooseAptosCliPanel(versionUpdateListener: (() -> Unit)?) : Disposable {
 
     private fun updateVersion() {
         val aptosPath =
-            when {
-                bundledRadioButton.isSelected -> AptosExecType.bundledPath()
-                else -> localPathField.text
-            }?.toPathOrNull()
+            if (isBundledSelected) AptosExecType.bundledAptosCLIPath else localPathField.text.toNioPathOrNull()
         versionLabel.updateAndNotifyListeners(aptosPath)
     }
 
@@ -200,10 +201,10 @@ class ChooseAptosCliPanel(versionUpdateListener: (() -> Unit)?) : Disposable {
         // do not save if it's not an aptos
         if ("aptos" !in versionLabel.text) return
 
-        val settingsService = sdksService()
-        if (sdkPath in settingsService.state.aptosSdkPaths) return
+//        val settingsService = sdksService()
+//        if (sdkPath in settingsService.state.aptosSdkPaths) return
 
-        settingsService.state.aptosSdkPaths.add(sdkPath)
+//        settingsService.state.aptosSdkPaths.add(sdkPath)
 
         LOG.logOrShowBalloon("Aptos SDK saved: $sdkPath")
     }

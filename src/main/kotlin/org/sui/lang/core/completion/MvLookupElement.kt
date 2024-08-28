@@ -60,7 +60,7 @@ fun getLookupElementProperties(
     var props = LookupElementProperties()
     val expectedTy = context.expectedTy
     if (expectedTy != null) {
-        val msl = context.isMsl()
+        val msl = context.msl
         val declaredTy =
             when (element) {
             is MvFunctionLike -> element.declaredType(msl).retType
@@ -72,7 +72,7 @@ fun getLookupElementProperties(
                 // so changing to infallible getPatTypeOrUnknown()
                 inference?.getPatTypeOrUnknown(element) ?: TyUnknown
             }
-                is MvStructField -> element.type?.loweredType(msl) ?: TyUnknown
+                is MvNamedFieldDecl -> element.type?.loweredType(msl) ?: TyUnknown
             else -> TyUnknown
         }
         val itemTy = declaredTy.substitute(subst)

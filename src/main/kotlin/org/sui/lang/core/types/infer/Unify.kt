@@ -5,7 +5,12 @@
 
 package org.sui.lang.core.types.infer
 
-import org.sui.ide.formatter.impl.location
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import io.ktor.http.*
+import org.sui.ide.formatter.impl.PsiLocation
+import org.sui.ide.formatter.impl.elementLocation
+import org.sui.lang.core.psi.MvTypeParameter
 import org.sui.lang.core.types.ty.TyInfer
 import org.sui.lang.toNioPathOrNull
 
@@ -99,7 +104,7 @@ class UnificationTable<K : Node, V> {
         val newVal = if (val1 != null && val2 != null) {
             if (val1 != val2) {
                 // must be solved on the upper level
-                error("Unification error: unifying $key1 -> $key2")
+                unificationError("Unification error: unifying $key1 -> $key2")
             }
             val1
         } else {
@@ -116,14 +121,18 @@ class UnificationTable<K : Node, V> {
             when (key) {
                 is TyInfer.TyVar -> {
                     val origin = key.origin?.origin
-                    val originFilePath = origin?.containingFile?.toNioPathOrNull()
-                    error(
-                        "TyVar unification error: " +
-                                "unifying $key (with origin at $originFilePath ${origin?.location}) " +
-                                "-> $value, node.value = ${node.value}"
+//                    val originFilePath = origin?.containingFile?.toNioPathOrNull()
+                    unificationError(
+                        "unifying $key -> $value, node.value = ${node.value}",
+                        origin = origin
                     )
+//                    unificationError(
+//                        "TyVar unification error: unifying $key -> $value" +
+//                                " (with origin at $originFilePath ${origin?.location}), node.value = ${node.value}"
+//                    )
                 }
-                else -> error("Unification error: unifying $key -> $value")
+
+                else -> unificationError("Unification error: unifying $key -> $value")
             }
         }
         setValue(node, value)
@@ -133,7 +142,7 @@ class UnificationTable<K : Node, V> {
         if (isSnapshot()) undoLog.add(UndoLogEntry.SetParent(node, node.parent))
     }
 
-    private fun isSnapshot(): Boolean = !undoLog.isEmpty()
+    private fun isSnapshot(): Boolean = undoLog.isNotEmpty()
 
     fun startSnapshot(): Snapshot {
         undoLog.add(UndoLogEntry.OpenSnapshot)
@@ -166,6 +175,61 @@ class UnificationTable<K : Node, V> {
     }
 }
 
+fun unificationError(message: String, origin: MvTypeParameter? = null): Nothing {
+    if (origin == null) {
+        throw UnificationError(message, origin = null)
+    }
+    val file = origin.containingFile
+    val error = if (file != null) {
+        UnificationError(message, origin = PsiErrorContext(origin.text, file, file.elementLocation(origin)))
+    } else {
+        UnificationError(message, PsiErrorContext(origin.text, null, null))
+    }
+    throw error
+}
+
+data class PsiErrorContext(val text: String, val file: PsiFile?, val location: PsiLocation?) {
+    override fun toString(): String {
+        return "${text.quote()} \n(at ${file?.toNioPathOrNull()} $location)"
+    }
+
+    companion object {
+        fun fromElement(element: PsiElement): PsiErrorContext {
+            val elementText = element.text
+            val file = element.containingFile
+            if (file != null) {
+                return PsiErrorContext(elementText, file, file.elementLocation(element))
+            } else {
+                return PsiErrorContext(elementText, null, null)
+            }
+        }
+    }
+}
+
+class UnificationError(
+    message: String,
+    val origin: PsiErrorContext? = null,
+    var context: PsiErrorContext? = null,
+) :
+    IllegalStateException(message) {
+
+    override fun toString(): String {
+        var message = super.toString()
+        val origin = origin
+        if (origin != null) {
+            message += ", \ntype parameter origin: \n$origin"
+        }
+        val context = context
+        if (context != null) {
+            message += ", \ncontext: \n$context"
+        }
+//        val combine = combine
+//        if (combine != null) {
+//            message += ", \ncombine types: ${combine.ty1} <-> ${combine.ty2}"
+//        }
+        return message
+    }
+}
 
 interface Snapshot {
     fun commit()
@@ -178,7 +242,7 @@ private sealed class UndoLogEntry {
 
     object OpenSnapshot : UndoLogEntry() {
         override fun rollback() {
-            error("Cannot rollback an uncommitted snapshot")
+            unificationError("Cannot rollback an uncommitted snapshot")
         }
     }
 

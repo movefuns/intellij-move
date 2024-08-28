@@ -365,4 +365,173 @@ module 0x1::m {
         }        
     """
     )
+
+    fun `test module resolution not available on type position`() = checkByCode(
+        """
+        module 0x1::Transaction {
+            struct Type {
+                val: u8                   
+            }
+        }
+        module 0x1::M {
+            fun main(a: 0x1::Transaction::Transaction) {
+                                           //^ unresolved
+            }
+        }
+    """
+    )
+
+    fun `test resolve enum type`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One, Two }
+               //X
+            fun main(one: S::One) {
+                        //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve enum type from module`() = checkByCode(
+        """
+        module 0x1::m { 
+            enum S { One, Two }
+               //X
+        }
+        module 0x1::main {
+            use 0x1::m;
+            fun main(one: m::S) {
+                           //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve enum type from module with variant`() = checkByCode(
+        """
+        module 0x1::m { 
+            enum S { One, Two }
+               //X
+        }
+        module 0x1::main {
+            use 0x1::m;
+            fun main(one: m::S::One) {
+                           //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve enum type from module with the same name`() = checkByCode(
+        """
+        module 0x1::S { 
+            enum S { One, Two }
+               //X
+        }
+        module 0x1::main {
+            use 0x1::S;
+            fun main(one: S::S::One) {
+                           //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve enum type from fully qualified`() = checkByCode(
+        """
+        module 0x1::m { 
+            enum S { One, Two }
+               //X
+        }
+        module 0x1::main {
+            fun main(one: 0x1::m::S) {
+                                //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve enum type from fully qualified with variant`() = checkByCode(
+        """
+        module 0x1::m { 
+            enum S { One, Two }
+               //X
+        }
+        module 0x1::main {
+            fun main(one: 0x1::m::S::One) {
+                                //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve enum type from item import`() = checkByCode(
+        """
+        module 0x1::m { 
+            enum S { One, Two }
+               //X
+        }
+        module 0x1::main {
+            use 0x1::m::S;
+            fun main(one: S::One) {
+                        //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve enum variant`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One, Two }
+                   //X
+            fun main(one: S::One) {
+                            //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve enum variant from module`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One, Two }
+                   //X
+        }
+        module 0x1::main {
+            use 0x1::m;
+            fun main(one: m::S::One) {
+                               //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve enum variant from module fully qualified`() = checkByCode(
+        """
+        module 0x1::m {
+            enum S { One, Two }
+                   //X
+        }
+        module 0x1::main {
+            fun main(one: 0x1::m::S::One) {
+                                   //^
+            }
+        }        
+    """
+    )
+
+    fun `test resolve types with shadowing`() = checkByCode(
+        """
+        module 0x1::m {
+            struct VestingContract {}
+            fun main<VestingContract>() {
+                       //X
+                let t: VestingContract;
+                          //^
+            }
+        }        
+    """
+    )
 }

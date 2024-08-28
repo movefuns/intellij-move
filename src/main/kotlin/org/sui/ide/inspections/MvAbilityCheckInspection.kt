@@ -78,7 +78,7 @@ class MvAbilityCheckInspection : MvLocalInspectionTool() {
                             val message =
                                 "The type '${fieldTy.name()}' does not have the ability '${requiredAbility.label()}' " +
                                         "required by the declared ability '${ability.label()}' " +
-                                        "of the struct '${field.structItem.name}'"
+                                        "of the struct '${field.structItem?.name}'"
                             holder.registerProblem(field, message, ProblemHighlightType.GENERIC_ERROR)
                         }
                     }

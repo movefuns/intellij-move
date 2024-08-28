@@ -16,7 +16,7 @@ class MvStructureViewTreeElement(val element: NavigatablePsiElement): StructureV
     val isPublic: Boolean
         get() {
             return when (element) {
-                is MvFunction -> element.visibility != FunctionVisibility.PRIVATE
+                is MvFunction -> element.isPublic
                 is MvConst -> false
                 else -> true
             }
@@ -40,7 +40,7 @@ class MvStructureViewTreeElement(val element: NavigatablePsiElement): StructureV
             is MoveFile -> {
                 listOf(
                     element.modules().toList(),
-                    element.scriptBlocks().flatMap { it.functionList }
+                    element.scripts().flatMap { it.functionList }
                 ).flatten()
             }
             is MvAddressDef -> element.modules()

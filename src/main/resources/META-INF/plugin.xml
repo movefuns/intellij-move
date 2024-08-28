@@ -1,4 +1,6 @@
-<idea-plugin>
+<idea-plugin
+        require-restart="true"
+>
     <id>org.sui.lang</id>
     <name>Sui Move Language</name>
 
@@ -6,51 +8,43 @@
 
     <description>
         <![CDATA[
-            <p>
-                <ul>Support Move 2024 grammar.
-                  <li>syntax highlighting.</li>
-                  <li>struct declarations.</li>
-                  <li>new keywords.</li>
-                  <li>preload item.</li>
-                  <li>other grammars are being adapted(Method syntax,Positional fields,Loop labels).</li>
-                </ul>
 
-                <p>This plugin provides enhanced support for Sui Move, a language tailored for blockchain development. It bolsters coding efficiency and workflow with a suite of features:</p>
-                <ul>
-                  <li><strong>Efficient Syntax Highlighting:</strong> For improved code clarity and error reduction.</li>
-                  <li><strong>Advanced Code Formatting:</strong> To maintain a uniform code structure.</li>
-                  <li><strong>Go-to-Definition:</strong> For effortless code navigation.</li>
-                  <li><strong>Automatic Type Inference:</strong> For concise coding with smart type predictions.</li>
-                  <li><strong>Execute Custom Commands:</strong> Customizable to fit project-specific needs.</li>
-                  <li><strong>Quick Access Buttons:</strong> To expedite development tasks.</li>
-                  <li><strong>Seamless sui Binary Integration:</strong> For smooth interaction with Sui Move tools.</li>
-                </ul>
-                <p>The plugin also allows for environment customization through the Sui Cli Path and includes a dedicated ToolWindow for effective project management. Maintain optimal performance by keeping the plugin up to date.</p>
-            </p>
-            <h2>Usage</h2>
-            <h3>Set the Sui Cli Path</h3>
-            <p>Go to <strong>Settings > Languages & Frameworks > Sui Move Language</strong>, select the sui cli path.</p>
-            <h3>Using the ToolWindow</h3>
-            <p>The ToolWindow offers several functionalities:</p>
+            <p>This IntelliJ IDEA plugin streamlines your Sui Move development workflow.</p>
+
+            <h3>Boost your productivity with:</h3>
+
             <ul>
-              <li><strong>Refresh Project:</strong> Synchronizes the latest project state.</li>
-              <li><strong>Get Active Address:</strong> Displays current active address.</li>
-              <li><strong>Switch Account:</strong> Switch between different accounts.</li>
-              <li><strong>Switch Network:</strong> Switch between networks, like development to test.</li>
+              <li><strong>Syntax highlighting:</strong> Write code faster with fewer errors.</li>
+              <li><strong>Code formatting:</strong> Keep your code clean and consistent.</li>
+              <li><strong>Go-to-definition:</strong> Navigate your codebase instantly.</li>
+              <li><strong>Type inference:</strong> Let the plugin predict your types for cleaner code.</li>
+              <li><strong>Custom commands:</strong> Tailor commands to your project's needs.</li>
+              <li><strong>Quick access buttons:</strong> Speed up common development tasks.</li>
+              <li><strong>Sui binary integration:</strong> Interact seamlessly with Sui Move tools.</li>
             </ul>
-            <h3>Execute Custom Command</h3>
-            <p>Configure custom commands in <strong>Edit Configurations</strong> in the toolbar.</p>
-            <p>Add <strong>Sui Command</strong>, set name, command. Use the <strong>Run Button</strong> button to execute.</p>
-            <p>You can also add another blockchain cli commands in the Configuration List.</p>
-            <p>Click the <strong>Move</strong> to add a new customer configuration.</p>
-            <p>Its configuration process is similar to Sui Command.</p>
-            <p><strong>Note:</strong> Ensure the working directory is in the current project.</p>
-            <p>Issues or feature requests? Visit our GitHub repository<a>[https://github.com/movefuns/intellij-move]</a>.</p>
+
+            <h3>Effortlessly manage your project:</h3>
+
+            <ul>
+              <li><strong>Customizable environment:</strong> Set your Sui CLI path for a personalized setup.</li>
+              <li><strong>Dedicated ToolWindow:</strong> Refresh your project, manage accounts, switch networks, and more – all in one place.</li>
+            </ul>
+
+            <h3>Get started:</h3>
+
+            <ol>
+              <li><strong>Install the plugin:</strong> Find it on the IntelliJ IDEA plugin marketplace.</li>
+              <li><strong>Set your Sui CLI path:</strong> Go to <em>Settings > Languages & Frameworks > Sui Move Language</em>.</li>
+              <li><strong>Explore the ToolWindow:</strong> Access powerful features to manage your project.</li>
+              <li><strong>Define custom commands:</strong> Configure and run project-specific commands with ease.</li>
+            </ol>
+
+            <h3>Need help?</h3>
+
+            <p>Visit our GitHub repository: <a href="https://github.com/movefuns/intellij-move">https://github.com/movefuns/intellij-move</a></p>
         ]]>
     </description>
 
-    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-     on how to target different products -->
     <resource-bundle>messages.MvBundle</resource-bundle>
 
     <depends>com.intellij.modules.platform</depends>
@@ -76,10 +70,16 @@
                                         implementationClass="org.sui.ide.lineMarkers.ItemSpecsLineMarkerProvider"/>
 
         <!-- PSI managing -->
+
         <projectService serviceInterface="org.sui.lang.core.psi.MvPsiManager"
                         serviceImplementation="org.sui.lang.core.psi.MvPsiManagerImpl"/>
 
         <projectService serviceImplementation="org.sui.cli.settings.MvProjectSettingsService"/>
+
+        <!--specificallytosupportnamedaddressesintests,doesnothinginnon-testenvironment-->
+        <projectService serviceInterface="org.sui.cli.tests.NamedAddressService"
+                        serviceImplementation="org.sui.cli.tests.NamedAddressServiceImpl"
+                        testServiceImplementation="org.sui.cli.tests.NamedAddressServiceTestImpl"/>
 
         <configurationType
                 implementation="org.sui.cli.runConfigurations.sui.SuiCommandConfigurationType"/>
@@ -103,6 +103,7 @@
         <stubIndex implementation="org.sui.lang.index.MvEntryFunctionIndex"/>
         <stubIndex implementation="org.sui.lang.index.MvViewFunctionIndex"/>
         <stubIndex implementation="org.sui.lang.index.MvTestFunctionIndex"/>
+        <stubIndex implementation="org.sui.lang.index.MvModuleIndex"/>
         <stubIndex implementation="org.sui.lang.index.MvModuleSpecIndex"/>
 
         <lang.documentationProvider language="Sui Move"
@@ -271,10 +272,6 @@
                          enabledByDefault="true" level="WARNING"
                          implementationClass="org.sui.ide.inspections.MvLocalBindingNamingInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Redundant qualifier"
-                         enabledByDefault="false" level="WARNING"
-                         implementationClass="org.sui.ide.inspections.RedundantQualifiedPathInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Type checking"
                          enabledByDefault="true" level="ERROR"
                          implementationClass="org.sui.ide.inspections.MvTypeCheckInspection"/>
@@ -307,10 +304,6 @@
                          enabledByDefault="true" level="WARNING"
                          implementationClass="org.sui.ide.inspections.UnusedTestSignerInspection"/>
         <localInspection language="Sui Move" groupName="SuiMove"
-                         displayName="Address by value inspection"
-                         enabledByDefault="false" level="WEAK WARNING"
-                         implementationClass="org.sui.ide.inspections.AddressByValueImportInspection"/>
-        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Redundant type cast"
                          enabledByDefault="true" level="WARNING"
                          implementationClass="org.sui.ide.inspections.RedundantTypeCastInspection"/>
@@ -318,7 +311,7 @@
                          displayName="Convert to method call"
                          enabledByDefault="true" level="WEAK WARNING"
                          implementationClass="org.sui.ide.inspections.ReplaceWithMethodCallInspection"/>
-        <localInspection language="Sui Move" groupName="Move"
+        <localInspection language="Sui Move" groupName="SuiMove"
                          displayName="Convert to index expr"
                          enabledByDefault="true" level="WEAK WARNING"
                          implementationClass="org.sui.ide.inspections.compilerV2.ReplaceWithIndexExprInspection"/>
@@ -347,8 +340,7 @@
 
         <postStartupActivity
                 implementation="org.sui.ide.newProject.projectActivity.AlwaysRefreshProjectsAfterOpen"/>
-        <!--    <postStartupActivity-->
-        <!--        implementation="org.sui.cli.openProject.OpenMoveTomlOnProjectCreationFile" />-->
+        <!--        <postStartupActivity implementation="org.sui.ide.newProject.projectActivity.PreImportedModuleStartupActivity"/>-->
         <!--     background = 5 seconds delayed  -->
         <!--    <postStartupActivity-->
         <!--        implementation="org.sui.cli.openProject.CreateDefaultCompileRunConfiguration" />-->
@@ -370,9 +362,10 @@
                         testServiceImplementation="org.sui.utils.TestProjectRootServiceImpl"/>
 
         <projectService serviceImplementation="org.sui.cli.MoveProjectsService"/>
+        <!--        <projectService serviceImplementation="org.move.cli.packages.MovePackageService"/>-->
 
         <!--        <projectService serviceInterface="com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectTracker"-->
-        <!--                        serviceImplementation="org.sui.cli.projectAware.MoveExternalSystemProjectAware"-->
+        <!--                        serviceImplementation="org.move.cli.externalSystem.MoveExternalSystemProjectAware"-->
         <!--                        overrides="true" />-->
         <!--<applicationServiceserviceImplementation="org.sui.openapiext.OpenSSLInfoService"/>-->
 
@@ -392,11 +385,16 @@
             <className>org.sui.ide.intentions.RemoveCurlyBracesIntention</className>
             <category>Move</category>
         </intentionAction>
-        <intentionAction>
-            <language>Sui Move</language>
-            <className>org.sui.ide.intentions.InlineAddressBlockIntention</className>
-            <category>Move</category>
-        </intentionAction>
+        <!--    <intentionAction>-->
+        <!--      <language>Move</language>-->
+        <!--      <className>org.move.ide.intentions.InlineAddressBlockIntention</className>-->
+        <!--      <category>Move</category>-->
+        <!--    </intentionAction>-->
+        <!--        <intentionAction>-->
+        <!--            <language>Sui Move</language>-->
+        <!--            <className>org.sui.ide.intentions.InlineAddressBlockIntention</className>-->
+        <!--            <category>Move</category>-->
+        <!--        </intentionAction>-->
         <intentionAction>
             <language>Sui Move</language>
             <className>org.sui.ide.intentions.ChopParameterListIntention</className>
@@ -409,17 +407,7 @@
         </intentionAction>
         <intentionAction>
             <language>Sui Move</language>
-            <className>org.sui.ide.intentions.ChopAttrArgumentListIntention</className>
-            <category>Move</category>
-        </intentionAction>
-        <intentionAction>
-            <language>Sui Move</language>
             <className>org.sui.ide.intentions.ChopStructLiteralIntention</className>
-            <category>Move</category>
-        </intentionAction>
-        <intentionAction>
-            <language>Sui Move</language>
-            <className>org.sui.ide.intentions.ChopStructPatIntention</className>
             <category>Move</category>
         </intentionAction>
 
@@ -482,6 +470,25 @@
                 description="Download sui-cli executable from Github"
                 class="org.sui.ide.actions.DownloadSuiSDKAction"
                 icon="AllIcons.Actions.Download"/>
+
+        <action id="Sui.RunExternalLinter"
+                class="org.sui.ide.actions.MvRunExternalLinterAction"
+                icon="/icons/externalLinter.svg">
+        </action>
+        <action id="Sui.ShowSettings"
+                class="org.sui.ide.actions.MoveEditSettingsAction"
+                icon="AllIcons.General.Settings">
+        </action>
+        <action id="Sui.FetchSuiPackage"
+                class="org.sui.bytecode.FetchSuiPackageAction"
+                icon="AllIcons.Actions.Download">
+        </action>
+
+        <action id="Sui.DecompileSuiMvFile"
+                class="org.sui.bytecode.DecompileSuiMvFileAction">
+            <add-to-group group-id="ProjectViewPopupMenu"/>
+        </action>
+
         <action id="Sui.GetActiveAddress"
                 description="Get active address"
                 text="Get Active Address"
@@ -507,22 +514,7 @@
                 text="Open Objects Dialog"
                 class="org.sui.ide.actions.OpenObjectListAction"
                 icon="AllIcons.Actions.GroupByPrefix"/>
-        <action id="Sui.RunExternalLinter"
-                class="org.sui.ide.actions.MvRunExternalLinterAction"
-                icon="/icons/externalLinter.svg">
-        </action>
-        <action id="Sui.ShowSettings"
-                class="org.sui.ide.actions.MoveEditSettingsAction"
-                icon="AllIcons.General.Settings">
-        </action>
-        <action id="Sui.FetchSuiPackage"
-                class="org.sui.bytecode.FetchSuiPackageAction"
-                icon="AllIcons.Actions.Download">
-        </action>
-        <action id="Sui.DecompileSuiMvFile"
-                class="org.sui.bytecode.DecompileSuiMvFileAction">
-            <add-to-group group-id="ProjectViewPopupMenu"/>
-        </action>
+
         <group id="Move.Sui">
             <reference id="Sui.RefreshAllProjects"/>
             <separator/>
@@ -530,8 +522,6 @@
             <separator/>
             <reference id="ExpandAll"/>
             <reference id="CollapseAll"/>
-            <!--            <separator/>-->
-            <!--            <reference id="Sui.FetchSuiPackage"/>-->
             <separator/>
             <reference id="Sui.ShowSettings"/>
             <separator/>
