@@ -1,17 +1,23 @@
 package org.sui.lang.core.resolve2
 
+import com.intellij.openapi.util.Key
+import com.intellij.psi.util.CachedValue
 import com.intellij.psi.util.PsiTreeUtil
 import org.sui.ide.inspections.imports.usageScope
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.resolve.*
 import org.sui.lang.core.resolve.LetStmtScope.*
-import org.sui.lang.core.resolve.ref.NAMES
+import org.sui.lang.core.resolve.ref.ENUMS
 import org.sui.lang.core.resolve.ref.NONE
 import org.sui.lang.core.resolve.ref.Namespace
 import org.sui.lang.core.resolve.ref.Namespace.NAME
+import org.sui.lang.core.resolve.ref.TYPES
 import org.sui.lang.core.resolve2.ref.ResolutionContext
 import org.sui.lang.core.resolve2.util.forEachLeafSpeck
+import org.sui.utils.cache
+import org.sui.utils.cacheManager
+import org.sui.utils.psiCacheResult
 
 fun processItemsInScope(
     scope: MvElement,
@@ -26,36 +32,38 @@ fun processItemsInScope(
             NAME -> {
                 val found = when (scope) {
                     is MvModule -> {
+                        // pre-imported items
+                        if (PreImportedModuleService.getInstance(scope.project).processPreImportedItems(elementNs, processor)) return true
+
                         // try enum variants first
-                        val found = processor.processAll(elementNs, scope.enumVariants())
-                        found || processor.processAllItems(
+                        if (processor.processAll(elementNs, scope.enumVariants())) return true
+                        processor.processAllItems(
                             elementNs,
                             scope.structs(),
-                            scope.consts(),
+                            scope.consts()
                         )
                     }
-
                     is MvModuleSpecBlock -> processor.processAllItems(elementNs, scope.schemaList)
                     is MvScript -> processor.processAllItems(elementNs, scope.constList)
                     is MvFunctionLike -> processor.processAll(elementNs, scope.parametersAsBindings)
-                    is MvLambdaExpr -> processor.processAll(elementNs, scope.bindingPatList)
+                    is MvLambdaExpr -> processor.processAll(elementNs, scope.patBindingList)
                     is MvForExpr -> {
-                        val iterBinding = scope.forIterCondition?.bindingPat
+                        val iterBinding = scope.forIterCondition?.patBinding
                         if (iterBinding != null) {
                             processor.process(elementNs, iterBinding)
                         } else {
                             false
                         }
                     }
-
                     is MvMatchArm -> {
-                        if (cameFrom is MvPat) continue
-                        // only use those bindings for the match arm rhs
-                        val matchBindings = scope.pat.bindings.toList()
-//                        val matchBindings = scope.matchPat.pat.bindings.toList()
-                        processor.processAll(elementNs, matchBindings)
-                    }
+                        if (cameFrom !is MvPat) {
+                            // coming from rhs, use pat bindings from lhs
+                            if (processor.processAll(elementNs, scope.pat.bindings)) return true
+                            continue
+                        }
 
+                        false
+                    }
                     is MvItemSpec -> {
                         val specItem = scope.item
                         when (specItem) {
@@ -63,15 +71,13 @@ fun processItemsInScope(
                                 processor.processAll(
                                     elementNs,
                                     specItem.valueParamsAsBindings,
-                                    specItem.specFunctionResultParameters.map { it.bindingPat },
+                                    specItem.specFunctionResultParameters.map { it.patBinding },
                                 )
                             }
-
                             is MvStruct -> processor.processAll(elementNs, specItem.fields)
                             else -> false
                         }
                     }
-
                     is MvSchema -> processor.processAll(elementNs, scope.fieldsAsBindings)
                     is MvQuantBindingsOwner -> processor.processAll(elementNs, scope.bindings)
                     is MvCodeBlock,
@@ -87,7 +93,6 @@ fun processItemsInScope(
                                                 && !PsiTreeUtil.isAncestor(cameFrom, it, true)
                                     }
                             }
-
                             is MvSpecCodeBlock -> {
                                 val letStmtScope = ctx.element.letStmtScope
                                 when (letStmtScope) {
@@ -108,11 +113,9 @@ fun processItemsInScope(
                                                         && !PsiTreeUtil.isAncestor(cameFrom, it, true)
                                             }
                                     }
-
                                     NOT_MSL -> emptyList()
                                 }
                             }
-
                             else -> error("unreachable")
                         }
                         // shadowing support (look at latest first)
@@ -140,12 +143,10 @@ fun processItemsInScope(
                         }
                         found
                     }
-
                     else -> false
                 }
                 found
             }
-
             Namespace.FUNCTION -> {
                 val found = when (scope) {
                     is MvModule -> {
@@ -160,7 +161,6 @@ fun processItemsInScope(
                             specInlineFunctions
                         )
                     }
-
                     is MvModuleSpecBlock -> {
                         val specFunctions = scope.specFunctionList
                         val specInlineFunctions = scope.moduleItemSpecList.flatMap { it.specInlineFunctions() }
@@ -170,9 +170,8 @@ fun processItemsInScope(
                             specInlineFunctions
                         )
                     }
-
                     is MvFunctionLike -> processor.processAll(elementNs, scope.lambdaParamsAsBindings)
-                    is MvLambdaExpr -> processor.processAll(elementNs, scope.bindingPatList)
+                    is MvLambdaExpr -> processor.processAll(elementNs, scope.patBindingList)
                     is MvItemSpec -> {
                         val item = scope.item
                         when (item) {
@@ -180,12 +179,10 @@ fun processItemsInScope(
                             else -> false
                         }
                     }
-
                     is MvSpecCodeBlock -> {
                         val inlineFunctions = scope.specInlineFunctions().asReversed()
                         processor.processAllItems(ns, inlineFunctions)
                     }
-
                     else -> false
                 }
                 found
@@ -204,16 +201,13 @@ fun processItemsInScope(
                             false
                         }
                     }
-
                     is MvModule -> {
-                        val f = processor.processAll(elementNs, scope.enumVariants())
-                        f || processor.processAllItems(
-                            ns,
+                        if (processor.processAll(TYPES, scope.enumVariants())) return true
+                        processor.processAllItems(
+                            TYPES,
                             scope.structs(),
-                            scope.enumList
                         )
                     }
-
                     is MvApplySchemaStmt -> {
                         val toPatterns = scope.applyTo?.functionPatternList.orEmpty()
                         val patternTypeParams =
@@ -224,6 +218,13 @@ fun processItemsInScope(
                     else -> false
                 }
                 found
+            }
+
+            Namespace.ENUM -> {
+                if (scope is MvModule) {
+                    if (processor.processAllItems(ENUMS, scope.enumList)) return true
+                }
+                false
             }
 
             Namespace.SCHEMA -> when (scope) {
@@ -245,42 +246,158 @@ fun processItemsInScope(
 }
 
 private fun MvItemsOwner.processUseSpeckElements(ns: Set<Namespace>, processor: RsResolveProcessor): Boolean {
-    var stop = false
-    for (useStmt in this.useStmtList) {
-        val stmtUsageScope = useStmt.usageScope
-        useStmt.forEachLeafSpeck { speckPath, alias ->
-            val name = if (alias != null) {
-                alias.name ?: return@forEachLeafSpeck false
+    // pre-imported modules
+    val preImportedService = PreImportedModuleService.getInstance(project)
+    if (preImportedService.processPreImportedModules(ns, processor)) return true
+
+    val useSpeckItems = getUseSpeckItems()
+    for (useSpeckItem in useSpeckItems) {
+        val speckPath = useSpeckItem.speckPath
+        val alias = useSpeckItem.alias
+
+        val resolvedItem = speckPath.reference?.resolve()
+        if (resolvedItem == null) {
+            if (alias != null) {
+                val referenceName = useSpeckItem.referenceName ?: continue
+                // aliased element cannot be resolved, but alias itself is valid, resolve to it
+                if (processor.process(referenceName, NONE, alias)) return true
+            }
+            continue
+        }
+
+        val element = alias ?: resolvedItem
+        val namespace = resolvedItem.namespace
+        if (namespace in ns) {
+            val referenceName = useSpeckItem.referenceName ?: continue
+            if (processor.process(
+                    referenceName,
+                    element,
+                    ns,
+                    adjustedItemScope = useSpeckItem.stmtUsageScope
+                )
+            ) return true
+        }
+    }
+    return false
+//    var stop = false
+//    for (useStmt in this.useStmtList) {
+//        val stmtUsageScope = useStmt.usageScope
+//        useStmt.forEachLeafSpeck { speckPath, alias ->
+//            val name = if (alias != null) {
+//                alias.name ?: return@forEachLeafSpeck false
+//            } else {
+//                var n = speckPath.referenceName ?: return@forEachLeafSpeck false
+//                // 0x1::m::Self -> 0x1::m
+//                if (n == "Self") {
+//                    n = speckPath.qualifier?.referenceName ?: return@forEachLeafSpeck false
+//                }
+//                n
+//            }
+//            val resolvedItem = speckPath.reference?.resolve()
+//            if (resolvedItem == null) {
+//                if (alias != null) {
+//                    // aliased element cannot be resolved, but alias itself is valid, resolve to it
+//                    if (processor.process(name, NONE, alias)) {
+//                        stop = true
+//                        return@forEachLeafSpeck true
+//                    }
+//                }
+//                return@forEachLeafSpeck false
+//            }
+//
+//            val element = alias ?: resolvedItem
+//            val namespace = resolvedItem.namespace
+//            if (namespace in ns) {
+//                val visibilityFilter =
+//                    resolvedItem.visInfo(adjustScope = stmtUsageScope).createFilter()
+//                if (processor.process(name, element, ns, visibilityFilter)) {
+//                    stop = true
+//                    return@forEachLeafSpeck true
+//                }
+//            }
+//            false
+//        }
+//        if (stop) return true
+//    }
+//    return stop
+}
+
+private val USE_SPECK_ITEMS_KEY: Key<CachedValue<List<UseSpeckItem>>> = Key.create("USE_SPECK_ITEMS_KEY")
+
+private fun MvItemsOwner.getUseSpeckItems(): List<UseSpeckItem> =
+    project.cacheManager.cache(this, USE_SPECK_ITEMS_KEY) {
+        val items = buildList {
+            for (useStmt in useStmtList) {
+                val usageScope = useStmt.usageScope
+                useStmt.forEachLeafSpeck { speckPath, alias ->
+                    add(UseSpeckItem(speckPath, alias, usageScope))
+                }
+            }
+        }
+        this.psiCacheResult(items)
+    }
+
+private data class UseSpeckItem(
+    val speckPath: MvPath,
+    val alias: MvUseAlias?,
+    val stmtUsageScope: NamedItemScope
+) {
+    val referenceName: String?
+        get() {
+            if (alias != null) {
+                return alias.name
+//            alias.name ?: return null
             } else {
-                var n = speckPath.referenceName ?: return@forEachLeafSpeck false
+                var n = speckPath.referenceName ?: return null
                 // 0x1::m::Self -> 0x1::m
                 if (n == "Self") {
-                    n = speckPath.qualifier?.referenceName ?: return@forEachLeafSpeck false
+                    n = speckPath.qualifier?.referenceName ?: return null
                 }
-                n
+                return n
             }
-            val resolvedItem = speckPath.reference?.resolve()
-            if (resolvedItem == null) {
-                if (alias != null) {
-                    // aliased element cannot be resolved, but alias itself is valid, resolve to it
-                    if (processor.process(name, NONE, alias)) return@forEachLeafSpeck true
-                }
-                // todo: should it be resolved to import anyway?
-                return@forEachLeafSpeck false
-            }
-
-            val element = alias ?: resolvedItem
-            val namespace = resolvedItem.namespace
-            val visibilityFilter =
-                resolvedItem.visInfo(adjustScope = stmtUsageScope).createFilter()
-
-            if (namespace in ns && processor.process(name, element, ns, visibilityFilter)) {
-                stop = true
-                return@forEachLeafSpeck true
-            }
-            false
         }
-        if (stop) return true
-    }
-    return stop
 }
+
+//private fun MvItemsOwner.processUseSpeckElements(ns: Set<Namespace>, processor: RsResolveProcessor): Boolean {
+//    var stop = false
+//    for (useStmt in this.useStmtList) {
+//        val stmtUsageScope = useStmt.usageScope
+//        useStmt.forEachLeafSpeck { speckPath, alias ->
+//            val name = if (alias != null) {
+//                alias.name ?: return@forEachLeafSpeck false
+//            } else {
+//                var n = speckPath.referenceName ?: return@forEachLeafSpeck false
+//                // 0x1::m::Self -> 0x1::m
+//                if (n == "Self") {
+//                    n = speckPath.qualifier?.referenceName ?: return@forEachLeafSpeck false
+//                }
+//                n
+//            }
+//            val resolvedItem = speckPath.reference?.resolve()
+//            if (resolvedItem == null) {
+//                if (alias != null) {
+//                    // aliased element cannot be resolved, but alias itself is valid, resolve to it
+//                    if (processor.process(name, NONE, alias)) {
+//                        stop = true
+//                        return@forEachLeafSpeck true
+//                    }
+//                }
+//                return@forEachLeafSpeck false
+//            }
+//
+//            val element = alias ?: resolvedItem
+//            val namespace = resolvedItem.namespace
+//            if (namespace in ns) {
+//                val visibilityFilter =
+//                    resolvedItem.visInfo(adjustScope = stmtUsageScope).createFilter()
+//                if (processor.process(name, element, ns, visibilityFilter)) {
+//                    stop = true
+//                    return@forEachLeafSpeck true
+//                }
+//            }
+//            false
+//        }
+//        if (stop) return true
+//    }
+//    return stop
+//}

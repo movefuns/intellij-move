@@ -161,6 +161,7 @@ fun Path?.isValidExecutable(): Boolean {
 }
 
 fun isDebugModeEnabled(): Boolean = Registry.`is`("org.sui.debug.enabled")
+fun isTypeUnknownAsError(): Boolean = Registry.`is`("org.sui.types.highlight.unknown.as.error")
 
 fun debugError(message: String) {
     if (isDebugModeEnabled()) {

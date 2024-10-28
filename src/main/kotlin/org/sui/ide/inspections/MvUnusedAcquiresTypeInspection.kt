@@ -5,19 +5,20 @@ import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import org.sui.ide.inspections.fixes.RemoveAcquiresFix
 import org.sui.ide.presentation.fullnameNoArgs
-import org.sui.ide.presentation.itemDeclaredInModule
+import org.sui.ide.presentation.declaringModule
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.MvCallable
 import org.sui.lang.core.types.infer.AcquireTypesOwnerVisitor
 import org.sui.lang.core.types.infer.acquiresContext
 import org.sui.lang.core.types.infer.inference
 import org.sui.lang.core.types.infer.loweredType
+import org.sui.lang.core.types.ty.TyUnknown
 import org.sui.lang.moveProject
 
 
-class MvUnusedAcquiresTypeInspection : MvLocalInspectionTool() {
+class MvUnusedAcquiresTypeInspection: MvLocalInspectionTool() {
     override fun buildMvVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): MvVisitor =
-        object : MvVisitor() {
+        object: MvVisitor() {
             override fun visitAcquiresType(o: MvAcquiresType) {
                 val function = o.parent as? MvFunction ?: return
                 val currentModule = function.module ?: return
@@ -25,7 +26,7 @@ class MvUnusedAcquiresTypeInspection : MvLocalInspectionTool() {
                 val inference = function.inference(false)
 
                 val callAcquiresTypes = mutableSetOf<String>()
-                val visitor = object : AcquireTypesOwnerVisitor() {
+                val visitor = object: AcquireTypesOwnerVisitor() {
                     override fun visitAcquireTypesOwner(acqTypesOwner: MvAcquireTypesOwner) {
                         val types =
                             when (acqTypesOwner) {
@@ -40,15 +41,18 @@ class MvUnusedAcquiresTypeInspection : MvLocalInspectionTool() {
 
                 val unusedTypeIndices = mutableListOf<Int>()
                 val visitedTypes = mutableSetOf<String>()
-                for ((i, pathType) in function.acquiresPathTypes.withIndex()) {
-                    val ty = pathType.loweredType(false)
-                    if (!ty.itemDeclaredInModule(currentModule)) {
+                for ((i, acqPathType) in function.acquiresPathTypes.withIndex()) {
+                    val acqItemTy = acqPathType.loweredType(false)
+                    if (acqItemTy is TyUnknown) continue
+
+                    val tyItemModule = acqItemTy.declaringModule() ?: continue
+                    if (tyItemModule != currentModule) {
                         unusedTypeIndices.add(i)
                         continue
                     }
 
                     // check for duplicates
-                    val tyFullName = ty.fullnameNoArgs()
+                    val tyFullName = acqItemTy.fullnameNoArgs()
                     if (tyFullName in visitedTypes) {
                         unusedTypeIndices.add(i)
                         continue
@@ -73,10 +77,10 @@ class MvUnusedAcquiresTypeInspection : MvLocalInspectionTool() {
 
     private fun ProblemsHolder.registerUnusedAcquires(ref: PsiElement) {
         this.registerProblem(
-                ref,
-                "Unused acquires clause",
-                ProblemHighlightType.LIKE_UNUSED_SYMBOL,
-                RemoveAcquiresFix(ref)
-            )
+            ref,
+            "Unused acquires clause",
+            ProblemHighlightType.LIKE_UNUSED_SYMBOL,
+            RemoveAcquiresFix(ref)
+        )
     }
 }

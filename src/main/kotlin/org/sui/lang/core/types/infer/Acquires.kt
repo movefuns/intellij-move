@@ -14,8 +14,8 @@ import org.sui.lang.core.psi.ext.MvCallable
 import org.sui.lang.core.psi.ext.isInline
 import org.sui.lang.core.psi.ext.receiverExpr
 import org.sui.lang.core.types.ty.Ty
+import org.sui.lang.core.types.ty.TyAdt
 import org.sui.lang.core.types.ty.TyFunction
-import org.sui.lang.core.types.ty.TyStruct
 import org.sui.lang.moveProject
 
 val ACQUIRES_TYPE_CONTEXT: Key<CachedValue<AcquiresTypeContext>> = Key.create("ACQUIRES_TYPE_CONTEXT")
@@ -33,7 +33,7 @@ val MoveProject.acquiresContext: AcquiresTypeContext
     }
 
 
-abstract class AcquireTypesOwnerVisitor : PsiRecursiveElementVisitor() {
+abstract class AcquireTypesOwnerVisitor: PsiRecursiveElementVisitor() {
 
     abstract fun visitAcquireTypesOwner(acqTypesOwner: MvAcquireTypesOwner)
 
@@ -56,7 +56,7 @@ class AcquiresTypeContext {
                 // collect inner callExpr types
                 val allTypes = mutableListOf<Ty>()
 
-                val visitor = object : AcquireTypesOwnerVisitor() {
+                val visitor = object: AcquireTypesOwnerVisitor() {
                     override fun visitAcquireTypesOwner(acqTypesOwner: MvAcquireTypesOwner) {
                         val tys =
                             when (acqTypesOwner) {
@@ -94,7 +94,7 @@ class AcquiresTypeContext {
 
     fun getIndexExprTypes(indexExpr: MvIndexExpr, inference: InferenceResult): List<Ty> {
         val receiverTy = inference.getExprType(indexExpr.receiverExpr)
-        return if (receiverTy is TyStruct) {
+        return if (receiverTy is TyAdt) {
             listOf(receiverTy)
         } else {
             emptyList()

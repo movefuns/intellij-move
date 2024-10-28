@@ -9,16 +9,16 @@ import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.abilities
 import org.sui.lang.core.psi.ext.fields
 import org.sui.lang.core.psi.ext.isMsl
-import org.sui.lang.core.psi.ext.structItem
+import org.sui.lang.core.psi.ext.fieldOwner
 import org.sui.lang.core.types.infer.inferExpectedTypeArgumentTy
 import org.sui.lang.core.types.infer.inference
 import org.sui.lang.core.types.infer.loweredType
 import org.sui.lang.core.types.ty.GenericTy
 import org.sui.lang.core.types.ty.TyUnknown
 
-class MvAbilityCheckInspection : MvLocalInspectionTool() {
+class MvAbilityCheckInspection: MvLocalInspectionTool() {
     override fun buildMvVisitor(holder: ProblemsHolder, isOnTheFly: Boolean) =
-        object : MvVisitor() {
+        object: MvVisitor() {
             override fun visitValueArgumentList(o: MvValueArgumentList) {
                 if (o.isMsl()) return
 
@@ -61,7 +61,7 @@ class MvAbilityCheckInspection : MvLocalInspectionTool() {
                         val message = "The type '${actualType.text()}' does not have required " +
                                 "${pluralise(missingAbilities.size, "ability", "abilities")} " +
                                 "'$abilitiesText'"
-                                holder.registerProblem(typeArgument, message, ProblemHighlightType.GENERIC_ERROR)
+                        holder.registerProblem(typeArgument, message, ProblemHighlightType.GENERIC_ERROR)
                     }
                 }
             }
@@ -78,7 +78,7 @@ class MvAbilityCheckInspection : MvLocalInspectionTool() {
                             val message =
                                 "The type '${fieldTy.name()}' does not have the ability '${requiredAbility.label()}' " +
                                         "required by the declared ability '${ability.label()}' " +
-                                        "of the struct '${field.structItem?.name}'"
+                                        "of the struct '${field.fieldOwner.name}'"
                             holder.registerProblem(field, message, ProblemHighlightType.GENERIC_ERROR)
                         }
                     }

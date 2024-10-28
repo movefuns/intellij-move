@@ -9,6 +9,7 @@ import org.sui.lang.core.psi.MvElement
 import org.sui.lang.moveProject
 import org.sui.lang.toNioPathOrNull
 import org.sui.openapiext.common.isLightTestFile
+import org.sui.openapiext.common.isUnitTestFile
 import org.sui.openapiext.common.isUnitTestMode
 import org.sui.openapiext.pathAsPath
 import org.sui.openapiext.resolveExisting
@@ -23,7 +24,7 @@ data class MovePackage(
     val packageName: String,
     val tomlMainAddresses: PackageAddresses,
 ) {
-    val manifestFile: VirtualFile get() = contentRoot.findChild(Consts.MANIFEST_FILE)!!
+    val manifestFile: VirtualFile get() = contentRoot.findChild(MvConstants.MANIFEST_FILE)!!
 
     val manifestTomlFile: TomlFile get() = manifestFile.toPsiFile(project) as TomlFile
     val moveToml: MoveToml get() = MoveToml.fromTomlFile(this.manifestTomlFile)
@@ -52,18 +53,6 @@ data class MovePackage(
         }
     val suiConfigYaml: SuiConfigYaml?
         get() {
-//            var root: VirtualFile? = contentRoot
-//            while (true) {
-//                if (root == null) break
-//                val candidatePath = root
-//                    .findChild(".sui")
-//                    ?.takeIf { it.isDirectory }
-//                    ?.findChild("config.yaml")
-//                if (candidatePath != null) {
-//                    return SuiConfigYaml.fromPath(candidatePath.pathAsPath)
-//                }
-//                root = root.parent
-//            }
             return null
         }
 
@@ -117,7 +106,7 @@ data class MovePackage(
 val MvElement.containingMovePackage: MovePackage?
     get() {
         val elementFile = this.containingFile.virtualFile
-        if (isUnitTestMode && elementFile.isLightTestFile) {
+        if (elementFile.isUnitTestFile) {
             // temp file for light unit tests
             return project.testMoveProject.currentPackage
         }
@@ -129,7 +118,7 @@ val MvElement.containingMovePackage: MovePackage?
                 if (elementPath.relativeToOrNull(folderPath) != null) {
                     return it
                 }
-        }
+            }
             false
+        }
     }
-}

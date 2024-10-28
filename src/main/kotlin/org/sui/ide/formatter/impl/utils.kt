@@ -21,7 +21,7 @@ import com.intellij.psi.tree.TokenSet.create as ts
 val ONE_LINE_ITEMS = ts(USE_STMT, CONST)
 
 val PAREN_DELIMITED_BLOCKS = ts(
-    PARENS_EXPR, TUPLE_PAT, TUPLE_TYPE, TUPLE_LIT_EXPR,
+    PARENS_EXPR, PAT_TUPLE, TUPLE_TYPE, TUPLE_LIT_EXPR,
     CONDITION, MATCH_ARGUMENT,
     FUNCTION_PARAMETER_LIST, VALUE_ARGUMENT_LIST, ATTR_ITEM_LIST,
     ITEM_SPEC_FUNCTION_PARAMETER_LIST
@@ -42,6 +42,7 @@ val DEF_BLOCKS = ts(
     MODULE_SPEC_BLOCK, SPEC_CODE_BLOCK,
     BLOCK_FIELDS, SCHEMA_FIELDS_BLOCK
 )
+
 val BLOCK_LIKE = orSet(STRUCT_LITERAL_BLOCKS, DEF_BLOCKS, ts(ENUM_BODY, MATCH_BODY))
 val BRACE_LISTS = ts(USE_GROUP)
 val BRACE_DELIMITED_BLOCKS = orSet(BLOCK_LIKE, BRACE_LISTS)
@@ -51,7 +52,7 @@ val DELIMITED_BLOCKS = orSet(
     BLOCK_LIKE,
     ts(USE_GROUP)
 )
-val FLAT_BRACE_BLOCKS = ts(SCRIPT, MODULE, STRUCT_PAT)
+val FLAT_BRACE_BLOCKS = ts(SCRIPT, MODULE, PAT_STRUCT)
 
 fun ASTNode?.isWhitespaceOrEmpty() = this == null || textLength == 0 || elementType == TokenType.WHITE_SPACE
 
@@ -109,11 +110,11 @@ val PsiElement.fileWithLocation: Pair<PsiFile, PsiLocation>?
 /// Returns null if element does not belong to any file
 val PsiElement.location: PsiLocation?
     get() {
-    val elementOffset = this.textOffset
-    val file = this.containingFile ?: return null
-    val location = file.document?.getOffsetPosition(elementOffset) ?: return null
-    return PsiLocation(location.first, location.second)
-}
+        val elementOffset = this.textOffset
+        val file = this.containingFile ?: return null
+        val location = file.document?.getOffsetPosition(elementOffset) ?: return null
+        return PsiLocation(location.first, location.second)
+    }
 
 fun PsiFile.elementLocation(psiElement: PsiElement): PsiLocation {
     val (line, col) = document?.getOffsetPosition(psiElement.textOffset) ?: (-1 to -1)

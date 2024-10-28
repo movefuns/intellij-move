@@ -49,7 +49,6 @@ private fun MvNamedElement.getLookupElementBuilder(
                     .withTypeText(this.outerFileName)
             }
         }
-
         is MvSpecFunction -> base
             .withTailText(this.parameters.joinToSignature())
             .withTypeText(this.returnType?.type?.text ?: "()")
@@ -70,14 +69,13 @@ private fun MvNamedElement.getLookupElementBuilder(
             base
                 .withTypeText(fieldTy.text(false))
         }
-
         is MvConst -> {
             val constTy = this.type?.loweredType(msl) ?: TyUnknown
             base
                 .withTypeText(constTy.text(true))
         }
 
-        is MvBindingPat -> {
+        is MvPatBinding -> {
             val bindingInference = this.inference(msl)
             // race condition sometimes happens, when file is too big, inference is not finished yet
             val ty = bindingInference?.getPatTypeOrUnknown(this) ?: TyUnknown

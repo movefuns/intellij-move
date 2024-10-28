@@ -55,11 +55,11 @@ interface MvAttributeOwnerStub {
     }
 }
 
-abstract class MvAttributeOwnerStubBase<T : MvElement>(
+abstract class MvAttributeOwnerStubBase<T: MvElement>(
     parent: StubElement<*>?,
     elementType: IStubElementType<*, *>
-) : StubBase<T>(parent, elementType),
-    MvAttributeOwnerStub {
+): StubBase<T>(parent, elementType),
+   MvAttributeOwnerStub {
 
     override val hasAttrs: Boolean
         get() = BitUtil.isSet(flags, MvAttributeOwnerStub.ATTRS_MASK)
@@ -79,9 +79,9 @@ class MvModuleStub(
     override val name: String?,
     override val flags: Int,
     val address: StubAddress,
-) : MvAttributeOwnerStubBase<MvModule>(parent, elementType), MvNamedStub {
+): MvAttributeOwnerStubBase<MvModule>(parent, elementType), MvNamedStub {
 
-    object Type : MvStubElementType<MvModuleStub, MvModule>("MODULE") {
+    object Type: MvStubElementType<MvModuleStub, MvModule>("MODULE") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): MvModuleStub {
             val name = dataStream.readNameAsString()
             val flags = dataStream.readInt()
@@ -120,7 +120,7 @@ class MvFunctionStub(
     val visibility: VisKind?,
     val address: StubAddress,
     val moduleName: String?,
-) : MvAttributeOwnerStubBase<MvFunction>(parent, elementType), MvNamedStub {
+): MvAttributeOwnerStubBase<MvFunction>(parent, elementType), MvNamedStub {
 
     val isTest: Boolean get() = BitUtil.isSet(flags, TEST_MASK)
     val isEntry: Boolean get() = BitUtil.isSet(flags, IS_ENTRY_MASK)
@@ -149,7 +149,7 @@ class MvFunctionStub(
         return "$addressText::$moduleName::$itemName"
     }
 
-    object Type : MvStubElementType<MvFunctionStub, MvFunction>("FUNCTION") {
+    object Type: MvStubElementType<MvFunctionStub, MvFunction>("FUNCTION") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): MvFunctionStub {
             val name = dataStream.readNameAsString()
             val flags = dataStream.readInt()
@@ -222,9 +222,9 @@ class MvSpecFunctionStub(
     parent: StubElement<*>?,
     elementType: IStubElementType<*, *>,
     override val name: String?,
-) : StubBase<MvSpecFunction>(parent, elementType), MvNamedStub {
+): StubBase<MvSpecFunction>(parent, elementType), MvNamedStub {
 
-    object Type : MvStubElementType<MvSpecFunctionStub, MvSpecFunction>("SPEC_FUNCTION") {
+    object Type: MvStubElementType<MvSpecFunctionStub, MvSpecFunction>("SPEC_FUNCTION") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?) =
             MvSpecFunctionStub(
                 parentStub,
@@ -253,9 +253,9 @@ class MvStructStub(
     elementType: IStubElementType<*, *>,
     override val name: String?,
     override val flags: Int,
-) : MvAttributeOwnerStubBase<MvStruct>(parent, elementType), MvNamedStub {
+): MvAttributeOwnerStubBase<MvStruct>(parent, elementType), MvNamedStub {
 
-    object Type : MvStubElementType<MvStructStub, MvStruct>("STRUCT") {
+    object Type: MvStubElementType<MvStructStub, MvStruct>("STRUCT") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): MvStructStub {
             val name = dataStream.readNameAsString()
             val flags = dataStream.readInt()
@@ -286,9 +286,9 @@ class MvEnumStub(
     elementType: IStubElementType<*, *>,
     override val name: String?,
     override val flags: Int,
-) : MvAttributeOwnerStubBase<MvEnum>(parent, elementType), MvNamedStub {
+): MvAttributeOwnerStubBase<MvEnum>(parent, elementType), MvNamedStub {
 
-    object Type : MvStubElementType<MvEnumStub, MvEnum>("ENUM") {
+    object Type: MvStubElementType<MvEnumStub, MvEnum>("ENUM") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): MvEnumStub {
             val name = dataStream.readNameAsString()
             val flags = dataStream.readInt()
@@ -308,7 +308,7 @@ class MvEnumStub(
             val attrs = QueryAttributes(psi.attrList.asSequence())
             val flags = MvAttributeOwnerStub.extractFlags(attrs)
             return MvEnumStub(parentStub, this, psi.name, flags)
-            }
+        }
 
         override fun indexStub(stub: MvEnumStub, sink: IndexSink) = sink.indexEnumStub(stub)
     }
@@ -319,9 +319,9 @@ class MvEnumVariantStub(
     elementType: IStubElementType<*, *>,
     override val name: String?,
     override val flags: Int,
-) : MvAttributeOwnerStubBase<MvEnumVariant>(parent, elementType), MvNamedStub {
+): MvAttributeOwnerStubBase<MvEnumVariant>(parent, elementType), MvNamedStub {
 
-    object Type : MvStubElementType<MvEnumVariantStub, MvEnumVariant>("ENUM_VARIANT") {
+    object Type: MvStubElementType<MvEnumVariantStub, MvEnumVariant>("ENUM_VARIANT") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): MvEnumVariantStub {
             val name = dataStream.readNameAsString()
             val flags = dataStream.readInt()
@@ -351,9 +351,9 @@ class MvSchemaStub(
     parent: StubElement<*>?,
     elementType: IStubElementType<*, *>,
     override val name: String?
-) : StubBase<MvSchema>(parent, elementType), MvNamedStub {
+): StubBase<MvSchema>(parent, elementType), MvNamedStub {
 
-    object Type : MvStubElementType<MvSchemaStub, MvSchema>("SCHEMA") {
+    object Type: MvStubElementType<MvSchemaStub, MvSchema>("SCHEMA") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?) =
             MvSchemaStub(
                 parentStub,
@@ -381,9 +381,9 @@ class MvConstStub(
     parent: StubElement<*>?,
     elementType: IStubElementType<*, *>,
     override val name: String?
-) : StubBase<MvConst>(parent, elementType), MvNamedStub {
+): StubBase<MvConst>(parent, elementType), MvNamedStub {
 
-    object Type : MvStubElementType<MvConstStub, MvConst>("CONST") {
+    object Type: MvStubElementType<MvConstStub, MvConst>("CONST") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?) =
             MvConstStub(
                 parentStub,
@@ -411,9 +411,9 @@ class MvModuleSpecStub(
     parent: StubElement<*>?,
     elementType: IStubElementType<*, *>,
     val moduleName: String?,
-) : StubBase<MvModuleSpec>(parent, elementType) {
+): StubBase<MvModuleSpec>(parent, elementType) {
 
-    object Type : MvStubElementType<MvModuleSpecStub, MvModuleSpec>("MODULE_SPEC") {
+    object Type: MvStubElementType<MvModuleSpecStub, MvModuleSpec>("MODULE_SPEC") {
         override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?) =
             MvModuleSpecStub(
                 parentStub,
@@ -451,4 +451,3 @@ fun factory(name: String): MvStubElementType<*, *> = when (name) {
 
     else -> error("Unknown element $name")
 }
-

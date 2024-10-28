@@ -183,13 +183,11 @@ private fun showCommandLineBalloon(
             }
 
             else -> {
-                if (!command.contains("--version")) {
-                    showBalloonWithoutProject(
-                        "Execution successful",
-                        "<code>$command</code> $atWorkDir",
-                        INFORMATION
-                    )
-                }
+                showBalloonWithoutProject(
+                    "Execution successful",
+                    "<code>$command</code> $atWorkDir",
+                    INFORMATION
+                )
             }
         }
     }

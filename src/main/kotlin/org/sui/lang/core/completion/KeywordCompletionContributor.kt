@@ -6,6 +6,7 @@ import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.completion.CompletionType
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.patterns.PlatformPatterns.psiElement
+import com.jetbrains.rd.util.remove
 import org.sui.cli.settings.moveSettings
 import org.sui.lang.MvElementTypes.*
 import org.sui.lang.core.MvPsiPattern
@@ -23,7 +24,7 @@ import org.sui.lang.core.MvPsiPattern.typeParameter
 import org.sui.lang.core.TYPES
 import org.sui.lang.core.completion.providers.KeywordCompletionProvider
 
-class KeywordCompletionContributor : CompletionContributor() {
+class KeywordCompletionContributor: CompletionContributor() {
     init {
         extend(
             CompletionType.BASIC,
@@ -44,7 +45,7 @@ class KeywordCompletionContributor : CompletionContributor() {
             CompletionType.BASIC,
             module().and(identifierStatementBeginningPattern()),
             KeywordCompletionProvider(
-                *VIS_MODIFIERS,
+                *(VIS_MODIFIERS.remove("public(script)")),
                 *FUNCTION_MODIFIERS,
                 "native",
                 "fun",
@@ -80,7 +81,7 @@ class KeywordCompletionContributor : CompletionContributor() {
         extend(
             CompletionType.BASIC,
             module().and(identifierStatementBeginningPattern("native")),
-            KeywordCompletionProvider(*VIS_MODIFIERS, "fun", "struct")
+            KeywordCompletionProvider(*VIS_MODIFIERS, "fun", "entry")
         )
         extend(
             CompletionType.BASIC,
@@ -156,11 +157,11 @@ class KeywordCompletionContributor : CompletionContributor() {
 }
 
 private val VIS_MODIFIERS = arrayOf(
-            "public",
-            "public(script)",
-            "public(friend)",
-            "public(package)"
-        )
+    "public",
+    "public(script)",
+    "public(friend)",
+    "public(package)"
+)
 
 private val FUNCTION_MODIFIERS = arrayOf("entry", "inline")
 

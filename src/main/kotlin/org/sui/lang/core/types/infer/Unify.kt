@@ -15,11 +15,11 @@ import org.sui.lang.core.types.ty.TyInfer
 import org.sui.lang.toNioPathOrNull
 
 interface NodeOrValue
-interface Node : NodeOrValue {
+interface Node: NodeOrValue {
     var parent: NodeOrValue
 }
 
-data class VarValue<out V>(val value: V?, val rank: Int) : NodeOrValue
+data class VarValue<out V>(val value: V?, val rank: Int): NodeOrValue
 
 /**
  * [UnificationTable] is map from [K] to [V] with additional ability
@@ -36,11 +36,11 @@ data class VarValue<out V>(val value: V?, val rank: Int) : NodeOrValue
  * <http://en.wikipedia.org/wiki/Disjoint-set_data_structure>.
  */
 @Suppress("UNCHECKED_CAST")
-class UnificationTable<K : Node, V> {
+class UnificationTable<K: Node, V> {
     private val undoLog: MutableList<UndoLogEntry> = mutableListOf()
 
     @Suppress("UNCHECKED_CAST")
-    private data class Root<out K : Node, out V>(val key: K) {
+    private data class Root<out K: Node, out V>(val key: K) {
         private val varValue: VarValue<V> = key.parent as VarValue<V>
         val rank: Int get() = varValue.rank
         val value: V? get() = varValue.value
@@ -122,16 +122,13 @@ class UnificationTable<K : Node, V> {
                 is TyInfer.TyVar -> {
                     val origin = key.origin?.origin
 //                    val originFilePath = origin?.containingFile?.toNioPathOrNull()
-                    unificationError(
-                        "unifying $key -> $value, node.value = ${node.value}",
-                        origin = origin
-                    )
+                    unificationError("unifying $key -> $value, node.value = ${node.value}",
+                                     origin = origin)
 //                    unificationError(
 //                        "TyVar unification error: unifying $key -> $value" +
 //                                " (with origin at $originFilePath ${origin?.location}), node.value = ${node.value}"
 //                    )
                 }
-
                 else -> unificationError("Unification error: unifying $key -> $value")
             }
         }
@@ -149,7 +146,7 @@ class UnificationTable<K : Node, V> {
         return SnapshotImpl(undoLog.size - 1)
     }
 
-    private inner class SnapshotImpl(val position: Int) : Snapshot {
+    private inner class SnapshotImpl(val position: Int): Snapshot {
         override fun commit() {
             assertOpenSnapshot(this)
             if (position == 0) {
@@ -210,7 +207,7 @@ class UnificationError(
     message: String,
     val origin: PsiErrorContext? = null,
     var context: PsiErrorContext? = null,
-) :
+):
     IllegalStateException(message) {
 
     override fun toString(): String {
@@ -240,27 +237,27 @@ interface Snapshot {
 private sealed class UndoLogEntry {
     abstract fun rollback()
 
-    object OpenSnapshot : UndoLogEntry() {
+    object OpenSnapshot: UndoLogEntry() {
         override fun rollback() {
             unificationError("Cannot rollback an uncommitted snapshot")
         }
     }
 
-    object CommittedSnapshot : UndoLogEntry() {
+    object CommittedSnapshot: UndoLogEntry() {
         override fun rollback() {
             // This occurs when there are nested snapshots and
             // the inner is committed but outer is rolled back.
         }
     }
 
-    data class SetParent(val node: Node, val oldParent: NodeOrValue) : UndoLogEntry() {
+    data class SetParent(val node: Node, val oldParent: NodeOrValue): UndoLogEntry() {
         override fun rollback() {
             node.parent = oldParent
         }
     }
 }
 
-class CombinedSnapshot(private vararg val snapshots: Snapshot) : Snapshot {
+class CombinedSnapshot(private vararg val snapshots: Snapshot): Snapshot {
     override fun rollback() = snapshots.forEach { it.rollback() }
     override fun commit() = snapshots.forEach { it.commit() }
 }

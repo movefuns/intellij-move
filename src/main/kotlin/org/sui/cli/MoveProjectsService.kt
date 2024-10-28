@@ -35,7 +35,7 @@ import org.sui.ide.notifications.logOrShowBalloon
 import org.sui.lang.core.psi.ext.elementType
 import org.sui.lang.toNioPathOrNull
 import org.sui.openapiext.checkReadAccessAllowed
-import org.sui.openapiext.common.isLightTestFile
+import org.sui.openapiext.common.isUnitTestFile
 import org.sui.openapiext.common.isUnitTestMode
 import org.sui.openapiext.debugInProduction
 import org.sui.openapiext.toVirtualFile
@@ -52,7 +52,7 @@ val Project.moveProjectsService get() = service<MoveProjectsService>()
 
 val Project.hasMoveProject get() = this.moveProjectsService.allProjects.isNotEmpty()
 
-class MoveProjectsService(val project: Project) : Disposable {
+class MoveProjectsService(val project: Project): Disposable {
 
     var initialized = false
 
@@ -64,11 +64,11 @@ class MoveProjectsService(val project: Project) : Disposable {
 
     val hasAtLeastOneValidProject: Boolean get() = this.allProjects.isNotEmpty()
 
-    fun scheduleProjectsRefresh(reason: String? = null): CompletableFuture<List<MoveProject>> {
+    fun scheduleProjectsRefresh(reason: String?): CompletableFuture<List<MoveProject>> {
         LOG.logOrShowBalloon("Refresh Projects ($reason)")
         return modifyProjectModel {
-                doRefreshProjects(project, reason)
-            }
+            doRefreshProjects(project, reason)
+        }
     }
 
     @TestOnly
@@ -91,8 +91,8 @@ class MoveProjectsService(val project: Project) : Disposable {
         projectTracker.activate(moveProjectAware.projectId)
 
         project.messageBus.connect(disposable)
-            .subscribe(MOVE_SETTINGS_TOPIC, object : MoveSettingsListener {
-                override fun <T : MvProjectSettingsBase<T>> settingsChanged(e: SettingsChangedEventBase<T>) {
+            .subscribe(MOVE_SETTINGS_TOPIC, object: MoveSettingsListener {
+                override fun <T: MvProjectSettingsBase<T>> settingsChanged(e: SettingsChangedEventBase<T>) {
                     if (e.affectsMoveProjectsMetadata) {
                         val tracker = ExternalSystemProjectTracker.getInstance(project)
                         tracker.markDirty(moveProjectAware.projectId)
@@ -112,7 +112,6 @@ class MoveProjectsService(val project: Project) : Disposable {
     }
 
     // requires ReadAccess
-
     fun findMoveProjectForPsiElement(psiElement: PsiElement): MoveProject? {
         // read access required for the psiElement.containingFile
         checkReadAccessAllowed()
@@ -122,6 +121,7 @@ class MoveProjectsService(val project: Project) : Disposable {
             else -> {
                 val containingFile =
                     try {
+                        // WARN: it fails with types of special psi factory generated items
                         psiElement.containingFile
                     } catch (e: PsiInvalidElementAccessException) {
                         val parentsChain =
@@ -138,6 +138,7 @@ class MoveProjectsService(val project: Project) : Disposable {
                             }
                         }
                     }
+                // returns LightVirtualFile for non-physical files
                 containingFile?.originalFile?.virtualFile
             }
         } ?: return null
@@ -154,6 +155,7 @@ class MoveProjectsService(val project: Project) : Disposable {
 
         val syncTask = MoveProjectsSyncTask(project, this, moveProjectsFut, reason)
         project.taskQueue.run(syncTask)
+
         return moveProjectsFut.thenApply { updatedProjects ->
             runOnlyInNonLightProject(project) {
                 setupProjectRoots(project, updatedProjects)
@@ -166,7 +168,7 @@ class MoveProjectsService(val project: Project) : Disposable {
         val cached = this.fileToMoveProjectCache.get(file)
         if (cached is CacheEntry.Present) return cached.value
 
-        if (isUnitTestMode && file.isLightTestFile) return project.testMoveProject
+        if (file.isUnitTestFile) return project.testMoveProject
 
         val filePath = file.toNioPathOrNull() ?: return null
 

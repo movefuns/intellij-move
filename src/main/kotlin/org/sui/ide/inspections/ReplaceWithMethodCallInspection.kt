@@ -7,16 +7,16 @@ import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.isMsl
 import org.sui.lang.core.psi.ext.itemModule
 import org.sui.lang.core.psi.ext.valueArguments
-import org.sui.lang.core.types.infer.foldTyTypeParameterWith
+import org.sui.lang.core.types.infer.deepFoldTyTypeParameterWith
 import org.sui.lang.core.types.infer.inference
 import org.sui.lang.core.types.ty.TyInfer
 import org.sui.lang.core.types.ty.TyReference.Companion.isCompatibleWithAutoborrow
 import org.sui.lang.core.types.ty.hasTyUnknown
 import org.sui.lang.moveProject
 
-class ReplaceWithMethodCallInspection : MvLocalInspectionTool() {
+class ReplaceWithMethodCallInspection: MvLocalInspectionTool() {
     override fun buildMvVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): MvVisitor {
-        return object : MvVisitor() {
+        return object: MvVisitor() {
             override fun visitCallExpr(callExpr: MvCallExpr) {
                 val function = callExpr.path.reference?.resolveFollowingAliases() as? MvFunction ?: return
                 val msl = callExpr.isMsl()
@@ -32,7 +32,7 @@ class ReplaceWithMethodCallInspection : MvLocalInspectionTool() {
                 if (methodModule != itemModule) return
 
                 val selfTy = function.selfParamTy(msl)
-                    ?.foldTyTypeParameterWith { TyInfer.TyVar(it) } ?: return
+                    ?.deepFoldTyTypeParameterWith { TyInfer.TyVar(it) } ?: return
                 if (selfTy.hasTyUnknown) return
 
                 if (isCompatibleWithAutoborrow(firstArgExprTy, selfTy, msl)) {

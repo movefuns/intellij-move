@@ -10,16 +10,16 @@ import org.sui.lang.core.psi.ext.MvCallable
 import org.sui.lang.core.psi.ext.isInline
 import org.sui.lang.core.types.infer.acquiresContext
 import org.sui.lang.core.types.infer.inference
-import org.sui.lang.core.types.ty.TyStruct
+import org.sui.lang.core.types.ty.TyAdt
 import org.sui.lang.core.types.ty.TyTypeParameter
 import org.sui.lang.moveProject
 
-class MvMissingAcquiresInspection : MvLocalInspectionTool() {
+class MvMissingAcquiresInspection: MvLocalInspectionTool() {
 
     override val isSyntaxOnly: Boolean get() = true
 
     override fun buildMvVisitor(holder: ProblemsHolder, isOnTheFly: Boolean) =
-        object : MvVisitor() {
+        object: MvVisitor() {
             override fun visitCallExpr(o: MvCallExpr) = visitAcquiredTypesOwner(o)
             override fun visitMethodCall(o: MvMethodCall) = visitAcquiredTypesOwner(o)
             override fun visitIndexExpr(o: MvIndexExpr) {
@@ -47,10 +47,11 @@ class MvMissingAcquiresInspection : MvLocalInspectionTool() {
                 val currentModule = outerFunction.module ?: return
                 val missingTypes =
                     callAcquiresTypes.mapNotNull { acqTy ->
-                        when (acqTy) {
-                            is TyTypeParameter ->
+                        when {
+                            // type parameters can be arguments, but only for inline functions
+                            acqTy is TyTypeParameter && outerFunction.isInline ->
                                 acqTy.origin.takeIf { tyOrigin -> existingTypes.all { tyOrigin != it } }
-                            is TyStruct -> {
+                            acqTy is TyAdt -> {
                                 val belongsToTheSameModule = acqTy.item.containingModule == currentModule
                                 if (
                                     belongsToTheSameModule

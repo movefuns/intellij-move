@@ -45,7 +45,7 @@ fun gitTimestamp(): String {
 val psiViewerPlugin: String by project
 val shortPlatformVersion = prop("shortPlatformVersion")
 val useInstaller = prop("useInstaller").toBooleanStrict()
-val codeVersion = "1.6.0"
+val codeVersion = "1.6.1"
 var pluginVersion = "$codeVersion.$shortPlatformVersion"
 if (publishingChannel != "default") {
     // timestamp of the commit with this eaps addition
@@ -85,11 +85,6 @@ allprojects {
     repositories {
         mavenCentral()
         gradlePluginPortal()
-        maven("https://maven.aliyun.com/repository/central/")
-        maven("https://maven.aliyun.com/repository/public/")
-        maven("https://maven.aliyun.com/repository/google/")
-        maven("https://maven.aliyun.com/repository/jcenter/")
-        maven("https://maven.aliyun.com/repository/gradle-plugin")
         intellijPlatform {
             defaultRepositories()
             jetbrainsRuntime()
@@ -107,7 +102,8 @@ allprojects {
 
         intellijPlatform {
 //            plugins(listOf(psiViewerPlugin))
-            create(prop("platformType"), prop("platformVersion"), useInstaller = useInstaller)
+            pycharmCommunity("2024.2.4", useInstaller = true)
+//            create(prop("platformType"), prop("platformVersion"), useInstaller = useInstaller)
             testFramework(TestFrameworkType.Platform)
             pluginVerifier(Constraints.LATEST_VERSION)
             bundledPlugin("org.toml.lang")
@@ -225,6 +221,7 @@ allprojects {
         }
         task {
             systemProperty("org.sui.debug.enabled", true)
+            systemProperty("org.sui.types.highlight.unknown.as.error", true)
 //            systemProperty("org.move.external.linter.max.duration", 30)  // 30 ms
 //            systemProperty("org.move.aptos.bundled.force.unsupported", true)
 //            systemProperty("idea.log.debug.categories", "org.move.cli")

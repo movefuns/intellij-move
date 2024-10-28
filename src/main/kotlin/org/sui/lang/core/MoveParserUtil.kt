@@ -323,12 +323,12 @@ object MoveParserUtil : GeneratedParserUtilBase() {
 
     @Suppress("FunctionName")
     @JvmStatic
-    fun VECTOR_IDENTIFIER(b: PsiBuilder, level: Int): Boolean {
+    fun vectorIdent(b: PsiBuilder, level: Int): Boolean {
         return nextTokenIs(b, "vector") && consumeToken(b, IDENTIFIER)
     }
 
     @JvmStatic
-    fun ASSERT_IDENTIFIER(b: PsiBuilder, level: Int): Boolean {
+    fun assertIdent(b: PsiBuilder, level: Int): Boolean {
         return nextTokenIs(b, "assert") && consumeToken(b, IDENTIFIER)
     }
 
@@ -364,7 +364,6 @@ object MoveParserUtil : GeneratedParserUtilBase() {
 
     @JvmStatic
     fun packageKeyword(b: PsiBuilder, level: Int): Boolean = contextualKeyword(b, "package", PACKAGE)
-
 
     @JvmStatic
     fun forKeyword(b: PsiBuilder, level: Int): Boolean = contextualKeyword(b, "for", FOR)

@@ -113,7 +113,7 @@ class FunctionParametersPanel(
         return panel {
             val typeParameters = function?.typeParameters.orEmpty()
             val parameters = function
-                ?.let { commandHandler.getFunctionParameters(function).map { it.bindingPat } }
+                ?.let { commandHandler.getFunctionParameters(function).map { it.patBinding } }
                 .orEmpty()
 
             if (typeParameters.isNotEmpty()) {

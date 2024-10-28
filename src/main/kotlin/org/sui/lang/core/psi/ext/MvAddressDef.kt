@@ -14,7 +14,7 @@ fun MvAddressDef.modules(): List<MvModule> =
 
 
 abstract class MvAddressDefMixin(node: ASTNode) : MvElementImpl(node),
-    MvAddressDef {
+                                                  MvAddressDef {
     override fun getPresentation(): ItemPresentation? {
         val addressText = this.addressRef?.address(this.moveProject)?.text() ?: ""
         return PresentationData(

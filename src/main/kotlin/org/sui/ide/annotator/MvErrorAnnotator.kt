@@ -2,28 +2,27 @@ package org.sui.ide.annotator
 
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.psi.PsiElement
+import org.sui.ide.presentation.declaringModule
 import org.sui.ide.presentation.fullname
-import org.sui.ide.presentation.itemDeclaredInModule
 import org.sui.ide.utils.functionSignature
 import org.sui.ide.utils.getSignature
 import org.sui.lang.MvElementTypes.R_PAREN
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.types.address
+import org.sui.lang.core.types.fullname
 import org.sui.lang.core.types.infer.descendantHasTypeError
 import org.sui.lang.core.types.infer.inference
 import org.sui.lang.core.types.infer.loweredType
-import org.sui.lang.core.types.ty.TyCallable
-import org.sui.lang.core.types.ty.TyFunction
-import org.sui.lang.core.types.ty.TyUnknown
+import org.sui.lang.core.types.ty.*
 import org.sui.lang.moveProject
 import org.sui.lang.utils.Diagnostic
 import org.sui.lang.utils.addToHolder
 
-class MvErrorAnnotator : MvAnnotatorBase() {
+class MvErrorAnnotator: MvAnnotatorBase() {
     override fun annotateInternal(element: PsiElement, holder: AnnotationHolder) {
         val moveHolder = MvAnnotationHolder(holder)
-        val visitor = object : MvVisitor() {
+        val visitor = object: MvVisitor() {
             override fun visitConst(o: MvConst) = checkConstDef(moveHolder, o)
 
             override fun visitFunction(o: MvFunction) = checkFunction(moveHolder, o)
@@ -45,21 +44,39 @@ class MvErrorAnnotator : MvAnnotatorBase() {
                 if (outerFunction.isInline) return
 
                 val path = callExpr.path
-                val referenceName = path.referenceName ?: return
                 val item = path.reference?.resolve() ?: return
+                if (item !is MvFunction) return
 
-                if (item is MvFunction && referenceName in GLOBAL_STORAGE_ACCESS_FUNCTIONS) {
-                    val explicitTypeArgs = path.typeArguments
-                    val currentModule = callExpr.containingModule ?: return
-                    for (typeArg in explicitTypeArgs) {
-                        val typeArgTy = typeArg.type.loweredType(false)
-                        if (typeArgTy !is TyUnknown && !typeArgTy.itemDeclaredInModule(currentModule)) {
-                            val typeName = typeArgTy.fullname()
-                            Diagnostic
-                                .StorageAccessIsNotAllowed(path, typeName)
-                                .addToHolder(moveHolder)
-                        }
+                val referenceName = path.referenceName ?: return
+                if (referenceName !in GLOBAL_STORAGE_ACCESS_FUNCTIONS) return
+
+                val currentModule = callExpr.containingModule ?: return
+                val typeArg = path.typeArguments.singleOrNull() ?: return
+
+                val typeArgTy = typeArg.type.loweredType(false)
+                if (typeArgTy is TyUnknown) return
+
+                when {
+                    typeArgTy is TyTypeParameter -> {
+                        val itemName = typeArgTy.origin.name ?: return
+                        Diagnostic.StorageAccessError.WrongItem(path, itemName)
+                            .addToHolder(moveHolder)
+                        return
                     }
+                    // todo: else
+                }
+
+                val itemModule = typeArgTy.declaringModule() ?: return
+                if (currentModule != itemModule) {
+                    val itemModuleName = itemModule.fullname() ?: return
+                    var moduleQualTypeName = typeArgTy.fullname()
+                    if (moduleQualTypeName.split("::").size == 3) {
+                        // fq name
+                        moduleQualTypeName =
+                            moduleQualTypeName.split("::").drop(1).joinToString("::")
+                    }
+                    Diagnostic.StorageAccessError.WrongModule(path, itemModuleName, moduleQualTypeName)
+                        .addToHolder(moveHolder)
                 }
             }
 
@@ -87,7 +104,6 @@ class MvErrorAnnotator : MvAnnotatorBase() {
                                     ?: return
                             callTy.paramTypes.size
                         }
-
                         is MvMethodCall -> {
                             val msl = parentCallable.isMslScope
                             val callTy =
@@ -134,7 +150,7 @@ class MvErrorAnnotator : MvAnnotatorBase() {
                 }
             }
 
-            override fun visitStructPat(o: MvStructPat) {
+            override fun visitPatStruct(o: MvPatStruct) {
                 val nameElement = o.path.referenceNameElement ?: return
                 val refStruct = o.path.maybeStruct ?: return
                 checkMissingFields(
@@ -149,7 +165,6 @@ class MvErrorAnnotator : MvAnnotatorBase() {
                     moveHolder, nameElement, o.providedFieldNames.toSet(), struct
                 )
             }
-
         }
         element.accept(visitor)
     }
@@ -236,7 +251,6 @@ class MvErrorAnnotator : MvAnnotatorBase() {
                     }
                 }
             }
-
             qualItem is MvStruct && parent is MvStructLitExpr -> {
                 // if any type param is passed, inference is disabled, so check fully
                 if (realCount != 0) {
@@ -245,7 +259,6 @@ class MvErrorAnnotator : MvAnnotatorBase() {
                     checkTypeArgumentList(typeArgumentList, qualItem, holder)
                 }
             }
-
             qualItem is MvFunction -> {
                 val callable =
                     when (parent) {
@@ -274,7 +287,6 @@ class MvErrorAnnotator : MvAnnotatorBase() {
                     }
                 }
             }
-
             qualItem is MvSchema && parent is MvSchemaLit -> {
                 val expectedCount = qualItem.typeParameters.size
                 if (realCount != 0) {

@@ -12,7 +12,7 @@ import org.sui.lang.core.psi.MvModule
 import org.sui.lang.core.psi.ext.nextNonWsSibling
 import org.sui.lang.core.psi.ext.prevNonWsSibling
 
-class CommonCompletionContributor : CompletionContributor() {
+class CommonCompletionContributor: CompletionContributor() {
     init {
         extend(CompletionType.BASIC, PrimitiveTypesCompletionProvider)
         extend(CompletionType.BASIC, SpecItemCompletionProvider)
@@ -28,8 +28,9 @@ class CommonCompletionContributor : CompletionContributor() {
         extend(CompletionType.BASIC, MvPathCompletionProvider2)
 
         extend(CompletionType.BASIC, MvPsiPattern.ability(), AbilitiesCompletionProvider)
-        extend(CompletionType.BASIC, MvPsiPattern.refExpr(), BoolsCompletionProvider)
+//        extend(CompletionType.BASIC, MvPsiPattern.refExpr(), BoolsCompletionProvider)
 
+        extend(CompletionType.BASIC, BoolsCompletionProvider)
         extend(CompletionType.BASIC, MacrosCompletionProvider)
         extend(CompletionType.BASIC, VectorLiteralCompletionProvider)
         extend(CompletionType.BASIC, MethodOrFieldCompletionProvider)
@@ -47,7 +48,7 @@ class CommonCompletionContributor : CompletionContributor() {
         if (identifier.parent is MvModule) {
             // check whether the left non-whitespace sibling is `module` keyword
             if (identifier.prevNonWsSibling.elementType == MODULE_KW) {
-            context.dummyIdentifier = "DummyAddress::"
+                context.dummyIdentifier = "DummyAddress::"
             }
         }
     }

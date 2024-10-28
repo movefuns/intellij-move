@@ -5,6 +5,7 @@ import org.sui.lang.core.psi.MvElement
 import org.sui.lang.core.psi.MvNamedElement
 import org.sui.lang.core.psi.MvUseAlias
 import org.sui.lang.core.psi.ext.parentUseSpeck
+import org.sui.lang.core.resolve2.ref.resolveAliases
 
 interface MvPolyVariantReference : PsiPolyVariantReference {
 
@@ -12,27 +13,20 @@ interface MvPolyVariantReference : PsiPolyVariantReference {
 
     override fun resolve(): MvNamedElement?
 
-    fun resolveFollowingAliases(): MvNamedElement? {
-        val resolved = this.resolve()
-        if (resolved is MvUseAlias) {
-            val aliasedPath = resolved.parentUseSpeck.path
-            return aliasedPath.reference?.resolve()
-        }
-        return resolved
-    }
-
     fun multiResolve(): List<MvNamedElement>
+
+    fun resolveFollowingAliases(): MvNamedElement? = this.resolve()?.let { resolveAliases(it) }
 }
 
-interface MvPathReference : MvPolyVariantReference {
+//interface MvPathReference : MvPolyVariantReference {
 
 //    fun multiResolveIfVisible(): List<MvElement> = multiResolve()
 //
 //    fun rawMultiResolve(): List<RsPathResolveResult<MvElement>> =
 //        multiResolve().map { RsPathResolveResult(it, isVisible = true) }
-}
+//}
 
-interface MvPath2Reference : MvPolyVariantReference {
+interface MvPath2Reference: MvPolyVariantReference {
 //    fun multiResolveIfVisible(): List<MvElement> = multiResolve()
 
 //    fun rawMultiResolve(): List<RsPathResolveResult<MvElement>>

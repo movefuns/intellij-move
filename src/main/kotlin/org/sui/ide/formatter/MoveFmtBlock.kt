@@ -95,8 +95,7 @@ class MoveFmtBlock(
                 val syntheticBlock = SyntheticRsFmtBlock(
                     representative = dotBlock,
                     subBlocks = children.subList(dotIndex, children.size),
-                    ctx = ctx
-                )
+                    ctx = ctx)
                 return children.subList(0, dotIndex).plusElement(syntheticBlock)
             }
         }

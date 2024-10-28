@@ -15,11 +15,11 @@ val MvSchemaLitField.isShorthand get() = !hasChild(MvElementTypes.COLON)
 
 val MvSchemaLitField.schemaLit: MvSchemaLit? get() = ancestorStrict(stopAt = MvSpecCodeBlock::class.java)
 
-inline fun <reified T : MvElement> MvSchemaLitField.resolveToElement(): T? =
+inline fun <reified T: MvElement> MvSchemaLitField.resolveToElement(): T? =
     reference.multiResolve().filterIsInstance<T>().singleOrNull()
 
 fun MvSchemaLitField.resolveToDeclaration(): MvSchemaFieldStmt? = resolveToElement()
-fun MvSchemaLitField.resolveToBinding(): MvBindingPat? = resolveToElement()
+fun MvSchemaLitField.resolveToBinding(): MvPatBinding? = resolveToElement()
 
 //class MvSchemaFieldReferenceImpl(
 //    element: MvSchemaLitField
@@ -38,8 +38,8 @@ fun MvSchemaLitField.resolveToBinding(): MvBindingPat? = resolveToElement()
 //    }
 //}
 
-abstract class MvSchemaLitFieldMixin(node: ASTNode) : MvElementImpl(node),
-    MvSchemaLitField {
+abstract class MvSchemaLitFieldMixin(node: ASTNode): MvElementImpl(node),
+                                                     MvSchemaLitField {
     override fun getReference(): MvPolyVariantReference =
         MvSchemaLitFieldReferenceImpl(this, shorthand = this.isShorthand)
 }
@@ -47,7 +47,7 @@ abstract class MvSchemaLitFieldMixin(node: ASTNode) : MvElementImpl(node),
 class MvSchemaLitFieldReferenceImpl(
     element: MvSchemaLitField,
     val shorthand: Boolean,
-) : MvPolyVariantReferenceCached<MvSchemaLitField>(element) {
+): MvPolyVariantReferenceCached<MvSchemaLitField>(element) {
     override fun multiResolveInner(): List<MvNamedElement> {
         var variants = collectResolveVariants(element.referenceName) {
             processSchemaLitFieldResolveVariants(element, it)
@@ -70,5 +70,5 @@ fun processSchemaLitFieldResolveVariants(
         .any { field ->
             processor.process(SimpleScopeEntry(field.name, field, setOf(Namespace.NAME)))
         }
-    }
+}
 

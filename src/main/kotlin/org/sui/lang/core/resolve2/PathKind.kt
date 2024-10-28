@@ -1,9 +1,12 @@
 package org.sui.lang.core.resolve2
 
-import org.sui.lang.core.psi.*
+import org.sui.lang.core.psi.MvPath
+import org.sui.lang.core.psi.MvUseGroup
+import org.sui.lang.core.psi.MvUseSpeck
+import org.sui.lang.core.psi.MvUseStmt
 import org.sui.lang.core.psi.ext.*
-import org.sui.lang.core.resolve.ref.ITEM_NAMESPACES
 import org.sui.lang.core.resolve.ref.MODULES
+import org.sui.lang.core.resolve.ref.ITEM_NAMESPACES
 import org.sui.lang.core.resolve.ref.NONE
 import org.sui.lang.core.resolve.ref.Namespace
 import org.sui.lang.core.types.Address
@@ -14,39 +17,39 @@ sealed class PathKind {
     abstract val ns: Set<Namespace>
 
     // aptos_std:: where aptos_std is a existing named address in a project
-    data class NamedAddress(val address: Address.Named) : PathKind() {
+    data class NamedAddress(val address: Address.Named): PathKind() {
         override val ns: Set<Namespace> get() = NONE
     }
 
     // 0x1::
-    data class ValueAddress(val address: Address.Value) : PathKind() {
+    data class ValueAddress(val address: Address.Value): PathKind() {
         override val ns: Set<Namespace> get() = NONE
     }
 
     // foo
-    data class UnqualifiedPath(override val ns: Set<Namespace>) : PathKind()
+    data class UnqualifiedPath(override val ns: Set<Namespace>): PathKind()
 
     // any multi element path
     sealed class QualifiedPath(
         val path: MvPath,
         val qualifier: MvPath,
         override val ns: Set<Namespace>
-    ) : PathKind() {
+    ): PathKind() {
         // `0x1:foo` or `aptos_framework::foo` (where aptos_framework is known named address)
-        class Module(path: MvPath, qualifier: MvPath, ns: Set<Namespace>, val address: Address) :
+        class Module(path: MvPath, qualifier: MvPath, ns: Set<Namespace>, val address: Address):
             QualifiedPath(path, qualifier, ns)
 
         // bar in foo::bar, where foo is not a named address
-        class ModuleItem(path: MvPath, qualifier: MvPath, ns: Set<Namespace>) :
+        class ModuleItem(path: MvPath, qualifier: MvPath, ns: Set<Namespace>):
             QualifiedPath(path, qualifier, ns)
 
         // bar in `0x1::foo::bar` or `aptos_std::foo::bar` (where aptos_std is known named address)
-        class FQModuleItem(path: MvPath, qualifier: MvPath, ns: Set<Namespace>) :
+        class FQModuleItem(path: MvPath, qualifier: MvPath, ns: Set<Namespace>):
             QualifiedPath(path, qualifier, ns)
 
         // use 0x1::m::{item1};
         //               ^
-        class UseGroupItem(path: MvPath, qualifier: MvPath, ns: Set<Namespace>) :
+        class UseGroupItem(path: MvPath, qualifier: MvPath, ns: Set<Namespace>):
             QualifiedPath(path, qualifier, ns)
     }
 }
@@ -89,10 +92,12 @@ fun MvPath.pathKind(isCompletion: Boolean = false): PathKind {
 
         // outside use stmt context
         if (moveProject != null) {
-            // try whether it's a named address
-            val namedAddress = moveProject.getNamedAddressTestAware(referenceName)
-            if (namedAddress != null) {
-                return PathKind.NamedAddress(namedAddress)
+            // check whether there's a '::' after it, then try for a named address
+            if (this.isColonColonNext) {
+                val namedAddress = moveProject.getNamedAddressTestAware(referenceName)
+                if (namedAddress != null) {
+                    return PathKind.NamedAddress(namedAddress)
+                }
             }
         }
 
@@ -119,12 +124,7 @@ fun MvPath.pathKind(isCompletion: Boolean = false): PathKind {
             moveProject != null && qualifierItemName != null -> {
                 val namedAddress = moveProject.getNamedAddressTestAware(qualifierItemName)
                 if (namedAddress != null) {
-                    val useModuleList = this.containingModule?.useModuleItemList()
-                    if (useModuleList?.contains(qualifierItemName) == true) {
-                        // known named address, can be module path
-                        val ns = this.allowedNamespaces(isCompletion)
-                        return PathKind.QualifiedPath.ModuleItem(this, qualifier, MODULES)
-                    }
+                    // known named address, can be module path
                     return PathKind.QualifiedPath.Module(this, qualifier, MODULES, namedAddress)
                 }
                 // `use std::main`

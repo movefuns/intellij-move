@@ -9,7 +9,7 @@ import org.sui.lang.core.completion.CompletionContext
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.stubs.MvModuleStub
 import org.sui.lang.core.types.infer.InferenceContext
-import org.sui.lang.core.types.infer.foldTyInferWith
+import org.sui.lang.core.types.infer.deepFoldTyInferWith
 import org.sui.lang.core.types.infer.loweredType
 import org.sui.lang.core.types.infer.substitute
 import org.sui.lang.core.types.ty.Ty
@@ -56,24 +56,24 @@ val MvFunctionLike.isNative get() = hasChild(MvElementTypes.NATIVE)
 
 val MvFunctionLike.parameters get() = this.functionParameterList?.functionParameterList.orEmpty()
 
-val MvFunctionLike.parametersAsBindings: List<MvBindingPat> get() = this.parameters.map { it.bindingPat }
+val MvFunctionLike.parametersAsBindings: List<MvPatBinding> get() = this.parameters.map { it.patBinding }
 
-val MvFunctionLike.valueParamsAsBindings: List<MvBindingPat>
+val MvFunctionLike.valueParamsAsBindings: List<MvPatBinding>
     get() {
         val msl = this.isMslOnlyItem
         val parameters = this.parameters
         return parameters
             .filter { it.type?.loweredType(msl) !is TyLambda }
-            .map { it.bindingPat }
+            .map { it.patBinding }
     }
 
-val MvFunctionLike.lambdaParamsAsBindings: List<MvBindingPat>
+val MvFunctionLike.lambdaParamsAsBindings: List<MvPatBinding>
     get() {
         val msl = this.isMslOnlyItem
         val parameters = this.parameters
         return parameters
             .filter { it.type?.loweredType(msl) is TyLambda }
-            .map { it.bindingPat }
+            .map { it.patBinding }
     }
 
 val MvFunctionLike.acquiresPathTypes: List<MvPathType>
@@ -116,11 +116,10 @@ val MvFunctionLike.signatureText: String
         return "$paramsText$retTypeSuffix"
     }
 
-val MvFunction.selfParam: MvFunctionParameter?
-    get() {
-        if (!project.moveSettings.enableReceiverStyleFunctions) return null
-        return this.parameters.firstOrNull()?.takeIf { it.name == "self" }
-    }
+val MvFunction.selfParam: MvFunctionParameter? get() {
+    if (!project.moveSettings.enableReceiverStyleFunctions) return null
+    return this.parameters.firstOrNull()?.takeIf { it.name == "self" }
+}
 
 fun MvFunction.selfParamTy(msl: Boolean): Ty? = this.selfParam?.type?.loweredType(msl)
 
@@ -134,19 +133,20 @@ val MvFunction.selfSignatureText: String
         return "$paramsText$retTypeSuffix"
     }
 
-fun MvFunctionLike.requiresExplicitlyProvidedTypeArguments(completionContext: CompletionContext?): Boolean {
-    val msl = this.isMslOnlyItem
-    val callTy = this.declaredType(msl).substitute(this.tyInfers) as TyFunction
+fun MvFunctionLike.requiresExplicitlyProvidedTypeArguments(completionContext: CompletionContext?): Boolean
+    {
+        val msl = this.isMslOnlyItem
+        val callTy = this.declaredType(msl).substitute(this.tyInfers) as TyFunction
 
-    val inferenceCtx = InferenceContext(msl)
+        val inferenceCtx = InferenceContext(msl)
 
-    callTy.paramTypes.forEach {
-        inferenceCtx.combineTypes(it, it.foldTyInferWith { TyUnknown })
+        callTy.paramTypes.forEach {
+            inferenceCtx.combineTypes(it, it.deepFoldTyInferWith { TyUnknown })
+        }
+        val expectedTy = completionContext?.expectedTy
+        if (expectedTy != null && expectedTy !is TyUnknown) {
+            inferenceCtx.combineTypes(callTy.retType, expectedTy)
+        }
+        val resolvedCallTy = inferenceCtx.resolveTypeVarsIfPossible(callTy) as TyFunction
+        return resolvedCallTy.needsTypeAnnotation()
     }
-    val expectedTy = completionContext?.expectedTy
-    if (expectedTy != null && expectedTy !is TyUnknown) {
-        inferenceCtx.combineTypes(callTy.retType, expectedTy)
-    }
-    val resolvedCallTy = inferenceCtx.resolveTypeVarsIfPossible(callTy) as TyFunction
-    return resolvedCallTy.needsTypeAnnotation()
-}

@@ -17,13 +17,10 @@ import org.sui.lang.core.resolve.createProcessor
 import org.sui.lang.core.resolve2.processMethodResolveVariants
 import org.sui.lang.core.types.infer.InferenceContext
 import org.sui.lang.core.types.infer.substitute
-import org.sui.lang.core.types.ty.TyFunction
-import org.sui.lang.core.types.ty.TyReference
-import org.sui.lang.core.types.ty.TyStruct
-import org.sui.lang.core.types.ty.knownOrNull
+import org.sui.lang.core.types.ty.*
 import org.sui.lang.core.withParent
 
-object MethodOrFieldCompletionProvider : MvCompletionProvider() {
+object MethodOrFieldCompletionProvider: MvCompletionProvider() {
     override val elementPattern: ElementPattern<out PsiElement>
         get() =
             PlatformPatterns
@@ -49,24 +46,24 @@ object MethodOrFieldCompletionProvider : MvCompletionProvider() {
 
         val ctx = CompletionContext(element, msl, expectedTy)
 
-        val structTy = receiverTy.derefIfNeeded() as? TyStruct
-        if (structTy != null) {
-            collectCompletionVariants(result, ctx, subst = structTy.substitution) {
-                processNamedFieldVariants(element, structTy, msl, it)
-                }
+        val tyAdt = receiverTy.derefIfNeeded() as? TyAdt
+        if (tyAdt != null) {
+            collectCompletionVariants(result, ctx, subst = tyAdt.substitution) {
+                processNamedFieldVariants(element, tyAdt, msl, it)
+            }
         }
 
         processMethodResolveVariants(element, receiverTy, ctx.msl, createProcessor { e ->
             val function = e.element as? MvFunction ?: return@createProcessor
-                val subst = function.tyInfers
-                val declaredFuncTy = function.declaredType(msl).substitute(subst) as TyFunction
-                val declaredSelfTy = declaredFuncTy.paramTypes.first()
-                val autoborrowedReceiverTy =
-                    TyReference.autoborrow(receiverTy, declaredSelfTy)
-                        ?: error("unreachable, references always compatible")
+            val subst = function.tyInfers
+            val declaredFuncTy = function.declaredType(msl).substitute(subst) as TyFunction
+            val declaredSelfTy = declaredFuncTy.paramTypes.first()
+            val autoborrowedReceiverTy =
+                TyReference.autoborrow(receiverTy, declaredSelfTy)
+                    ?: error("unreachable, references always compatible")
 
-                val inferenceCtx = InferenceContext(msl)
-                inferenceCtx.combineTypes(declaredSelfTy, autoborrowedReceiverTy)
+            val inferenceCtx = InferenceContext(msl)
+            inferenceCtx.combineTypes(declaredSelfTy, autoborrowedReceiverTy)
 
             result.addElement(
                 createLookupElement(

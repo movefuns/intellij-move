@@ -102,7 +102,7 @@
         <stubIndex implementation="org.sui.lang.index.MvNamedElementIndex"/>
         <stubIndex implementation="org.sui.lang.index.MvEntryFunctionIndex"/>
         <stubIndex implementation="org.sui.lang.index.MvViewFunctionIndex"/>
-        <stubIndex implementation="org.sui.lang.index.MvTestFunctionIndex"/>
+<!--        <stubIndex implementation="org.sui.lang.index.MvTestFunctionIndex"/>-->
         <stubIndex implementation="org.sui.lang.index.MvModuleIndex"/>
         <stubIndex implementation="org.sui.lang.index.MvModuleSpecIndex"/>
 
@@ -403,6 +403,11 @@
         <intentionAction>
             <language>Sui Move</language>
             <className>org.sui.ide.intentions.ChopValueArgumentListIntention</className>
+      <category>Sui Move</category>
+    </intentionAction>
+    <intentionAction>
+      <language>Sui Move</language>
+      <className>org.sui.ide.intentions.ChopAttrArgumentListIntention</className>
             <category>Move</category>
         </intentionAction>
         <intentionAction>
@@ -417,6 +422,10 @@
                      defaultValue="false"
                      restartRequired="false"
                      description="Enable debug mode for Move"/>
+    <registryKey key="org.sui.types.highlight.unknown.as.error"
+                 defaultValue="false"
+                 restartRequired="false"
+                 description="Show any TyUnknown type as error in the TypeCheckInspection" />
         <registryKey key="org.sui.external.linter.max.duration"
                      defaultValue="3000"
                      restartRequired="false"

@@ -5,16 +5,13 @@ import org.sui.cli.settings.debugErrorOrFallback
 import org.sui.ide.annotator.BUILTIN_TYPE_IDENTIFIERS
 import org.sui.ide.annotator.PRIMITIVE_TYPE_IDENTIFIERS
 import org.sui.ide.annotator.SPEC_ONLY_PRIMITIVE_TYPES
-import org.sui.ide.inspections.imports.BasePathType
-import org.sui.ide.inspections.imports.basePathType
+import org.sui.lang.MvElementTypes.COLON_COLON
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.resolve.ref.*
-import org.sui.lang.core.resolve.ref.Namespace.*
-import org.sui.lang.core.resolve2.ref.Path2ReferenceImpl
-import java.util.*
+import org.sui.lang.core.resolve2.ref.MvPath2ReferenceImpl
 
 /** For `Foo::bar::baz::quux` path returns `Foo` */
-tailrec fun <T : MvPath> T.basePath(): T {
+tailrec fun <T: MvPath> T.basePath(): T {
     @Suppress("UNCHECKED_CAST")
     val qualifier = path as T?
     return if (qualifier === null) this else qualifier.basePath()
@@ -56,7 +53,7 @@ val MvPath.isUpdateFieldArg2: Boolean
             .ancestorStrict<MvCallExpr>()
             ?.let { if (it.path.textMatches("update_field")) it else null }
             ?.let {
-                val expr = this.ancestorStrict<MvRefExpr>() ?: return@let -1
+                val expr = this.ancestorStrict<MvPathExpr>() ?: return@let -1
                 it.argumentExprs.indexOf(expr)
             }
         return ind == 1
@@ -107,35 +104,33 @@ fun MvPath.allowedNamespaces(isCompletion: Boolean = false): Set<Namespace> {
     return when {
         // mod::foo::bar
         //      ^
-        parent is MvPath && qualifier != null -> TYPES
+        parent is MvPath && qualifier != null -> ENUMS
         // foo::bar
         //  ^
-        parent is MvPath -> TYPES_N_MODULES
+        parent is MvPath -> ENUMS_N_MODULES
         // use 0x1::foo::bar; | use 0x1::foo::{bar, baz}
-    // ^     ^
+        //               ^                     ^
         parent is MvUseSpeck -> ITEM_NAMESPACES
         // a: bar
         //     ^
-        parent is MvPathType && qualifier == null -> if (isCompletion) TYPES_N_MODULES else TYPES
-
+        parent is MvPathType && qualifier == null ->
+            if (isCompletion) TYPES_N_ENUMS_N_MODULES else TYPES_N_ENUMS
         // a: foo::bar
-        // ^
-        parent is MvPathType && qualifier != null -> TYPES
+        //         ^
+        parent is MvPathType && qualifier != null -> TYPES_N_ENUMS
         parent is MvCallExpr -> FUNCTIONS
-        parent is MvRefExpr
+        parent is MvPathExpr
                 && this.hasAncestor<MvAttrItemInitializer>() -> ALL_NAMESPACES
 
         // can be anything in completion
-        parent is MvRefExpr -> if (isCompletion) ALL_NAMESPACES else NAMES
+        parent is MvPathExpr -> if (isCompletion) ALL_NAMESPACES else NAMES
 //        }
         parent is MvSchemaLit
                 || parent is MvSchemaRef -> SCHEMAS
-
         parent is MvStructLitExpr
-                || parent is MvStructPat
-                || parent is MvEnumVariantPat -> TYPES
-
-        parent is MvAccessSpecifier -> TYPES
+                || parent is MvPatStruct
+                || parent is MvPatConst -> TYPES_N_ENUMS
+        parent is MvAccessSpecifier -> TYPES_N_ENUMS
         parent is MvAddressSpecifierArg -> FUNCTIONS
         parent is MvAddressSpecifierCallParam -> NAMES
         parent is MvFriendDecl -> MODULES
@@ -159,27 +154,14 @@ val MvPath.qualifier: MvPath?
         return (ctx as? MvUseSpeck)?.qualifier
     }
 
-abstract class MvPathMixin(node: ASTNode) : MvElementImpl(node), MvPath {
+abstract class MvPathMixin(node: ASTNode): MvElementImpl(node), MvPath {
 
-    override fun getReference(): MvPath2Reference? = Path2ReferenceImpl(this)
-}
-
-fun MvPath.importCandidateNamespaces(): Set<Namespace> {
-    val parent = this.parent
-    return when (parent) {
-        is MvPathType -> setOf(TYPE)
-        is MvSchemaLit, is MvSchemaRef -> setOf(SCHEMA)
-        else -> {
-            val baseBaseType = this.basePathType()
-            when (baseBaseType) {
-                is BasePathType.Module -> EnumSet.of(MODULE)
-                else -> EnumSet.of(NAME, FUNCTION)
-            }
-        }
-    }
+    override fun getReference(): MvPath2Reference? = MvPath2ReferenceImpl(this)
 }
 
 val MvPath.hasColonColon: Boolean get() = colonColon != null
+
+val MvPath.isColonColonNext: Boolean get() = nextNonWsSibling?.elementType == COLON_COLON
 
 val MvPath.useSpeck: MvUseSpeck? get() = this.rootPath().parent as? MvUseSpeck
 

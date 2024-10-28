@@ -10,6 +10,7 @@ import org.sui.lang.core.psi.ext.greenStub
 import org.sui.lang.core.types.Address.Named
 import org.sui.lang.core.types.Address.Value
 import org.sui.lang.core.types.AddressLit.Companion.normalizeValue
+import org.sui.lang.moveProject
 
 const val MAX_LENGTH = 32
 
@@ -47,7 +48,7 @@ sealed class Address {
 
     val is0x0 get() = this is Value && this.addressLit().original == "0x0"
 
-    class Value(private val value: String) : Address() {
+    class Value(private val value: String): Address() {
         fun addressLit(): AddressLit = AddressLit(value)
 
         override fun canonicalValue(moveProject: MoveProject): String = this.addressLit().canonical()
@@ -70,7 +71,7 @@ sealed class Address {
         val name: String,
         val value: String?,
         private val declMoveProject: MoveProject?
-    ) : Address() {
+    ): Address() {
         fun value(moveProject: MoveProject? = null): String {
             return value
                 ?: this.declMoveProject?.getNamedAddressValue(name)
@@ -105,7 +106,6 @@ sealed class Address {
             return when {
                 left is Value && right is Value ->
                     left.addressLit().canonical() == right.addressLit().canonical()
-
                 left is Named && right is Named -> {
                     val leftValue = left.value?.let { normalizeValue(it) }
                     val rightValue = right.value?.let { normalizeValue(it) }
@@ -115,7 +115,6 @@ sealed class Address {
                     }
                     return leftValue == rightValue
                 }
-
                 left is Value && right is Named -> checkValueNamedEquals(left, right)
                 left is Named && right is Value -> checkValueNamedEquals(right, left)
                 else -> false
@@ -131,9 +130,9 @@ sealed class Address {
 }
 
 sealed class StubAddress {
-    object Unknown : StubAddress()
-    data class Value(val value: String) : StubAddress()
-    data class Named(val name: String) : StubAddress()
+    object Unknown: StubAddress()
+    data class Value(val value: String): StubAddress()
+    data class Named(val name: String): StubAddress()
 
     fun asInt(): Int {
         return when (this) {
@@ -156,7 +155,6 @@ sealed class StubAddress {
                     )
                 }
             }
-
             is Value -> Address.Value(this.value)
             is Unknown -> null
         }
@@ -212,4 +210,10 @@ fun MvAddressRef.psiStubAddress(): StubAddress {
     }
     val addressText = this.diemAddress?.text ?: this.bech32Address?.text ?: return StubAddress.Unknown
     return StubAddress.Value(addressText)
+}
+
+fun MvModule.fullname(): String? {
+    val addressName = this.address(null)?.text() ?: return null
+    val moduleName = this.name ?: return null
+    return "$addressName::$moduleName"
 }

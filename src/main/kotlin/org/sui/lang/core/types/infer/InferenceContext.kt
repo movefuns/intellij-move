@@ -9,6 +9,8 @@ import org.sui.cli.settings.isDebugModeEnabled
 import org.sui.ide.formatter.impl.location
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
+import org.sui.lang.core.resolve.ScopeEntry
+import org.sui.lang.core.resolve.isVisibleFrom
 import org.sui.lang.core.types.ty.*
 import org.sui.lang.core.types.ty.TyReference.Companion.coerceMutability
 import org.sui.lang.toNioPathOrNull
@@ -30,7 +32,7 @@ fun isCompatibleIntegers(expectedTy: TyInteger, inferredTy: TyInteger): Boolean 
 
 fun compatAbilities(expectedTy: Ty, actualTy: Ty, msl: Boolean): Boolean {
     if (msl) return true
-    if (expectedTy.hasTyStruct
+    if (expectedTy.hasTyAdt
         || expectedTy.hasTyInfer
         || expectedTy.hasTyTypeParameters
     ) {
@@ -64,21 +66,38 @@ interface InferenceData {
 
     fun getPatTypeOrUnknown(pat: MvPat): Ty = patTypes[pat] ?: TyUnknown
 
-    fun getPatType(pat: MvPat): Ty = patTypes[pat] ?: inferenceErrorOrTyUnknown(pat)
+    fun getPatType(pat: MvPat): Ty = patTypes[pat] ?: inferenceErrorOrFallback(pat, TyUnknown)
+
+    fun getPatFieldType(patField: MvPatField): Ty
+
+    fun getResolvedLitField(litField: MvStructLitField): List<MvNamedElement>
+
+    fun getBindingType(binding: MvPatBinding): Ty =
+        when (val parent = binding.parent) {
+            is MvPatField -> getPatFieldType(parent)
+            else -> getPatType(binding)
+        }
 }
 
 data class InferenceResult(
     override val patTypes: Map<MvPat, Ty>,
+
+    val patFieldTypes: Map<MvPatField, Ty>,
+
     private val exprTypes: Map<MvExpr, Ty>,
     private val exprExpectedTypes: Map<MvExpr, Ty>,
     private val methodOrPathTypes: Map<MvMethodOrPath, Ty>,
-//    private val resolvedPaths: Map<MvPath, List<ResolvedPath>>,
+
+    private val resolvedPaths: Map<MvPath, List<ResolvedItem>>,
     private val resolvedFields: Map<MvStructDotField, MvNamedElement?>,
     private val resolvedMethodCalls: Map<MvMethodCall, MvNamedElement?>,
+    private val resolvedBindings: Map<MvPatBinding, MvNamedElement?>,
+    private val resolvedLitFields: Map<MvStructLitField, List<MvNamedElement>>,
+
     val callableTypes: Map<MvCallable, Ty>,
     val typeErrors: List<TypeError>
 ): InferenceData {
-    fun getExprType(expr: MvExpr): Ty = exprTypes[expr] ?: inferenceErrorOrTyUnknown(expr)
+    fun getExprType(expr: MvExpr): Ty = exprTypes[expr] ?: inferenceErrorOrFallback(expr, TyUnknown)
 
     @TestOnly
     fun hasExprType(expr: MvExpr): Boolean = expr in exprTypes
@@ -91,11 +110,18 @@ data class InferenceResult(
     fun getCallableType(callable: MvCallable): Ty? = callableTypes[callable]
     fun getMethodOrPathType(methodOrPath: MvMethodOrPath): Ty? = methodOrPathTypes[methodOrPath]
 
-//    fun getResolvedPath(path: MvPath): List<ResolvedPath> =
-//        resolvedPaths[path] ?: emptyList()
+    fun getResolvedPath(path: MvPath): List<ResolvedItem>? =
+        resolvedPaths[path] ?: inferenceErrorOrFallback(path, null)
 
     fun getResolvedField(field: MvStructDotField): MvNamedElement? = resolvedFields[field]
     fun getResolvedMethod(methodCall: MvMethodCall): MvNamedElement? = resolvedMethodCalls[methodCall]
+    fun getResolvedPatBinding(binding: MvPatBinding): MvNamedElement? = resolvedBindings[binding]
+
+    override fun getResolvedLitField(litField: MvStructLitField): List<MvNamedElement> =
+        resolvedLitFields[litField].orEmpty()
+
+    override fun getPatFieldType(patField: MvPatField): Ty =
+        patFieldTypes[patField] ?: TyUnknown
 }
 
 fun inferTypesIn(element: MvInferenceContextOwner, msl: Boolean): InferenceResult {
@@ -159,6 +185,7 @@ class InferenceContext(
 ): InferenceData {
 
     override val patTypes = mutableMapOf<MvPat, Ty>()
+    private val patFieldTypes = mutableMapOf<MvPatField, Ty>()
 
     private val exprTypes = mutableMapOf<MvExpr, Ty>()
     private val exprExpectedTypes = mutableMapOf<MvExpr, Ty>()
@@ -167,9 +194,12 @@ class InferenceContext(
     //    private val pathTypes = mutableMapOf<MvPath, Ty>()
     private val methodOrPathTypes = mutableMapOf<MvMethodOrPath, Ty>()
 
-    //    val resolvedPaths = mutableMapOf<MvPath, List<ResolvedPath>>()
+    val resolvedPaths = mutableMapOf<MvPath, List<ResolvedItem>>()
     val resolvedFields = mutableMapOf<MvStructDotField, MvNamedElement?>()
     val resolvedMethodCalls = mutableMapOf<MvMethodCall, MvNamedElement?>()
+    val resolvedBindings = mutableMapOf<MvPatBinding, MvNamedElement?>()
+
+    val resolvedLitFields: MutableMap<MvStructLitField, List<MvNamedElement>> = hashMapOf()
 
     private val typeErrors = mutableListOf<TypeError>()
 
@@ -199,6 +229,14 @@ class InferenceContext(
 
         inference.extractParameterBindings(owner)
 
+        if (owner is MvDocAndAttributeOwner) {
+            for (attr in owner.attrList) {
+                for (attrItem in attr.attrItemList) {
+                    inference.inferAttrItem(attrItem)
+                }
+            }
+        }
+
         when (owner) {
             is MvFunctionLike -> owner.anyBlock?.let { inference.inferFnBody(it) }
             is MvItemSpec -> {
@@ -212,6 +250,7 @@ class InferenceContext(
 
         exprTypes.replaceAll { _, ty -> fullyResolveTypeVars(ty) }
         patTypes.replaceAll { _, ty -> fullyResolveTypeVars(ty) }
+        patFieldTypes.replaceAll { _, ty -> fullyResolveTypeVars(ty) }
 
         // for call expressions, we need to leave unresolved ty vars intact
         // to determine whether an explicit type annotation required
@@ -222,14 +261,20 @@ class InferenceContext(
 //        pathTypes.replaceAll { _, ty -> fullyResolveWithOrigins(ty) }
         methodOrPathTypes.replaceAll { _, ty -> fullyResolveTypeVarsWithOrigins(ty) }
 
+        resolvedPaths.values.asSequence().flatten()
+            .forEach { it.subst = it.subst.foldValues(fullTypeWithOriginsResolver) }
+
         return InferenceResult(
             patTypes,
+            patFieldTypes,
             exprTypes,
             exprExpectedTypes,
             methodOrPathTypes,
-//            resolvedPaths,
+            resolvedPaths,
             resolvedFields,
             resolvedMethodCalls,
+            resolvedBindings,
+            resolvedLitFields,
             callableTypes,
             typeErrors
         )
@@ -268,6 +313,18 @@ class InferenceContext(
         this.patTypes[pat] = ty
     }
 
+    fun writePath(path: MvPath, resolved: List<ResolvedItem>) {
+        resolvedPaths[path] = resolved
+    }
+
+    fun writePathSubst(path: MvPath, subst: Substitution) {
+        resolvedPaths[path]?.singleOrNull()?.subst = subst
+    }
+
+    fun writeFieldPatTy(psi: MvPatField, ty: Ty) {
+        patFieldTypes[psi] = ty
+    }
+
     fun writeExprExpectedTy(expr: MvExpr, ty: Ty) {
         this.exprExpectedTypes[expr] = ty
     }
@@ -280,8 +337,19 @@ class InferenceContext(
 //        resolvedPaths[path] = resolved
 //    }
 
+    override fun getPatFieldType(patField: MvPatField): Ty {
+        return patFieldTypes[patField] ?: TyUnknown
+    }
+
+    override fun getResolvedLitField(litField: MvStructLitField): List<MvNamedElement> =
+        resolvedLitFields[litField].orEmpty()
+
+    fun getExprType(expr: MvExpr): Ty {
+        return exprTypes[expr] ?: TyUnknown
+    }
+
     @Suppress("UNCHECKED_CAST")
-    fun <T : GenericTy> instantiateMethodOrPath(
+    fun <T: GenericTy> instantiateMethodOrPath(
         methodOrPath: MvMethodOrPath,
         genericItem: MvTypeParametersOwner
     ): Pair<T, Substitution>? {
@@ -370,13 +438,13 @@ class InferenceContext(
         // skip unification for isCompatible check to prevent bugs
         if (skipUnification) return Ok(Unit)
         when (ty2) {
-                is TyInfer.IntVar -> intUnificationTable.unifyVarVar(ty1, ty2)
+            is TyInfer.IntVar -> intUnificationTable.unifyVarVar(ty1, ty2)
             is TyInteger -> intUnificationTable.unifyVarValue(ty1, ty2)
             is TyUnknown -> {
                 // do nothing, unknown should no influence IntVar
             }
-                else -> return Err(CombineTypeError.TypeMismatch(ty1, ty2))
-            }
+            else -> return Err(CombineTypeError.TypeMismatch(ty1, ty2))
+        }
         return Ok(Unit)
     }
 
@@ -390,7 +458,6 @@ class InferenceContext(
                 ty2.visitTyVarWith { combineTyVar(it, TyUnknown); false }
                 Ok(Unit)
             }
-
             ty2 is TyUnknown -> {
                 ty1.visitTyVarWith { combineTyVar(it, TyUnknown); false }
                 Ok(Unit)
@@ -400,7 +467,6 @@ class InferenceContext(
             ty1 is TyUnit && ty2 is TyUnit -> Ok(Unit)
             ty1 is TyInteger && ty2 is TyInteger
                     && isCompatibleIntegers(ty1, ty2) -> Ok(Unit)
-
             ty1 is TyPrimitive && ty2 is TyPrimitive && ty1.name == ty2.name -> Ok(Unit)
 
             ty1 is TyVector && ty2 is TyVector -> combineTypes(ty1.item, ty2.item)
@@ -411,7 +477,7 @@ class InferenceContext(
                     && coerceMutability(ty1, ty2) ->
                 combineTypes(ty1.referenced, ty2.referenced)
 
-            ty1 is TyStruct && ty2 is TyStruct
+            ty1 is TyAdt && ty2 is TyAdt
                     && ty1.item == ty2.item ->
                 combineTypePairs(ty1.typeArguments.zip(ty2.typeArguments))
 
@@ -440,11 +506,11 @@ class InferenceContext(
     }
 
     fun <T: TypeFoldable<T>> resolveTypeVarsIfPossible(ty: T): T {
-        return if (ty.hasTyInfer) ty.foldTyInferWith(this::resolveTyInfer) else ty
+        return if (ty.hasTyInfer) ty.deepFoldTyInferWith(this::resolveTyInfer) else ty
     }
 
     /// every TyVar unresolved at the end of this function converted into TyUnknown
-    fun <T : TypeFoldable<T>> fullyResolveTypeVars(value: T): T = value.foldWith(fullTypeResolver)
+    fun <T: TypeFoldable<T>> fullyResolveTypeVars(value: T): T = value.foldWith(fullTypeResolver)
 
     private inner class FullTypeResolver: TypeFolder() {
         override fun fold(ty: Ty): Ty {
@@ -465,7 +531,7 @@ class InferenceContext(
      * Similar to [fullyResolveTypeVars], but replaces unresolved [TyInfer.TyVar] to its [TyInfer.TyVar.origin]
      * instead of [TyUnknown]
      */
-    fun <T : TypeFoldable<T>> fullyResolveTypeVarsWithOrigins(value: T): T {
+    fun <T: TypeFoldable<T>> fullyResolveTypeVarsWithOrigins(value: T): T {
         return value.foldWith(fullTypeWithOriginsResolver)
     }
 
@@ -499,20 +565,32 @@ class InferenceContext(
     }
 }
 
+data class ResolvedItem(
+    val element: MvNamedElement,
+    val isVisible: Boolean,
+    var subst: Substitution = emptySubstitution,
+) {
+    companion object {
+        fun from(entry: ScopeEntry, context: MvMethodOrPath): ResolvedItem {
+            return ResolvedItem(entry.element, entry.isVisibleFrom(context))
+        }
+    }
+}
+
 fun PsiElement.descendantHasTypeError(existingTypeErrors: List<TypeError>): Boolean {
     return existingTypeErrors.any { typeError -> this.isAncestorOf(typeError.element) }
 }
 
-fun inferenceErrorOrTyUnknown(inferredElement: MvElement): TyUnknown =
+fun <T> inferenceErrorOrFallback(inferredElement: MvElement, fallback: T): T =
     when {
         // pragma statements are not supported for now
 //        inferredElement.hasAncestorOrSelf<MvPragmaSpecStmt>() -> TyUnknown
         // error out if debug mode is enabled
         isDebugModeEnabled() -> throw InferenceError(inferredElement.inferenceErrorMessage)
-        else -> TyUnknown
+        else -> fallback
     }
 
-class InferenceError(message: String, var context: PsiErrorContext? = null) : IllegalStateException(message) {
+class InferenceError(message: String, var context: PsiErrorContext? = null): IllegalStateException(message) {
     override fun toString(): String {
         var message = super.toString()
         val context = context

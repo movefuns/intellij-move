@@ -12,7 +12,7 @@ import org.sui.lang.core.psi.ext.isShorthand
 import org.sui.lang.core.psi.ext.owner
 
 
-class MvRenameProcessor : RenamePsiElementProcessor() {
+class MvRenameProcessor: RenamePsiElementProcessor() {
     override fun canProcessElement(element: PsiElement): Boolean = element is MvNamedElement
 
     override fun renameElement(
@@ -48,7 +48,7 @@ class MvRenameProcessor : RenamePsiElementProcessor() {
                     }
                 }
             }
-            is MvBindingPat -> {
+            is MvPatBinding -> {
                 val owner = element.owner
                 usages.forEach {
                     when (owner) {
@@ -59,7 +59,6 @@ class MvRenameProcessor : RenamePsiElementProcessor() {
                                 psiFactory.schemaLitField(newName, schemaLitField.referenceName)
                             schemaLitField.replace(newSchemaLitField)
                         }
-
                         else -> {
                             val field = it.element?.maybeLitFieldParent
                             // OLD_FIELD_NAME: NEW_VARIABLE_NAME
@@ -83,11 +82,11 @@ class MvRenameProcessor : RenamePsiElementProcessor() {
 
         val elementParent = element.parent
         val elementToRename = when {
-            element is MvBindingPat && elementParent is MvFieldPat -> {
+            element is MvPatBinding && elementParent is MvPatField -> {
                 // replace { myval } -> { myval: myval }
                 val newFieldPat = psiFactory.fieldPatFull(element.referenceName, element.referenceName)
-                val newFieldPatInTree = elementParent.bindingPat?.replace(newFieldPat) as MvFieldPatFull
-                newFieldPatInTree.pat as MvBindingPat
+                val newFieldPatInTree = elementParent.patBinding?.replace(newFieldPat) as MvPatFieldFull
+                newFieldPatInTree.pat as MvPatBinding
             }
             else -> element
         }

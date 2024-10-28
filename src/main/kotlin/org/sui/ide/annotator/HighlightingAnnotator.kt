@@ -11,8 +11,8 @@ import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.types.infer.inference
 import org.sui.lang.core.types.ty.Ty
+import org.sui.lang.core.types.ty.TyAdt
 import org.sui.lang.core.types.ty.TyReference
-import org.sui.lang.core.types.ty.TyStruct
 
 val SUI_BUILTIN_TYPE_IDENTIFIERS = setOf(
     "transfer", "object", "tx_context", "vector", "option",
@@ -60,7 +60,7 @@ class HighlightingAnnotator : MvAnnotatorBase() {
         return when {
             leafType == IDENTIFIER -> highlightIdentifier(parent)
             leafType == HEX_INTEGER_LITERAL -> MvColor.NUMBER
-            parent is MvAssertBangExpr -> MvColor.MACRO
+            parent is MvAssertMacroExpr -> MvColor.MACRO
             parent is MvCopyExpr
                     && element.text == "copy" -> MvColor.KEYWORD
             else -> null
@@ -68,7 +68,7 @@ class HighlightingAnnotator : MvAnnotatorBase() {
     }
 
     private fun highlightIdentifier(element: MvElement): MvColor? {
-        if (element is MvAssertBangExpr) return MvColor.MACRO
+        if (element is MvAssertMacroExpr) return MvColor.MACRO
         if (element is MvAbility) return MvColor.ABILITY
         if (element is MvTypeParameter) return MvColor.TYPE_PARAMETER
         if (element is MvItemSpecTypeParameter) return MvColor.TYPE_PARAMETER
@@ -84,8 +84,8 @@ class HighlightingAnnotator : MvAnnotatorBase() {
         if (element is MvNamedFieldDecl) return MvColor.FIELD
         if (element is MvStructDotField) return MvColor.FIELD
         if (element is MvMethodCall) return MvColor.METHOD_CALL
-        if (element is MvFieldPatFull) return MvColor.FIELD
-        if (element is MvFieldPat) return MvColor.FIELD
+        if (element is MvPatFieldFull) return MvColor.FIELD
+        if (element is MvPatField) return MvColor.FIELD
         if (element is MvStructLitField) return MvColor.FIELD
         if (element is MvConst) return MvColor.CONSTANT
         if (element is MvModule) return MvColor.MODULE
@@ -93,12 +93,12 @@ class HighlightingAnnotator : MvAnnotatorBase() {
 
         return when (element) {
             is MvPath -> highlightPathElement(element)
-            is MvBindingPat -> highlightBindingPat(element)
+            is MvPatBinding -> highlightBindingPat(element)
             else -> null
         }
     }
 
-    private fun highlightBindingPat(bindingPat: MvBindingPat): MvColor {
+    private fun highlightBindingPat(bindingPat: MvPatBinding): MvColor {
         val bindingOwner = bindingPat.parent
         if (bindingPat.isReceiverStyleFunctionsEnabled &&
             bindingOwner is MvFunctionParameter && bindingOwner.isSelfParam
@@ -106,7 +106,7 @@ class HighlightingAnnotator : MvAnnotatorBase() {
             return MvColor.SELF_PARAMETER
         }
         val msl = bindingPat.isMslOnlyItem
-        val itemTy = bindingPat.inference(msl)?.getPatType(bindingPat)
+        val itemTy = bindingPat.inference(msl)?.getBindingType(bindingPat)
         return if (itemTy != null) {
             highlightVariableByType(itemTy)
         } else {
@@ -154,8 +154,8 @@ class HighlightingAnnotator : MvAnnotatorBase() {
                 }
             }
             is MvStructLitExpr -> MvColor.STRUCT
-            is MvStructPat -> MvColor.STRUCT
-            is MvRefExpr -> {
+            is MvPatStruct -> MvColor.STRUCT
+            is MvPathExpr -> {
                 val item = path.reference?.resolveFollowingAliases() ?: return null
                 when {
                     item is MvConst -> MvColor.CONSTANT
@@ -165,16 +165,16 @@ class HighlightingAnnotator : MvAnnotatorBase() {
                             && itemParent is MvFunctionParameter && itemParent.isSelfParam
                         ) {
                             MvColor.SELF_PARAMETER
-                } else {
-                    val msl = path.isMslScope
-                    val itemTy = pathOwner.inference(msl)?.getExprType(pathOwner)
-                    if (itemTy != null) {
-                        highlightVariableByType(itemTy)
-                    } else {
-                        MvColor.VARIABLE
+                        } else {
+                            val msl = path.isMslScope
+                            val itemTy = pathOwner.inference(msl)?.getExprType(pathOwner)
+                            if (itemTy != null) {
+                                highlightVariableByType(itemTy)
+                            } else {
+                                MvColor.VARIABLE
+                            }
+                        }
                     }
-                }
-            }
                 }
             }
             else -> null
@@ -186,19 +186,19 @@ class HighlightingAnnotator : MvAnnotatorBase() {
             itemTy is TyReference -> {
                 val referenced = itemTy.referenced
                 when {
-                    referenced is TyStruct && referenced.item.hasKey ->
+                    referenced is TyAdt && referenced.item.hasKey ->
                         if (itemTy.isMut) MvColor.MUT_REF_TO_KEY_OBJECT else MvColor.REF_TO_KEY_OBJECT
-                    referenced is TyStruct && referenced.item.hasStore && !referenced.item.hasDrop ->
+                    referenced is TyAdt && referenced.item.hasStore && !referenced.item.hasDrop ->
                         if (itemTy.isMut) MvColor.MUT_REF_TO_STORE_NO_DROP_OBJECT else MvColor.REF_TO_STORE_NO_DROP_OBJECT
-                    referenced is TyStruct && referenced.item.hasStore && referenced.item.hasDrop ->
+                    referenced is TyAdt && referenced.item.hasStore && referenced.item.hasDrop ->
                         if (itemTy.isMut) MvColor.MUT_REF_TO_STORE_OBJECT else MvColor.REF_TO_STORE_OBJECT
                     else ->
                         if (itemTy.isMut) MvColor.MUT_REF else MvColor.REF
                 }
             }
-            itemTy is TyStruct && itemTy.item.hasStore && !itemTy.item.hasDrop -> MvColor.STORE_NO_DROP_OBJECT
-            itemTy is TyStruct && itemTy.item.hasStore -> MvColor.STORE_OBJECT
-            itemTy is TyStruct && itemTy.item.hasKey -> MvColor.KEY_OBJECT
+            itemTy is TyAdt && itemTy.item.hasStore && !itemTy.item.hasDrop -> MvColor.STORE_NO_DROP_OBJECT
+            itemTy is TyAdt && itemTy.item.hasStore -> MvColor.STORE_OBJECT
+            itemTy is TyAdt && itemTy.item.hasKey -> MvColor.KEY_OBJECT
             else -> MvColor.VARIABLE
         }
 

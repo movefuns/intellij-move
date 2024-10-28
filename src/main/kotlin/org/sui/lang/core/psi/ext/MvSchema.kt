@@ -7,7 +7,7 @@ import org.sui.lang.core.psi.*
 import org.sui.lang.core.stubs.MvSchemaStub
 import org.sui.lang.core.stubs.MvStubbedNamedElementImpl
 import org.sui.lang.core.types.ItemQualName
-import org.sui.lang.core.types.infer.foldTyTypeParameterWith
+import org.sui.lang.core.types.infer.deepFoldTyTypeParameterWith
 import org.sui.lang.core.types.infer.loweredType
 import org.sui.lang.core.types.ty.TySchema
 import org.sui.lang.core.types.ty.TyUnknown
@@ -22,14 +22,14 @@ val MvSchema.requiredTypeParams: List<MvTypeParameter>
         this.fieldStmts
             .map { it.type?.loweredType(true) ?: TyUnknown }
             .forEach {
-                it.foldTyTypeParameterWith { paramTy -> usedTypeParams.add(paramTy.origin); paramTy }
+                it.deepFoldTyTypeParameterWith { paramTy -> usedTypeParams.add(paramTy.origin); paramTy }
             }
         return this.typeParameters.filter { it !in usedTypeParams }
     }
 
 val MvSchema.fieldStmts: List<MvSchemaFieldStmt> get() = this.specBlock?.schemaFields().orEmpty()
 
-val MvSchema.fieldsAsBindings get() = this.fieldStmts.map { it.bindingPat }
+val MvSchema.fieldsAsBindings get() = this.fieldStmts.map { it.patBinding }
 
 val MvIncludeStmt.expr: MvExpr? get() = this.childOfType()
 

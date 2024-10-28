@@ -9,7 +9,7 @@ import org.sui.lang.core.resolve.ref.MvPolyVariantReferenceBase
 import org.sui.lang.core.types.address
 import org.sui.lang.core.types.infer.inference
 import org.sui.lang.core.types.ty.Ty
-import org.sui.lang.core.types.ty.TyStruct
+import org.sui.lang.core.types.ty.TyAdt
 import org.sui.lang.core.types.ty.TyVector
 import org.sui.stdext.wrapWithList
 
@@ -29,8 +29,7 @@ fun Ty.itemModule(moveProject: MoveProject): MvModule? {
                 .getModulesFromIndex("vector")
                 .firstOrNull { it.is0x1Address(moveProject) }
         }
-
-        is TyStruct -> norefTy.item.module
+        is TyAdt -> norefTy.item.module
         else -> null
     }
 }
@@ -42,7 +41,7 @@ fun MvModule.is0x1Address(moveProject: MoveProject): Boolean {
 
 class MvMethodCallReferenceImpl(
     element: MvMethodCall
-) :
+):
     MvPolyVariantReferenceBase<MvMethodCall>(element) {
 
     override fun multiResolve(): List<MvNamedElement> {
@@ -56,8 +55,8 @@ class MvMethodCallReferenceImpl(
         element is MvFunction && super.isReferenceTo(element)
 }
 
-abstract class MvMethodCallMixin(node: ASTNode) : MvElementImpl(node),
-    MvMethodCall {
+abstract class MvMethodCallMixin(node: ASTNode): MvElementImpl(node),
+                                                 MvMethodCall {
 
     override fun getReference(): MvPolyVariantReference = MvMethodCallReferenceImpl(this)
 }

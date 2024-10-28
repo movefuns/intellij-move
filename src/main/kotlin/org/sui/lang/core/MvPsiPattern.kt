@@ -13,7 +13,9 @@ import com.intellij.util.ProcessingContext
 import org.sui.lang.MoveFile
 import org.sui.lang.MvElementTypes.*
 import org.sui.lang.core.psi.*
+import org.sui.lang.core.psi.ext.ancestorStrict
 import org.sui.lang.core.psi.ext.elementType
+import org.sui.lang.core.psi.ext.hasColonColon
 import org.sui.lang.core.psi.ext.leftLeaves
 
 object MvPsiPattern {
@@ -50,7 +52,7 @@ object MvPsiPattern {
             // let S { field } = 1
             //  STRUCT_PAT[FIELD_PAT[BINDING[IDENTIFIER]]]
             //  ^ 3         ^ 2           ^ 1       ^ 0
-            .andNot(psiElement().withSuperParent(3, MvStructPat::class.java))
+            .andNot(psiElement().withSuperParent(3, MvPatStruct::class.java))
 
     fun anySpecStart() = psiElementInside<MvItemSpec>().and(onStatementBeginning("spec"))
 
@@ -58,7 +60,7 @@ object MvPsiPattern {
 
     fun itemSpecRef(): PsiElementPattern.Capture<PsiElement> = psiElementWithParent<MvItemSpecRef>()
 
-    fun bindingPat(): PsiElementPattern.Capture<PsiElement> = psiElementWithParent<MvBindingPat>()
+    fun bindingPat(): PsiElementPattern.Capture<PsiElement> = psiElementWithParent<MvPatBinding>()
 
     fun namedAddress(): PsiElementPattern.Capture<MvNamedAddress> = psiElement<MvNamedAddress>()
 
@@ -78,7 +80,7 @@ object MvPsiPattern {
 
     fun refExpr(): PsiElementPattern.Capture<PsiElement> =
         path()
-            .withSuperParent(2, MvRefExpr::class.java)
+            .withSuperParent(2, MvPathExpr::class.java)
 
     fun pathType(): PsiElementPattern.Capture<PsiElement> =
         path()
@@ -102,13 +104,12 @@ object MvPsiPattern {
 
     private fun whitespaceAndErrors() = psiElement().whitespaceCommentEmptyOrError()
 
-    inline fun <reified I : PsiElement> psiElementWithParent() =
+    inline fun <reified I: PsiElement> psiElementWithParent() =
         psiElement()
-            .withParent(
-                or(psiElement<I>(), psiElement<PsiErrorElement>().withParent(psiElement<I>()))
-            )
+            .withParent(or(psiElement<I>(), psiElement<PsiErrorElement>().withParent(psiElement<I>()))
+        )
 
-    inline fun <reified I : PsiElement> psiElementAfterSiblingSkipping(
+    inline fun <reified I: PsiElement> psiElementAfterSiblingSkipping(
         skip: ElementPattern<*>,
     ) =
         or(
@@ -117,7 +118,7 @@ object MvPsiPattern {
                 .withParent(psiElement<PsiErrorElement>().afterSiblingSkipping(skip, psiElement<I>()))
         )
 
-    inline fun <reified I : PsiElement> psiElementInside(): PsiElementPattern.Capture<PsiElement> =
+    inline fun <reified I: PsiElement> psiElementInside(): PsiElementPattern.Capture<PsiElement> =
         psiElement().inside(
             or(
                 psiElement<I>(),
@@ -125,7 +126,21 @@ object MvPsiPattern {
             )
         )
 
-    class AfterSibling(val sibling: IElementType, val withPossibleError: Boolean = true) :
+    val simplePathPattern: PsiElementPattern.Capture<PsiElement>
+        get() {
+            val simplePath = psiElement<MvPath>()
+                .with(object : PatternCondition<MvPath>("SimplePath") {
+                    override fun accepts(path: MvPath, context: ProcessingContext?): Boolean =
+                        path.pathAddress == null &&
+                                path.path == null &&
+//                                path.typeQual == null &&
+                                !path.hasColonColon &&
+                                path.ancestorStrict<MvUseSpeck>() == null
+                })
+            return psiElement().withParent(simplePath)
+        }
+
+    class AfterSibling(val sibling: IElementType, val withPossibleError: Boolean = true):
         PatternCondition<PsiElement>("afterSiblingKeywords") {
         override fun accepts(t: PsiElement, context: ProcessingContext?): Boolean {
             var element = t
@@ -143,7 +158,7 @@ object MvPsiPattern {
         }
     }
 
-    class AfterAnySibling(val siblings: TokenSet, val withPossibleError: Boolean = true) :
+    class AfterAnySibling(val siblings: TokenSet, val withPossibleError: Boolean = true):
         PatternCondition<PsiElement>("afterSiblingKeywords") {
         override fun accepts(t: PsiElement, context: ProcessingContext?): Boolean {
             var element = t
@@ -163,7 +178,7 @@ object MvPsiPattern {
 
     private class OnStatementBeginning(
         vararg startWords: String
-    ) : PatternCondition<PsiElement>("on statement beginning") {
+    ): PatternCondition<PsiElement>("on statement beginning") {
         val myStartWords = startWords
         override fun accepts(t: PsiElement, context: ProcessingContext?): Boolean {
             val prev = t.prevVisibleOrNewLine
@@ -189,22 +204,22 @@ private val PsiElement.prevVisibleOrNewLine: PsiElement?
 
     }
 
-inline fun <reified I : PsiElement> psiElement(): PsiElementPattern.Capture<I> {
+inline fun <reified I: PsiElement> psiElement(): PsiElementPattern.Capture<I> {
     return PlatformPatterns.psiElement(I::class.java)
 }
 
-inline fun <reified I : PsiElement> PsiElementPattern.Capture<PsiElement>.withParent(): PsiElementPattern.Capture<PsiElement> {
+inline fun <reified I: PsiElement> PsiElementPattern.Capture<PsiElement>.withParent(): PsiElementPattern.Capture<PsiElement> {
     return this.withSuperParent(1, I::class.java)
 }
 
-inline fun <reified I : PsiElement> PsiElementPattern.Capture<PsiElement>.withSuperParent(level: Int): PsiElementPattern.Capture<PsiElement> {
+inline fun <reified I: PsiElement> PsiElementPattern.Capture<PsiElement>.withSuperParent(level: Int): PsiElementPattern.Capture<PsiElement> {
     return this.withSuperParent(level, I::class.java)
 }
 
-fun <T : Any, Self : ObjectPattern<T, Self>> ObjectPattern<T, Self>.withCond(
+fun <T: Any, Self: ObjectPattern<T, Self>> ObjectPattern<T, Self>.withCond(
     name: String,
     cond: (T) -> Boolean
 ): Self =
-    with(object : PatternCondition<T>(name) {
+    with(object: PatternCondition<T>(name) {
         override fun accepts(t: T, context: ProcessingContext?): Boolean = cond(t)
     })

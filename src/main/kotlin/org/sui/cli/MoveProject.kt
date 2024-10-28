@@ -43,7 +43,7 @@ data class MoveProject(
     val dependencies: List<Pair<MovePackage, RawAddressMap>>,
     // updates
     val fetchDepsStatus: UpdateStatus = UpdateStatus.NeedsUpdate,
-) : UserDataHolderBase() {
+): UserDataHolderBase() {
 
     val contentRoot: VirtualFile get() = this.currentPackage.contentRoot
     val contentRootPath: Path? get() = this.currentPackage.contentRoot.toNioPathOrNull()
@@ -125,9 +125,7 @@ data class MoveProject(
             val dirScope = GlobalSearchScopes.directoryScope(project, folder, true)
             searchScope = searchScope.uniteWith(dirScope)
         }
-        if (isUnitTestMode
-            && searchScope == GlobalSearchScope.EMPTY_SCOPE
-        ) {
+        if (isUnitTestMode && searchScope == GlobalSearchScope.EMPTY_SCOPE) {
             // add current file to the search scope for the tests
             val currentFile =
                 FileEditorManager.getInstance(project).selectedTextEditor?.virtualFile
@@ -183,8 +181,8 @@ data class MoveProject(
 
     sealed class UpdateStatus(private val priority: Int) {
         //        object UpToDate : UpdateStatus(0)
-        object NeedsUpdate : UpdateStatus(1)
-        class UpdateFailed(@Tooltip val reason: String) : UpdateStatus(2) {
+        object NeedsUpdate: UpdateStatus(1)
+        class UpdateFailed(@Tooltip val reason: String): UpdateStatus(2) {
             override fun toString(): String = reason
         }
 
@@ -215,30 +213,13 @@ data class MoveProject(
                     ) as TomlFile
 
             val moveToml = MoveToml(project, tomlFile)
-            val movePackage = MovePackage(
-                project, contentRoot,
-                packageName = "DummyPackage",
-                tomlMainAddresses = moveToml.declaredAddresses()
-            )
+            val movePackage = MovePackage(project, contentRoot,
+                                          packageName = "DummyPackage",
+                                          tomlMainAddresses = moveToml.declaredAddresses())
             return movePackage
         }
 
         fun forTests(project: Project): MoveProject {
-//            checkUnitTestMode()
-//            val contentRoot = project.contentRoots.first()
-//            val tomlFile =
-//                PsiFileFactory.getInstance(project)
-//                    .createFileFromText(
-//                        TomlLanguage,
-//                        """
-//                     [package]
-//                     name = "MyPackage"
-//                """
-//                    ) as TomlFile
-//
-//            val moveToml = MoveToml(project, tomlFile)
-//            val movePackage = MovePackage(project, contentRoot, moveToml,
-//                                          declaredTomlAddresses = moveToml.declaredAddresses())
             return MoveProject(
                 project,
                 packageForTests(project),

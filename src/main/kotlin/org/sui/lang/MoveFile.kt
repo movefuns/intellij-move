@@ -9,7 +9,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.CachedValuesManager.getProjectPsiDependentCache
 import com.intellij.psi.util.PsiTreeUtil
-import org.sui.cli.Consts
+import org.sui.cli.MvConstants
 import org.sui.cli.MoveProject
 import org.sui.cli.moveProjectsService
 import org.sui.lang.core.psi.*
@@ -23,7 +23,7 @@ import java.nio.file.Path
 fun findMoveTomlPath(currentFilePath: Path): Path? {
     var dir = currentFilePath.parent
     while (dir != null) {
-        val moveTomlPath = dir.resolveAbsPath(Consts.MANIFEST_FILE)
+        val moveTomlPath = dir.resolveAbsPath(MvConstants.MANIFEST_FILE)
         if (moveTomlPath != null) {
             return moveTomlPath
         }
@@ -77,7 +77,7 @@ class MoveFile(fileViewProvider: FileViewProvider) : MoveFileBase(fileViewProvid
     fun preloadModules(): Sequence<MvModule> {
         return getProjectPsiDependentCache(this) { it ->
             it.modules().filter {
-                it.isPreload()
+                it.isPreload() == true
             }
 //            it.childrenOfType<MvModule>()
 //                .chain(it.childrenOfType<MvAddressDef>().flatMap { a -> a.modules() })

@@ -45,7 +45,7 @@ class RsExternalLinterPass(
     private val factory: RsExternalLinterPassFactory,
     private val file: PsiFile,
     private val editor: Editor
-) : TextEditorHighlightingPass(file.project, editor.document), DumbAware {
+): TextEditorHighlightingPass(file.project, editor.document), DumbAware {
     private val highlights: MutableList<HighlightInfo> = mutableListOf()
 
     @Volatile
@@ -84,7 +84,7 @@ class RsExternalLinterPass(
             return
         }
 
-        class RsUpdate : Update(file) {
+        class RsUpdate: Update(file) {
             val updateFile: MoveFile = file
 
             override fun setRejected() {
@@ -157,7 +157,7 @@ class RsExternalLinterPass(
 class RsExternalLinterPassFactory(
     project: Project,
     registrar: TextEditorHighlightingPassRegistrar
-) : DirtyScopeTrackingHighlightingPassFactory {
+): DirtyScopeTrackingHighlightingPassFactory {
     private val myPassId: Int = registrar.registerTextEditorHighlightingPass(
         this,
         null,

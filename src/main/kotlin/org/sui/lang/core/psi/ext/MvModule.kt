@@ -4,7 +4,9 @@ import com.intellij.ide.projectView.PresentationData
 import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentation
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Key
 import com.intellij.psi.stubs.IStubElementType
+import com.intellij.psi.util.CachedValue
 import com.intellij.psi.util.CachedValuesManager.getProjectPsiDependentCache
 import org.sui.ide.MoveIcons
 import org.sui.ide.annotator.PRELOAD_STD_MODULES
@@ -21,6 +23,9 @@ import org.sui.lang.core.types.ItemQualName
 import org.sui.lang.core.types.address
 import org.sui.lang.index.MvModuleSpecIndex
 import org.sui.lang.moveProject
+import org.sui.utils.cache
+import org.sui.utils.cacheManager
+import org.sui.utils.psiCacheResult
 import javax.swing.Icon
 
 fun MvModule.hasTestFunctions(): Boolean = this.testFunctions().isNotEmpty()
@@ -28,15 +33,19 @@ fun MvModule.hasTestFunctions(): Boolean = this.testFunctions().isNotEmpty()
 fun MvModule.addressRef(): MvAddressRef? =
     this.addressRef ?: (this.ancestorStrict<MvAddressDef>())?.addressRef
 
-val MvModule.friendModules: Set<MvModule>
+val MvModule.friendModules: Sequence<MvModule>
     get() {
-        val friendModulePaths = this.friendDeclList.mapNotNull { it.path }
-        val friends = mutableSetOf<MvModule>()
-        for (modulePath in friendModulePaths) {
-            val module = modulePath.reference?.resolveFollowingAliases() as? MvModule ?: continue
-            friends.add(module)
-        }
-        return friends
+        return this.friendDeclList
+            .asSequence()
+            .mapNotNull { it.path?.reference?.resolveFollowingAliases() as? MvModule }
+//        return sequence {
+//        }
+//        val friends = mutableSetOf<MvModule>()
+//        for (modulePath in friendModulePaths) {
+//            val module = modulePath.reference?.resolveFollowingAliases() as? MvModule ?: continue
+//            friends.add(module)
+//        }
+//        return friends
     }
 
 fun MvModule.allFunctions(): List<MvFunction> {
@@ -176,25 +185,27 @@ fun MvModuleSpec.specFunctions(): List<MvSpecFunction> = this.moduleSpecBlock?.s
 fun MvModuleSpec.specInlineFunctions(): List<MvSpecInlineFunction> =
     this.moduleItemSpecs().flatMap { it.specInlineFunctions() }
 
-fun MvModule.allModuleSpecs(): List<MvModuleSpec> {
-    val moveProject = this.moveProject ?: return emptyList()
-    val moduleName = this.name ?: return emptyList()
+private val MODULE_SPECS_KEY: Key<CachedValue<List<MvModuleSpec>>> =
+    Key.create("ALL_MODULE_SPECS_KEY")
+
+fun MvModule.allModuleSpecs(): List<MvModuleSpec> = project.cacheManager.cache(this, MODULE_SPECS_KEY) {
+    val specs: List<MvModuleSpec> = run {
+        val moveProject = this.moveProject ?: return@run emptyList()
+        val moduleName = this.name ?: return@run emptyList()
 
         val searchScope = moveProject.searchScope()
-    // all `spec 0x1::m {}` for the current module
-    val moduleSpecs = MvModuleSpecIndex.getElementsByModuleName(this.project, moduleName, searchScope)
-    if (moduleSpecs.isEmpty()) return emptyList()
+        // all `spec 0x1::m {}` for the current module
+        val allModuleSpecs = MvModuleSpecIndex.getElementsByModuleName(this.project, moduleName, searchScope)
+        if (allModuleSpecs.isEmpty()) return@run emptyList()
 
-//    val currentModule = this.fqModule() ?: return emptyList()
-    return moduleSpecs
+        allModuleSpecs
             .filter { moduleSpec ->
                 val specModule = moduleSpec.moduleItem ?: return@filter false
                 isModulesEqual(this, specModule)
-//            currentModule == specModule.fqModule()
             }
             .toList()
-//    return getProjectPsiDependentCache(this) {
-//    }
+    }
+    this.psiCacheResult(specs)
 }
 
 fun MvModule.allModuleSpecBlocks(): List<MvModuleSpecBlock> {
@@ -228,12 +239,12 @@ fun MvModule.useModuleItemList(): List<String> {
     return strings
 }
 
-abstract class MvModuleMixin : MvStubbedNamedElementImpl<MvModuleStub>,
-                               MvModule {
+abstract class MvModuleMixin: MvStubbedNamedElementImpl<MvModuleStub>,
+                              MvModule {
 
-    constructor(node: ASTNode) : super(node)
+    constructor(node: ASTNode): super(node)
 
-    constructor(stub: MvModuleStub, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
+    constructor(stub: MvModuleStub, nodeType: IStubElementType<*, *>): super(stub, nodeType)
 
     override fun getIcon(flags: Int): Icon = MoveIcons.MODULE
 
@@ -258,6 +269,4 @@ abstract class MvModuleMixin : MvStubbedNamedElementImpl<MvModuleStub>,
             val address = this.address(moveProject) ?: Address.Value("0x0")
             return ItemQualName(this, address, null, moduleName)
         }
-
-
 }

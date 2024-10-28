@@ -102,7 +102,7 @@ object RsExternalLinterUtils {
 
         val future = CompletableFuture<RsExternalLinterResult?>()
         val task =
-            object : Task.Backgroundable(project, "Analyzing project with ${args.linter.title}...", true) {
+            object: Task.Backgroundable(project, "Analyzing project with ${args.linter.title}...", true) {
 
                 override fun run(indicator: ProgressIndicator) {
                     widget?.inProgress = true
@@ -154,7 +154,7 @@ fun MessageBus.createDisposableOnAnyPsiChange(): CheckedDisposable {
     val disposable = Disposer.newCheckedDisposable("Dispose on PSI change")
     connect(disposable).subscribe(
         PsiManagerImpl.ANY_PSI_CHANGE_TOPIC,
-        object : AnyPsiChangeListener {
+        object: AnyPsiChangeListener {
             override fun beforePsiChanged(isPhysical: Boolean) {
                 if (isPhysical) {
                     Disposer.dispose(disposable)
@@ -373,7 +373,6 @@ private fun formatMessage(message: String): String {
                     group.lines.add(line)
                     Pair(group, acc)
                 }
-
                 else -> {
                     acc.add(group)
                     Pair(Group(isListItem, arrayListOf(line)), acc)

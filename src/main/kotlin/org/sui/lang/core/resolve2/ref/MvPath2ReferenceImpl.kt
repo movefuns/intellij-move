@@ -2,9 +2,6 @@ package org.sui.lang.core.resolve2.ref
 
 import com.intellij.psi.ResolveResult
 import org.sui.cli.MoveProject
-import org.sui.ide.annotator.PRELOAD_MODULE_ITEMS
-import org.sui.ide.annotator.PRELOAD_STD_MODULES
-import org.sui.ide.annotator.PRELOAD_SUI_MODULES
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.resolve.*
@@ -13,12 +10,18 @@ import org.sui.lang.core.resolve.ref.Namespace.MODULE
 import org.sui.lang.core.resolve2.*
 import org.sui.lang.core.resolve2.PathKind.NamedAddress
 import org.sui.lang.core.resolve2.PathKind.ValueAddress
+import org.sui.lang.core.types.infer.inference
+import org.sui.lang.core.types.ty.Ty
+import org.sui.lang.core.types.ty.TyAdt
 import org.sui.lang.moveProject
-import org.sui.lang.preLoadItems
 import kotlin.LazyThreadSafetyMode.NONE
 
-class Path2ReferenceImpl(element: MvPath) :
-    MvPolyVariantReferenceBase<MvPath>(element), MvPath2Reference {
+interface InferenceCachedPathElement: MvElement {
+    val path: MvPath
+}
+
+class MvPath2ReferenceImpl(element: MvPath): MvPolyVariantReferenceBase<MvPath>(element),
+                                             MvPath2Reference {
 
     override fun resolve(): MvNamedElement? =
         rawMultiResolveIfVisible().singleOrNull()?.element as? MvNamedElement
@@ -38,19 +41,27 @@ class Path2ReferenceImpl(element: MvPath) :
     fun rawMultiResolveIfVisible(): List<RsPathResolveResult<MvElement>> =
         rawMultiResolve().filter { it.isVisible }
 
-    //    fun rawMultiResolve(): List<RsPathResolveResult<MvElement>> = Resolver.invoke(this.element)
-    fun rawMultiResolve(): List<RsPathResolveResult<MvElement>> = rawCachedMultiResolve()
+    fun rawMultiResolve(): List<RsPathResolveResult<MvElement>> =
+//        rawCachedMultiResolve()
+        rawMultiResolveUsingInferenceCache() ?: rawCachedMultiResolve()
+
+    private fun rawMultiResolveUsingInferenceCache(): List<RsPathResolveResult<MvElement>>? {
+        val pathElement = element.parent as? InferenceCachedPathElement ?: return null
+        val msl = pathElement.isMsl()
+        return pathElement.inference(msl)?.getResolvedPath(pathElement.path)
+            ?.map {
+                RsPathResolveResult(it.element, it.isVisible)
+            }
+    }
 
     private fun rawCachedMultiResolve(): List<RsPathResolveResult<MvElement>> {
         return MvResolveCache
             .getInstance(element.project)
-            .resolveWithCaching(element, cacheDependency, Resolver)
+            .resolveWithCaching(element, ResolveCacheDependency.LOCAL_AND_RUST_STRUCTURE, Resolver)
             .orEmpty()
     }
 
-    private val cacheDependency: ResolveCacheDependency get() = ResolveCacheDependency.LOCAL_AND_RUST_STRUCTURE
-
-    private object Resolver : (MvElement) -> List<RsPathResolveResult<MvElement>> {
+    private object Resolver: (MvElement) -> List<RsPathResolveResult<MvElement>> {
         override fun invoke(path: MvElement): List<RsPathResolveResult<MvElement>> {
             // should not really happen
             if (path !is MvPath) return emptyList()
@@ -58,6 +69,60 @@ class Path2ReferenceImpl(element: MvPath) :
             return resolvePath(resolutionCtx, path)
         }
     }
+}
+
+fun processPathResolveVariantsWithExpectedType(
+    ctx: ResolutionContext,
+    pathKind: PathKind,
+    expectedType: Ty?,
+    processor: RsResolveProcessor
+): Boolean {
+    val expectedTypeFilterer = filterEnumVariantsByExpectedType(expectedType, processor)
+    return processPathResolveVariants(
+        ctx,
+        pathKind,
+        processor = expectedTypeFilterer
+    )
+}
+
+fun filterEnumVariantsByExpectedType(expectedType: Ty?, processor: RsResolveProcessor): RsResolveProcessor {
+    if (expectedType == null) return processor
+
+    val enumItem = (expectedType as? TyAdt)?.item as? MvEnum
+    if (enumItem == null) return processor
+
+    val allowedVariants = enumItem.variants
+    return processor.wrapWithFilter {
+        val element = it.element
+        element !is MvEnumVariant || element in allowedVariants
+    }
+}
+
+//fun resolveAliases(processor: RsResolveProcessor): RsResolveProcessor =
+//    processor.wrapWithMapper { e: ScopeEntry ->
+//        val visEntry = e as? ScopeEntryWithVisibility ?: return@wrapWithMapper e
+//        val element = visEntry.element
+//        val unaliased = resolveAliases(element)
+//        visEntry.copy(element = unaliased)
+////        if (element is MvUseAlias) {
+////            val aliasedPath = element.parentUseSpeck.path
+////            val resolvedItem = aliasedPath.reference?.resolve()
+////            if (resolvedItem != null) {
+////                return@wrapWithMapper visEntry.copy(element = resolvedItem)
+////            }
+////        }
+////        e
+//    }
+
+fun resolveAliases(element: MvNamedElement): MvNamedElement {
+    if (element is MvUseAlias) {
+        val aliasedPath = element.parentUseSpeck.path
+        val resolvedItem = aliasedPath.reference?.resolve()
+        if (resolvedItem != null) {
+            return resolvedItem
+        }
+    }
+    return element
 }
 
 fun processPathResolveVariants(
@@ -75,11 +140,9 @@ fun processPathResolveVariants(
             // local
             processNestedScopesUpwards(ctx.element, pathKind.ns, ctx, processor)
         }
-
         is PathKind.QualifiedPath.Module -> {
             processModulePathResolveVariants(ctx, pathKind.address, processor)
         }
-
         is PathKind.QualifiedPath -> {
             processQualifiedPathResolveVariants(ctx, pathKind.ns, pathKind.qualifier, processor)
         }
@@ -121,7 +184,6 @@ fun processQualifiedPathResolveVariants(
 }
 
 class ResolutionContext(val element: MvElement, val isCompletion: Boolean) {
-
     private var lazyContainingMoveProject: Lazy<MoveProject?> = lazy(NONE) {
         element.moveProject
     }
@@ -142,64 +204,33 @@ class ResolutionContext(val element: MvElement, val isCompletion: Boolean) {
     val isSpecOnlyExpr: Boolean get() = element.hasAncestor<MvSpecOnlyExpr>()
 }
 
-//// todo: use in inference later
-//fun resolvePathRaw(path: MvPath): List<ScopeEntry> {
-//    return collectResolveVariantsAsScopeEntries(path.referenceName) {
-//        processPathResolveVariants(path, it)
-//    }
-//}
+fun resolvePathRaw(path: MvPath, expectedType: Ty? = null): List<ScopeEntry> {
+    val ctx = ResolutionContext(path, false)
+    val kind = path.pathKind()
+    val resolveVariants =
+        collectResolveVariantsAsScopeEntries(path.referenceName) {
+            processPathResolveVariantsWithExpectedType(ctx, kind, expectedType, it)
+        }
+    return resolveVariants
+}
 
 private fun resolvePath(
     ctx: ResolutionContext,
     path: MvPath,
-//    kind: RsPathResolveKind
 ): List<RsPathResolveResult<MvElement>> {
     val pathKind = path.pathKind()
-    var result =
+    val result =
         // matches resolve variants against referenceName from path
         collectMethodOrPathResolveVariants(path, ctx) {
             // actually emits resolve variants
-            processPathResolveVariants(ctx, pathKind, it)
+            processPathResolveVariantsWithExpectedType(ctx, pathKind, expectedType = null, it)
+//            processPathResolveVariants(ctx, pathKind, it)
         }
-
-    if (result.isEmpty()) {
-        result = collectMethodOrPathResolveVariants(path, ctx) {
-            // pre-load module
-            if (PRELOAD_SUI_MODULES.contains(ctx.element.text) || PRELOAD_STD_MODULES.contains(ctx.element.text)) {
-                if (ctx.moveProject != null) {
-                    ctx.moveProject?.processMoveFiles { file ->
-                        val modules = file.preloadModules()
-                        for (module in modules) {
-                            if (it.process(module.name.toString(), MODULES, module)) {
-                                return@processMoveFiles true
-                            }
-                        }
-                        true
-                    }
-                }
-            }
-            // pre-load module-item
-            if (PRELOAD_MODULE_ITEMS.contains(ctx.element.text)) {
-                if (ctx.moveProject != null) {
-                    ctx.moveProject!!.processMoveFiles { file ->
-                        val items = file.preLoadItems()
-                        for (item in items) {
-                            if (it.process(item.name.toString(), MODULES, item)) {
-                                return@processMoveFiles true
-                            }
-                        }
-                        true
-                    }
-                }
-            }
-        }
-    }
-
-//    return result
-    return when (result.size) {
-        0 -> emptyList()
-        1 -> listOf(result.single())
-        else -> result
-    }
+    return result
+//    return when (result.size) {
+//        0 -> emptyList()
+//        1 -> listOf(result.single())
+//        else -> result
+//    }
 }
 

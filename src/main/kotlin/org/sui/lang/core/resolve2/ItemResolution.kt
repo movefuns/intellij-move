@@ -4,7 +4,7 @@ import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.resolve.*
 import org.sui.lang.core.resolve.ref.Namespace
-import org.sui.lang.core.types.infer.foldTyTypeParameterWith
+import org.sui.lang.core.types.infer.deepFoldTyTypeParameterWith
 import org.sui.lang.core.types.ty.Ty
 import org.sui.lang.core.types.ty.TyInfer
 import org.sui.lang.core.types.ty.TyReference
@@ -15,7 +15,7 @@ val MvNamedElement.namespace
     get() = when (this) {
         is MvFunctionLike -> Namespace.FUNCTION
         is MvStruct -> Namespace.TYPE
-        is MvEnum -> Namespace.TYPE
+        is MvEnum -> Namespace.ENUM
         is MvConst -> Namespace.NAME
         is MvSchema -> Namespace.SCHEMA
         is MvModule -> Namespace.MODULE
@@ -37,7 +37,7 @@ fun processMethodResolveVariants(
             val selfTy = function.selfParamTy(msl) ?: return@wrapWithFilter false
             // need to use TyVar here, loweredType() erases them
             val selfTyWithTyVars =
-                selfTy.foldTyTypeParameterWith { tp -> TyInfer.TyVar(tp) }
+                selfTy.deepFoldTyTypeParameterWith { tp -> TyInfer.TyVar(tp) }
             TyReference.isCompatibleWithAutoborrow(receiverTy, selfTyWithTyVars, msl)
         }
         .processAllItems(setOf(Namespace.FUNCTION), itemModule.allNonTestFunctions())
@@ -54,14 +54,13 @@ fun processItemDeclarations(
     val items = itemsOwner.itemElements +
             (itemsOwner as? MvModule)?.innerSpecItems.orEmpty() +
             (itemsOwner as? MvModule)?.let { getItemsFromModuleSpecs(it, ns) }.orEmpty()
+
     for (item in items) {
         val name = item.name ?: continue
-
         val namespace = item.namespace
         if (namespace !in ns) continue
 
-        val visibilityFilter = item.visInfo().createFilter()
-        if (processor.process(name, item, EnumSet.of(namespace), visibilityFilter)) return true
+        if (processor.process(name, item, setOf(namespace))) return true
     }
 
     return false
@@ -88,7 +87,6 @@ fun processItemsFromModuleSpecs(
                         moduleSpec.specFunctions(),
                         moduleSpec.specInlineFunctions(),
                     )
-
                 Namespace.SCHEMA -> processor.processAll(thisNs, moduleSpec.schemas())
                 else -> false
             }

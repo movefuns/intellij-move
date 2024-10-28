@@ -62,7 +62,6 @@ data class CompletionContext(
     val structAsType: Boolean = false
 )
 
-
 fun MvNamedElement.createLookupElement(
     completionContext: CompletionContext,
     subst: Substitution = emptySubstitution,
@@ -116,7 +115,7 @@ private fun CharSequence.indexOfSkippingSpace(c: Char, startIndex: Int): Int? {
 fun LookupElementBuilder.withPriority(priority: Double): LookupElement =
     if (priority == DEFAULT_PRIORITY) this else PrioritizedLookupElement.withPriority(this, priority)
 
-class AngleBracketsInsertHandler : InsertHandler<LookupElement> {
+class AngleBracketsInsertHandler: InsertHandler<LookupElement> {
 
     override fun handleInsert(context: InsertionContext, item: LookupElement) {
         val document = context.document
@@ -127,7 +126,7 @@ class AngleBracketsInsertHandler : InsertHandler<LookupElement> {
     }
 }
 
-open class DefaultInsertHandler(val completionCtx: CompletionContext? = null) : InsertHandler<LookupElement> {
+open class DefaultInsertHandler(val completionCtx: CompletionContext? = null): InsertHandler<LookupElement> {
 
     final override fun handleInsert(context: InsertionContext, item: LookupElement) {
         val element = item.psiElement as? MvElement ?: return
@@ -226,7 +225,6 @@ private fun MvNamedElement.getLookupElementBuilder(
                     .withTypeText(this.outerFileName)
             }
         }
-
         is MvSpecFunction -> lookupElementBuilder
             .withTailText(this.parameters.joinToSignature())
             .withTypeText(this.returnType?.type?.text ?: "()")
@@ -247,16 +245,13 @@ private fun MvNamedElement.getLookupElementBuilder(
             lookupElementBuilder
                 .withTypeText(fieldTy.text(false))
         }
-
         is MvConst -> {
-//            val msl = this.isMslOnlyItem
             val constTy = this.type?.loweredType(msl) ?: TyUnknown
             lookupElementBuilder
                 .withTypeText(constTy.text(true))
         }
 
-        is MvBindingPat -> {
-//            val msl = this.isMslOnlyItem
+        is MvPatBinding -> {
             val bindingInference = this.inference(msl)
             // race condition sometimes happens, when file is too big, inference is not finished yet
             val ty = bindingInference?.getPatTypeOrUnknown(this) ?: TyUnknown
@@ -266,20 +261,6 @@ private fun MvNamedElement.getLookupElementBuilder(
 
         is MvSchema -> lookupElementBuilder
             .withTypeText(this.containingFile?.name)
-
-        // we need to do the resolve here and in the next one to get the underlying item,
-        // but it should be cached in the most cases
-//        is MvModuleUseSpeck -> {
-//            this.fqModuleRef?.reference?.resolve()
-//                ?.getLookupElementBuilder(completionCtx, subst, structAsType)
-//                ?: lookupElementBuilder
-//        }
-
-//        is MvUseItem -> {
-//            this.reference.resolve()
-//                ?.getLookupElementBuilder(completionCtx, subst, structAsType)
-//                ?: lookupElementBuilder
-//        }
 
         else -> lookupElementBuilder
     }
@@ -291,9 +272,8 @@ private fun MvNamedElement.getLookupElementBuilder(
 private fun InsertionContext.doNotAddOpenParenCompletionChar() {
     if (completionChar == '(') {
         setAddCompletionChar(false)
-//        Testmarks.DoNotAddOpenParenCompletionChar.hit()
     }
 }
 
-inline fun <reified T : PsiElement> InsertionContext.getElementOfType(strict: Boolean = false): T? =
+inline fun <reified T: PsiElement> InsertionContext.getElementOfType(strict: Boolean = false): T? =
     PsiTreeUtil.findElementOfClassAtOffset(file, tailOffset - 1, T::class.java, strict)

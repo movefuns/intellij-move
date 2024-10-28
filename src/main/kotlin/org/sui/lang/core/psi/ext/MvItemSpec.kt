@@ -34,8 +34,8 @@ fun MvModuleItemSpec.specInlineFunctions(): List<MvSpecInlineFunction> =
 val MvItemSpec.itemSpecBlock: MvSpecCodeBlock? get() = this.childOfType()
 val MvItemSpecBlockExpr.specBlock: MvSpecCodeBlock? get() = this.childOfType()
 
-abstract class MvItemSpecMixin(node: ASTNode) : MvElementImpl(node),
-    MvItemSpec {
+abstract class MvItemSpecMixin(node: ASTNode): MvElementImpl(node),
+                                               MvItemSpec {
 
     override val modificationTracker = MvModificationTracker(this)
 

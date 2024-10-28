@@ -4,7 +4,7 @@ import com.intellij.codeInsight.hints.InlayInfo
 import com.intellij.psi.PsiElement
 import org.sui.ide.utils.FunctionSignature
 import org.sui.lang.core.psi.MvMethodCall
-import org.sui.lang.core.psi.MvRefExpr
+import org.sui.lang.core.psi.MvPathExpr
 import org.sui.lang.core.psi.MvStructLitExpr
 import org.sui.lang.core.psi.ext.MvCallable
 import org.sui.lang.core.psi.ext.argumentExprs
@@ -25,8 +25,8 @@ object InlayParameterHints {
             .asSequence()
             .filter { (_, arg) -> arg != null }
             // don't show argument, if just function call / variable / struct literal
-    //            .filter { (_, arg) -> arg !is MvRefExpr && arg !is MvCallExpr && arg !is MvStructLitExpr }
-            .filter { (_, arg) -> arg !is MvRefExpr && arg !is MvStructLitExpr }
+            //            .filter { (_, arg) -> arg !is MvRefExpr && arg !is MvCallExpr && arg !is MvStructLitExpr }
+            .filter { (_, arg) -> arg !is MvPathExpr && arg !is MvStructLitExpr }
             .filter { (hint, arg) -> !isSimilar(hint, arg!!.text) }
             .filter { (hint, _) -> hint != "_" }
             .map { (hint, arg) -> InlayInfo("$hint:", arg!!.startOffset) }
