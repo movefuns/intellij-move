@@ -20,6 +20,7 @@ import org.sui.lang.core.resolve.ref.MvReferenceElement
 import org.sui.lang.core.resolve.ref.Namespace
 import org.sui.lang.core.resolve.ref.Namespace.MODULE
 import org.sui.lang.core.resolve.ref.TYPES_N_ENUMS
+import org.sui.lang.core.resolve.ref.Visibility2
 import org.sui.lang.core.resolve2.PathKind
 import org.sui.lang.core.resolve2.pathKind
 import org.sui.lang.core.resolve2.ref.ResolutionContext
@@ -153,10 +154,23 @@ fun filterCompletionVariantsByVisibility(
     processor: RsResolveProcessor
 ): RsResolveProcessor {
     return processor.wrapWithFilter { e ->
-        // drop invisible items
+
+        val element = e.element
+
+        if (element is MvFunction) {
+            val visibility = (element as? MvVisibilityOwner)?.visibility2
+            when (visibility) {
+                is Visibility2.Public,
+                is Visibility2.Restricted.Friend,
+                is Visibility2.Restricted.Package -> {return@wrapWithFilter true}
+                else -> return@wrapWithFilter false
+            }
+        }
+
         if (!e.isVisibleFrom(context)) return@wrapWithFilter false
 
         true
+
     }
 }
 

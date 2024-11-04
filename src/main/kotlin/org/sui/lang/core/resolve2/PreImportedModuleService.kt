@@ -2,6 +2,11 @@ package org.sui.lang.core.resolve2
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.FileViewProvider
+import com.intellij.psi.PsiManager
+import org.sui.lang.MoveFile
+import org.sui.lang.MoveLanguage
 import org.sui.lang.core.psi.MvModule
 import org.sui.lang.core.psi.MvStruct
 import org.sui.lang.core.psi.ext.structs
@@ -11,10 +16,17 @@ import org.sui.lang.core.resolve.process
 import org.sui.lang.core.resolve.ref.Namespace
 import org.sui.lang.preLoadItems
 import org.sui.openapiext.allMoveFiles
+import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
 class PreImportedModuleService(private val project: Project) {
+    private val viewProviderCache = ConcurrentHashMap<VirtualFile, FileViewProvider>()
 
+    private fun getOrCreateViewProvider(file: VirtualFile): FileViewProvider {
+        return viewProviderCache.computeIfAbsent(file) {
+            PsiManager.getInstance(project).findViewProvider(it)!!
+        }
+    }
     private val preImportedModules: MutableList<MvModule> = mutableListOf()
     private val preImportedItems: MutableList<MvStruct> = mutableListOf()
 
@@ -25,14 +37,14 @@ class PreImportedModuleService(private val project: Project) {
 
     private fun loadPreDefinedModules() {
         for (file in project.allMoveFiles()) {
+            val viewProvider = getOrCreateViewProvider(file.virtualFile)
+            val psiFile = viewProvider.getPsi(MoveLanguage) as? MoveFile ?: continue
 
-            file.modules().forEach { module ->
-                // load std modules
+            psiFile.modules().forEach { module ->
                 if (module.name in PRELOAD_STD_MODULES) {
                     preImportedModules.add(module)
                 }
 
-                // load sui modules
                 val address = module.addressRef?.namedAddress?.identifier?.text ?: ""
                 if (address == "sui" && module.name in PRELOAD_SUI_MODULES) {
                     preImportedModules.add(module)

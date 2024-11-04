@@ -1,6 +1,7 @@
 package org.sui.ide.utils.imports
 
 import org.sui.ide.inspections.imports.usageScope
+import org.sui.lang.MvElementTypes
 import org.sui.lang.core.psi.*
 import org.sui.lang.core.psi.ext.*
 import org.sui.lang.core.types.ItemQualName
@@ -161,8 +162,11 @@ private fun insertUseStmtAtTheCorrectLocation(mod: MvItemsOwner, useStmt: MvUseS
     val newline = psiFactory.createNewline()
     val useStmts = mod.childrenOfType<MvUseStmt>().map(::UseStmtWrapper)
     if (useStmts.isEmpty()) {
-        val anchor = mod.firstItem
-        mod.addAfter(newline, mod.addBefore(useStmt, anchor))
+        val moduleDecl = mod.findFirstChildByType(MvElementTypes.L_BRACE)
+            ?: mod.findFirstChildByType(MvElementTypes.SEMICOLON)
+            ?: mod.firstItem
+        mod.addAfter(useStmt, moduleDecl)
+        mod.addAfter(newline, moduleDecl)
         return true
     }
 

@@ -115,7 +115,7 @@ private fun CharSequence.indexOfSkippingSpace(c: Char, startIndex: Int): Int? {
 fun LookupElementBuilder.withPriority(priority: Double): LookupElement =
     if (priority == DEFAULT_PRIORITY) this else PrioritizedLookupElement.withPriority(this, priority)
 
-class AngleBracketsInsertHandler: InsertHandler<LookupElement> {
+class AngleBracketsInsertHandler : InsertHandler<LookupElement> {
 
     override fun handleInsert(context: InsertionContext, item: LookupElement) {
         val document = context.document
@@ -126,7 +126,7 @@ class AngleBracketsInsertHandler: InsertHandler<LookupElement> {
     }
 }
 
-open class DefaultInsertHandler(val completionCtx: CompletionContext? = null): InsertHandler<LookupElement> {
+open class DefaultInsertHandler(val completionCtx: CompletionContext? = null) : InsertHandler<LookupElement> {
 
     final override fun handleInsert(context: InsertionContext, item: LookupElement) {
         val element = item.psiElement as? MvElement ?: return
@@ -139,66 +139,80 @@ open class DefaultInsertHandler(val completionCtx: CompletionContext? = null): I
         item: LookupElement
     ) {
         val document = context.document
+        val editor = context.editor
 
-        when (element) {
-            is MvFunctionLike -> {
-                // no suffix for imports
-                if (completionCtx?.resolutionCtx?.isUseSpeck == true) return
+        // 在文档修改前禁用高亮更新
+        editor.markupModel.removeAllHighlighters()
 
-                val isMethodCall = context.getElementOfType<MvMethodOrField>() != null
-                val requiresExplicitTypes =
-                    element.requiresExplicitlyProvidedTypeArguments(completionCtx)
-                if (isMethodCall) {
-                    var suffix = ""
-                    if (requiresExplicitTypes && !context.alreadyHasColonColon) {
-                        suffix += "::<>"
+        try {
+            when (element) {
+                is MvFunctionLike -> {
+                    // no suffix for imports
+                    if (completionCtx?.resolutionCtx?.isUseSpeck == true) return
+
+                    val isMethodCall = context.getElementOfType<MvMethodOrField>() != null
+                    val requiresExplicitTypes =
+                        element.requiresExplicitlyProvidedTypeArguments(completionCtx)
+                    if (isMethodCall) {
+                        var suffix = ""
+                        if (requiresExplicitTypes && !context.alreadyHasColonColon) {
+                            suffix += "::<>"
+                        }
+                        if (!context.alreadyHasColonColon && !context.alreadyHasCallParens) {
+                            suffix += "()"
+                        }
+                        val caretShift = when {
+                            context.alreadyHasColonColon || requiresExplicitTypes -> 3
+                            // drop first for self
+                            element.parameters.drop(1).isNotEmpty() -> 1
+                            else -> 2
+                        }
+                        context.document.insertString(context.selectionEndOffset, suffix)
+                        EditorModificationUtil.moveCaretRelatively(context.editor, caretShift)
+                    } else {
+                        var suffix = ""
+                        if (requiresExplicitTypes && !context.alreadyHasAngleBrackets) {
+                            suffix += "<>"
+                        }
+                        if (!context.alreadyHasAngleBrackets && !context.alreadyHasCallParens) {
+                            suffix += "()"
+                        }
+                        val caretShift = when {
+                            requiresExplicitTypes -> 1
+                            element.parameters.isNotEmpty() -> 1
+                            else -> 2
+                        }
+                        context.document.insertString(context.selectionEndOffset, suffix)
+                        EditorModificationUtil.moveCaretRelatively(context.editor, caretShift)
                     }
-                    if (!context.alreadyHasColonColon && !context.alreadyHasCallParens) {
-                        suffix += "()"
+                }
+
+                is MvSchema -> {
+                    if (element.hasTypeParameters) {
+                        if (!context.alreadyHasAngleBrackets) {
+                            document.insertString(context.selectionEndOffset, "<>")
+                        }
+                        EditorModificationUtil.moveCaretRelatively(context.editor, 1)
                     }
-                    val caretShift = when {
-                        context.alreadyHasColonColon || requiresExplicitTypes -> 3
-                        // drop first for self
-                        element.parameters.drop(1).isNotEmpty() -> 1
-                        else -> 2
+                }
+
+                is MvStruct -> {
+                    val insideAcquiresType =
+                        context.file
+                            .findElementAt(context.startOffset)
+                            ?.ancestorOrSelf<MvAcquiresType>() != null
+                    if (element.hasTypeParameters && !insideAcquiresType) {
+                        if (!context.alreadyHasAngleBrackets) {
+                            document.insertString(context.selectionEndOffset, "<>")
+                        }
+                        EditorModificationUtil.moveCaretRelatively(context.editor, 1)
                     }
-                    context.document.insertString(context.selectionEndOffset, suffix)
-                    EditorModificationUtil.moveCaretRelatively(context.editor, caretShift)
-                } else {
-                    var suffix = ""
-                    if (requiresExplicitTypes && !context.alreadyHasAngleBrackets) {
-                        suffix += "<>"
-                    }
-                    if (!context.alreadyHasAngleBrackets && !context.alreadyHasCallParens) {
-                        suffix += "()"
-                    }
-                    val caretShift = when {
-                        requiresExplicitTypes -> 1
-                        element.parameters.isNotEmpty() -> 1
-                        else -> 2
-                    }
-                    context.document.insertString(context.selectionEndOffset, suffix)
-                    EditorModificationUtil.moveCaretRelatively(context.editor, caretShift)
                 }
             }
-            is MvSchema -> {
-                if (element.hasTypeParameters) {
-                    if (!context.alreadyHasAngleBrackets) {
-                        document.insertString(context.selectionEndOffset, "<>")
-                    }
-                    EditorModificationUtil.moveCaretRelatively(context.editor, 1)
-                }
-            }
-            is MvStruct -> {
-                val insideAcquiresType =
-                    context.file
-                        .findElementAt(context.startOffset)
-                        ?.ancestorOrSelf<MvAcquiresType>() != null
-                if (element.hasTypeParameters && !insideAcquiresType) {
-                    if (!context.alreadyHasAngleBrackets) {
-                        document.insertString(context.selectionEndOffset, "<>")
-                    }
-                    EditorModificationUtil.moveCaretRelatively(context.editor, 1)
+        } finally {
+            editor.markupModel.allHighlighters.forEach { highlighter ->
+                if (!highlighter.isValid) {
+                    highlighter.dispose()
                 }
             }
         }
@@ -225,6 +239,7 @@ private fun MvNamedElement.getLookupElementBuilder(
                     .withTypeText(this.outerFileName)
             }
         }
+
         is MvSpecFunction -> lookupElementBuilder
             .withTailText(this.parameters.joinToSignature())
             .withTypeText(this.returnType?.type?.text ?: "()")
@@ -245,6 +260,7 @@ private fun MvNamedElement.getLookupElementBuilder(
             lookupElementBuilder
                 .withTypeText(fieldTy.text(false))
         }
+
         is MvConst -> {
             val constTy = this.type?.loweredType(msl) ?: TyUnknown
             lookupElementBuilder
@@ -275,5 +291,5 @@ private fun InsertionContext.doNotAddOpenParenCompletionChar() {
     }
 }
 
-inline fun <reified T: PsiElement> InsertionContext.getElementOfType(strict: Boolean = false): T? =
+inline fun <reified T : PsiElement> InsertionContext.getElementOfType(strict: Boolean = false): T? =
     PsiTreeUtil.findElementOfClassAtOffset(file, tailOffset - 1, T::class.java, strict)
