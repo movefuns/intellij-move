@@ -739,7 +739,7 @@ PatIdent ::= PatBinding
 //       Name => { } // bind Name to x
 //   }
 //PatIdent ::= PatBinding
-PatBinding ::= IDENTIFIER !ForbiddenPatBindingLast {
+PatBinding ::=mut? IDENTIFIER !ForbiddenPatBindingLast {
     implements = [
         "org.sui.lang.core.psi.MvMandatoryNameIdentifierOwner"
         "org.sui.lang.core.resolve.ref.MvMandatoryReferenceElement"
@@ -774,9 +774,9 @@ private PatField_with_recover ::= !'}' PatField (',' | &'}')
     recoverWhile = PatField_recover
 
 }
-private PatField_recover ::= !('}' | IDENTIFIER)
+private PatField_recover ::= !('}' |mut? IDENTIFIER)
 
-PatFieldFull ::= IDENTIFIER ':' Pat
+PatFieldFull ::=mut? IDENTIFIER ':' Pat
 {
     implements = [
 //        "org.sui.lang.core.resolve.ref.MvStructPatFieldReferenceElement"
@@ -784,7 +784,7 @@ PatFieldFull ::= IDENTIFIER ':' Pat
     ]
     mixin = "org.sui.lang.core.psi.ext.MvPatFieldFullMixin"
 }
-FieldPatFull ::= IDENTIFIER ':' Pat
+FieldPatFull ::=mut? IDENTIFIER ':' Pat
 
 PatField ::= PatFieldFull | PatBinding
 FieldPat ::= PatFieldFull | PatBinding
