@@ -367,9 +367,16 @@ SpecInlineFunctionStmt ::= SpecInlineFunctionInner
     ]
 }
 
+
+
 private PublicKeyword ::= 'public'
-fake Struct ::= Attr* PublicKeyword? native? STRUCT_KW IDENTIFIER? TypeParameterList? AbilitiesList?
-                        (';' | BlockFields)?
+///  explame : 1. public struct Test;
+///            2. public  struct Test has copy {}(BlockFields)
+///            2. public struct Text(u64,bool)
+///
+fake Struct ::= Attr* PublicKeyword native? STRUCT_KW IDENTIFIER TypeParameterList?
+                            //AbilitiesList?   (';' | BlockFields)?
+                (StructBlock | StructTupleBlock | StructBlockFields)?
 {
  implements = [
      "org.sui.lang.core.psi.MvQualNamedElement"
@@ -382,11 +389,14 @@ fake Struct ::= Attr* PublicKeyword? native? STRUCT_KW IDENTIFIER? TypeParameter
  elementTypeFactory = "org.sui.lang.core.stubs.StubsKt.factory"
 }
 
+private StructBlock ::= AbilitiesList  (';' | BlockFields | TupleFields)?
 
+private endAbilitiesAbi ::= TupleFields AbilitiesList';'?
+
+private StructBlockFields ::= BlockFields AbilitiesList';'?
 
 private StructInnerFirst ::= STRUCT_KW
-StructInner ::= Attr* VisibilityModifier? StructInnerFirst IDENTIFIER TypeParameterList? AbilitiesList?
-                            BlockFields
+StructInner ::= Attr* VisibilityModifier? StructInnerFirst IDENTIFIER TypeParameterList?  (StructBlock | StructTupleBlock | StructBlockFields)?
 {
  pin = StructInnerFirst
  elementType = Struct
