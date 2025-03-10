@@ -391,9 +391,9 @@ fake Struct ::= Attr* PublicKeyword native? STRUCT_KW IDENTIFIER TypeParameterLi
 
 private StructBlock ::= AbilitiesList  (';' | BlockFields | TupleFields)?
 
-private endAbilitiesAbi ::= TupleFields AbilitiesList';'?
+private StructTupleBlock ::= TupleFields (AbilitiesList';')?
 
-private StructBlockFields ::= BlockFields AbilitiesList';'?
+private StructBlockFields ::= BlockFields (AbilitiesList';')?
 
 private StructInnerFirst ::= STRUCT_KW
 StructInner ::= Attr* VisibilityModifier? StructInnerFirst IDENTIFIER TypeParameterList?  (StructBlock | StructTupleBlock | StructBlockFields)?
@@ -1383,7 +1383,7 @@ private ItemSpecFunctionParameter_with_recover ::= !(')' | '{' | ';') ItemSpecFu
 }
 private ItemSpecFunctionParameter_recover ::= !(')' | '{' | ';' | IDENTIFIER)
 
-ItemSpecFunctionParameter ::= IDENTIFIER TypeAnnotation {
+ItemSpecFunctionParameter ::='mut'? IDENTIFIER TypeAnnotation {
     pin = 1
     implements = [
         "org.sui.lang.core.resolve.ref.MvItemSpecParameterReferenceElement"
