@@ -367,9 +367,16 @@ SpecInlineFunctionStmt ::= SpecInlineFunctionInner
     ]
 }
 
+
+
 private PublicKeyword ::= 'public'
-fake Struct ::= Attr* PublicKeyword? native? STRUCT_KW IDENTIFIER? TypeParameterList? AbilitiesList?
-                        (';' | BlockFields)?
+///  explame : 1. public struct Test;
+///            2. public  struct Test has copy {}(BlockFields)
+///            2. public struct Text(u64,bool)
+///
+fake Struct ::= Attr* PublicKeyword native? STRUCT_KW IDENTIFIER TypeParameterList?
+                            //AbilitiesList?   (';' | BlockFields)?
+                (StructBlock | StructTupleBlock | StructBlockFields)?
 {
  implements = [
      "org.sui.lang.core.psi.MvQualNamedElement"
@@ -382,11 +389,14 @@ fake Struct ::= Attr* PublicKeyword? native? STRUCT_KW IDENTIFIER? TypeParameter
  elementTypeFactory = "org.sui.lang.core.stubs.StubsKt.factory"
 }
 
+private StructBlock ::= AbilitiesList  (';' | BlockFields | TupleFields)?
 
+private StructTupleBlock ::= TupleFields (AbilitiesList';')?
+
+private StructBlockFields ::= BlockFields (AbilitiesList';')?
 
 private StructInnerFirst ::= STRUCT_KW
-StructInner ::= Attr* VisibilityModifier? StructInnerFirst IDENTIFIER TypeParameterList? AbilitiesList?
-                            BlockFields
+StructInner ::= Attr* VisibilityModifier? StructInnerFirst IDENTIFIER TypeParameterList?  (StructBlock | StructTupleBlock | StructBlockFields)?
 {
  pin = StructInnerFirst
  elementType = Struct
@@ -729,7 +739,7 @@ PatIdent ::= PatBinding
 //       Name => { } // bind Name to x
 //   }
 //PatIdent ::= PatBinding
-PatBinding ::= IDENTIFIER !ForbiddenPatBindingLast {
+PatBinding ::=mut? IDENTIFIER !ForbiddenPatBindingLast {
     implements = [
         "org.sui.lang.core.psi.MvMandatoryNameIdentifierOwner"
         "org.sui.lang.core.resolve.ref.MvMandatoryReferenceElement"
@@ -764,9 +774,9 @@ private PatField_with_recover ::= !'}' PatField (',' | &'}')
     recoverWhile = PatField_recover
 
 }
-private PatField_recover ::= !('}' | IDENTIFIER)
+private PatField_recover ::= !('}' |mut? IDENTIFIER)
 
-PatFieldFull ::= IDENTIFIER ':' Pat
+PatFieldFull ::=mut? IDENTIFIER ':' Pat
 {
     implements = [
 //        "org.sui.lang.core.resolve.ref.MvStructPatFieldReferenceElement"
@@ -774,7 +784,7 @@ PatFieldFull ::= IDENTIFIER ':' Pat
     ]
     mixin = "org.sui.lang.core.psi.ext.MvPatFieldFullMixin"
 }
-FieldPatFull ::= IDENTIFIER ':' Pat
+FieldPatFull ::=mut? IDENTIFIER ':' Pat
 
 PatField ::= PatFieldFull | PatBinding
 FieldPat ::= PatFieldFull | PatBinding
@@ -1373,7 +1383,7 @@ private ItemSpecFunctionParameter_with_recover ::= !(')' | '{' | ';') ItemSpecFu
 }
 private ItemSpecFunctionParameter_recover ::= !(')' | '{' | ';' | IDENTIFIER)
 
-ItemSpecFunctionParameter ::= IDENTIFIER TypeAnnotation {
+ItemSpecFunctionParameter ::='mut'? IDENTIFIER TypeAnnotation {
     pin = 1
     implements = [
         "org.sui.lang.core.resolve.ref.MvItemSpecParameterReferenceElement"
